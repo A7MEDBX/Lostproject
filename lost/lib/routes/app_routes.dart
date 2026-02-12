@@ -11,10 +11,15 @@ import '../presentation/screens/verification_screen.dart';
 import '../presentation/screens/new_password_screen.dart';
 import '../presentation/screens/notifications_screen.dart';
 import '../presentation/screens/chat_screen.dart';
+import '../presentation/screens/messages_screen.dart';
 import '../presentation/screens/create_post_screen.dart';
 import '../presentation/screens/ai_matching_results_screen.dart';
 import '../presentation/screens/post_detail_screen.dart';
 import '../presentation/screens/preview_post_screen.dart';
+import '../presentation/screens/filter_screen.dart';
+import '../presentation/screens/report_problem_screen.dart';
+import '../presentation/screens/edit_profile_screen.dart';
+import '../presentation/screens/change_password_screen.dart';
 
 /// App Routes Configuration
 class AppRoutes {
@@ -27,6 +32,7 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String settingsRoute = '/settings';
   static const String chat = '/chat';
+  static const String messages = '/messages';
   static const String login = '/login';
   static const String signup = '/signup';
   static const String forgotPassword = '/forgot-password';
@@ -34,6 +40,10 @@ class AppRoutes {
   static const String newPassword = '/new-password';
   static const String notifications = '/notifications';
   static const String aiMatchingResults = '/ai-matching-results';
+  static const String filter = '/filter';
+  static const String reportProblem = '/report-problem';
+  static const String editProfile = '/edit-profile';
+  static const String changePassword = '/change-password';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -84,11 +94,27 @@ class AppRoutes {
       case profile:
         return MaterialPageRoute(builder: (_) => const ProfileScreen());
 
+      case editProfile:
+        return MaterialPageRoute(builder: (_) => const EditProfileScreen());
+
+      case changePassword:
+        return MaterialPageRoute(builder: (_) => const ChangePasswordScreen());
+
       case '/settings':
         return MaterialPageRoute(builder: (_) => const SettingsScreen());
 
+      case messages:
+        return MaterialPageRoute(builder: (_) => const MessagesScreen());
+
       case chat:
-        return MaterialPageRoute(builder: (_) => const ChatScreen());
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            userName: args?['userName'],
+            userId: args?['userId'],
+            isOnline: args?['isOnline'],
+          ),
+        );
 
       case login:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
@@ -107,6 +133,12 @@ class AppRoutes {
 
       case notifications:
         return MaterialPageRoute(builder: (_) => const NotificationsScreen());
+
+      case filter:
+        return MaterialPageRoute(builder: (_) => const FilterScreen());
+
+      case reportProblem:
+        return MaterialPageRoute(builder: (_) => const ReportProblemScreen());
 
       default:
         return MaterialPageRoute(

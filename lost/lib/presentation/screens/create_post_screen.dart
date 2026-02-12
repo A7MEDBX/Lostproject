@@ -107,12 +107,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               leading: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: FinderColors.primaryBrown.withOpacity(0.1),
+                  color: const Color(0xFF0A3D91).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
                   Icons.camera_alt,
-                  color: FinderColors.primaryBrown,
+                  color: Color(0xFF0A3D91),
                 ),
               ),
               title: const Text(
@@ -132,12 +132,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               leading: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: FinderColors.primaryBrown.withOpacity(0.1),
+                  color: const Color(0xFF0A3D91).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
                   Icons.photo_library,
-                  color: FinderColors.primaryBrown,
+                  color: Color(0xFF0A3D91),
                 ),
               ),
               title: const Text(
@@ -260,10 +260,20 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: FinderColors.background,
-      appBar: AppBar(
-        backgroundColor: FinderColors.primaryBrown,
-        elevation: 0,
-        leading: IconButton(
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(70),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF0A3D91),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(30),
+              bottomRight: Radius.circular(30),
+            ),
+          ),
+          child: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
@@ -284,6 +294,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             },
           ),
         ],
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -303,7 +315,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: FinderColors.lightBrown,
+                        color: const Color(0xFF0A3D91),
                         width: 2,
                         style: BorderStyle.solid,
                       ),
@@ -348,14 +360,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                               Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: FinderColors.primaryBrown.withOpacity(
+                                  color: const Color(0xFF0A3D91).withOpacity(
                                     0.1,
                                   ),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(
                                   Icons.add_photo_alternate_outlined,
-                                  color: FinderColors.primaryBrown,
+                                  color: Color(0xFF0A3D91),
                                   size: 40,
                                 ),
                               ),
@@ -406,12 +418,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? FinderColors.primaryBrown
+                                ? const Color(0xFF0A3D91)
                                 : Colors.white,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: isSelected
-                                  ? FinderColors.primaryBrown
+                                  ? const Color(0xFF0A3D91)
                                   : FinderColors.lightBrown,
                             ),
                           ),
@@ -469,7 +481,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: FinderColors.lightBrown),
+                    border: Border.all(color: const Color(0xFF0A3D91)),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
@@ -545,7 +557,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _submitPost,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: FinderColors.primaryBrown,
+                      backgroundColor: const Color(0xFF0A3D91),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -624,20 +636,20 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             ? Icon(prefixIcon, color: FinderColors.textSecondary)
             : null,
         suffixIcon: suffixIcon != null
-            ? Icon(suffixIcon, color: FinderColors.primaryBrown)
+            ? Icon(suffixIcon, color: const Color(0xFF0A3D91))
             : null,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: FinderColors.lightBrown),
+          borderSide: const BorderSide(color: Color(0xFF0A3D91)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: FinderColors.lightBrown),
+          borderSide: const BorderSide(color: Color(0xFF0A3D91)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(
-            color: FinderColors.primaryBrown,
+            color: Color(0xFF0A3D91),
             width: 2,
           ),
         ),

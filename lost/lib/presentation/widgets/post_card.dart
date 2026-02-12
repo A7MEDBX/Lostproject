@@ -35,16 +35,13 @@ class PostCard extends StatelessWidget {
 
   Color _getBadgeColor() {
     if (post.postType.toLowerCase() == 'lost') {
-      return const Color(0xFFA0826D); // Brown for lost items
+      return const Color(0xFF0A3D91); // Blue for lost items
     }
-    return Colors.white; // White for found items
+    return const Color(0xFF0A3D91); // Blue for found items
   }
 
   Color _getBadgeTextColor() {
-    if (post.postType.toLowerCase() == 'lost') {
-      return Colors.white;
-    }
-    return Colors.grey[700]!;
+    return Colors.white; // White text for both lost and found
   }
 
   @override
@@ -84,6 +81,10 @@ class PostCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: backgroundColor ?? const Color(0xFFE8E8E8),
               borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: const Color(0xFF0A3D91),
+                width: 2,
+              ),
             ),
             child: Stack(
               children: [

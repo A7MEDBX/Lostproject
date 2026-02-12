@@ -73,7 +73,7 @@ class SuccessMessageScreen extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF6B5B4A),
+                  color: Color(0xFF0A3D91),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.check, color: Colors.white, size: 40),
@@ -101,9 +101,13 @@ class SuccessMessageScreen extends StatelessWidget {
 
   Widget _buildBottomNav(BuildContext context) {
     return Container(
-      height: 80,
+      height: 100,
       decoration: BoxDecoration(
-        color: const Color(0xFF8B7355),
+        color: const Color(0xFF0A3D91),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -149,7 +153,7 @@ class SuccessMessageScreen extends StatelessWidget {
         ),
         child: Icon(
           icon,
-          color: isActive ? const Color(0xFF8B7355) : Colors.white,
+          color: isActive ? const Color(0xFF0A3D91) : Colors.white,
           size: 28,
         ),
       ),

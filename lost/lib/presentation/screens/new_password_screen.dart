@@ -103,7 +103,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: const BorderSide(
-                              color: Color(0xFF8B7355),
+                              color: Color(0xFF0A3D91),
                               width: 1.5,
                             ),
                           ),
@@ -171,7 +171,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: const BorderSide(
-                              color: Color(0xFF8B7355),
+                              color: Color(0xFF0A3D91),
                               width: 1.5,
                             ),
                           ),
@@ -226,7 +226,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                             }
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF8B7355),
+                            backgroundColor: const Color(0xFF0A3D91),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -258,9 +258,13 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
 
   Widget _buildBottomNav() {
     return Container(
-      height: 80,
+      height: 100,
       decoration: BoxDecoration(
-        color: const Color(0xFF8B7355),
+        color: const Color(0xFF0A3D91),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -292,7 +296,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
         ),
         child: Icon(
           icon,
-          color: isActive ? const Color(0xFF8B7355) : Colors.white,
+          color: isActive ? const Color(0xFF0A3D91) : Colors.white,
           size: 28,
         ),
       ),

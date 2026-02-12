@@ -13,30 +13,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Profile',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(70),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF0A3D91),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(30),
+              bottomRight: Radius.circular(30),
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const SizedBox(width: 48),
+                  const Text(
+                    'Profile',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.notifications_outlined,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/notifications');
+                    },
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.notifications_outlined,
-              color: Colors.black,
-              size: 28,
-            ),
-            onPressed: () {
-              Navigator.pushNamed(context, '/notifications');
-            },
-          ),
-        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -52,7 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     height: 130,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: const Color(0xFFD4C4A8),
+                      color: const Color(0xFF0A3D91).withOpacity(0.2),
                       border: Border.all(color: Colors.white, width: 4),
                       boxShadow: [
                         BoxShadow(
@@ -65,7 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: const Icon(
                       Icons.person,
                       size: 60,
-                      color: Color(0xFF8B7355),
+                      color: Color(0xFF0A3D91),
                     ),
                   ),
                   Positioned(
@@ -75,7 +91,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       width: 40,
                       height: 40,
                       decoration: const BoxDecoration(
-                        color: Color(0xFF2196F3),
+                        color: Color(0xFF0A3D91),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -127,10 +143,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 16),
 
+                    // Edit Profile
+                    _buildMenuItem(
+                      icon: Icons.edit_outlined,
+                      iconColor: const Color(0xFF0A3D91),
+                      title: 'Edit Profile',
+                      onTap: () {
+                        Navigator.pushNamed(context, '/edit-profile');
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
                     // Settings
                     _buildMenuItem(
                       icon: Icons.settings_outlined,
-                      iconColor: const Color(0xFF2196F3),
+                      iconColor: const Color(0xFF0A3D91),
                       title: 'Settings',
                       onTap: () {
                         Navigator.pushNamed(context, '/settings');
@@ -142,7 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     // Support
                     _buildMenuItem(
                       icon: Icons.help_outline,
-                      iconColor: const Color(0xFF2196F3),
+                      iconColor: const Color(0xFF0A3D91),
                       title: 'Support',
                       onTap: () {
                         // Navigator.pushNamed(pass);
@@ -151,10 +179,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     const SizedBox(height: 12),
 
+                    // Report a Problem
+                    _buildMenuItem(
+                      icon: Icons.report_problem_outlined,
+                      iconColor: const Color(0xFF0A3D91),
+                      title: 'Report a problem',
+                      onTap: () {
+                        Navigator.pushNamed(context, '/report-problem');
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
                     // Privacy Policy
                     _buildMenuItem(
                       icon: Icons.shield_outlined,
-                      iconColor: const Color(0xFF2196F3),
+                      iconColor: const Color(0xFF0A3D91),
                       title: 'Privacy Policy',
                       onTap: () {
                         // Navigator.pushNamed(context, '/settings');
@@ -197,34 +237,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: Container(
-        height: 80,
-        decoration: BoxDecoration(
-          color: const Color(0xFF8B7355),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
+      bottomNavigationBar: Stack(
+        children: [
+          Container(
+            height: 100,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -5),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavButton(Icons.home, false, () {
-              Navigator.pushReplacementNamed(context, '/home');
-            }),
-            
-            _buildNavButton(Icons.chat_bubble_outline_sharp, false, () {
-              Navigator.pushNamed(context, '/chat');
-            }),
-            _buildNavButton(Icons.file_upload_outlined, false, () {
-              Navigator.pushNamed(context, '/create-post');
-            }),
-            _buildNavButton(Icons.person, true, () {}),
-          ],
-        ),
+            child: Column(
+              children: [
+                const SizedBox(height: 40),
+                Container(
+                  height: 60,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF0A3D91),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            top: 10,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildNavButton(Icons.home, false, () {
+                  Navigator.pushReplacementNamed(context, '/home');
+                }),
+                _buildNavButton(Icons.chat_bubble_outline_sharp, false, () {
+                  Navigator.pushNamed(context, '/messages');
+                }),
+                _buildNavButton(Icons.file_upload_outlined, false, () {
+                  Navigator.pushNamed(context, '/create-post');
+                }),
+                _buildNavButton(Icons.person, true, () {}),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -277,16 +340,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 56,
-        height: 56,
+        width: 70,
+        height: 70,
         decoration: BoxDecoration(
-          color: isActive ? Colors.white : Colors.transparent,
+          color: isActive ? const Color(0xFF0A3D91) : Colors.white,
           shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Icon(
           icon,
-          color: isActive ? const Color(0xFF8B7355) : Colors.white,
-          size: 28,
+          color: isActive ? Colors.white : Colors.grey[600],
+          size: 38,
         ),
       ),
     );

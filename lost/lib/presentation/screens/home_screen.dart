@@ -5,6 +5,7 @@ import 'dart:io';
 import '../widgets/post_card.dart';
 import '../../domain/entities/post.dart';
 import '../../core/constants/api_endpoints.dart';
+import 'filter_screen.dart';
 
 /// Home Screen - Suggested Posts
 class HomeScreen extends StatefulWidget {
@@ -108,12 +109,54 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.black, size: 28),
-            onPressed: () {
-              Scaffold.of(context).openDrawer();
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) =>
+                      const FilterScreen(),
+                  transitionsBuilder:
+                      (context, animation, secondaryAnimation, child) {
+                    const begin = Offset(0.0, 1.0);
+                    const end = Offset.zero;
+                    const curve = Curves.easeInOut;
+                    var tween = Tween(begin: begin, end: end)
+                        .chain(CurveTween(curve: curve));
+                    var offsetAnimation = animation.drive(tween);
+                    return SlideTransition(
+                      position: offsetAnimation,
+                      child: child,
+                    );
+                  },
+                ),
+              );
             },
+            child: Container(
+              width: 45,
+              height: 45,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: const Color(0xFF0A3D91),
+                  width: 3,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.tune,
+                color: Color(0xFF0A3D91),
+                size: 24,
+              ),
+            ),
           ),
         ),
         actions: [
@@ -122,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
               IconButton(
                 icon: const Icon(
                   Icons.notifications_outlined,
-                  color: Colors.black,
+                  color: Color(0xFF0A3D91),
                   size: 28,
                 ),
                 onPressed: () {
@@ -144,48 +187,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ],
-      ),
-      drawer: Drawer(
-        backgroundColor: Colors.white,
-        child: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-
-              // Drawer Menu Items
-              _buildDrawerItem(
-                icon: Icons.settings_outlined,
-                title: 'Privacy Settings',
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, '/settings');
-                },
-              ),
-
-              _buildDrawerItem(
-                icon: Icons.flag_outlined,
-                title: 'Report a problem',
-                onTap: () {
-                  Navigator.pop(context);
-                  // TODO: Navigate to report problem
-                },
-              ),
-
-              _buildDrawerItem(
-                icon: Icons.logout,
-                title: 'Log Out',
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/login',
-                    (route) => false,
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
       ),
       body: SafeArea(
         child: Column(
@@ -219,7 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
                           fontStyle: FontStyle.italic,
-                          color: Color(0xFFB8956A),
+                          color: Color(0xFF0A3D91),
                           height: 1.2,
                         ),
                       ),
@@ -244,12 +245,12 @@ class _HomeScreenState extends State<HomeScreen> {
               child: _isLoading
                   ? const Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFF8B7355),
+                        color: Color(0xFF0A3D91),
                       ),
                     )
                   : RefreshIndicator(
                       onRefresh: _fetchPosts,
-                      color: const Color(0xFF8B7355),
+                      color: const Color(0xFF0A3D91),
                       child: ListView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         itemCount: _posts.length,
@@ -269,32 +270,56 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: Container(
-        height: 80,
-        decoration: BoxDecoration(
-          color: const Color(0xFF8B7355),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      bottomNavigationBar: SizedBox(
+        height: 100,
+        child: Stack(
           children: [
-            _buildNavButton(Icons.home, true, () {}),
+            // Color bar positioned in the middle
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                height: 60,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0A3D91),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(30),
+                    topRight: Radius.circular(30),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, -5),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Icons positioned to overlap the bar
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 10,
+              bottom: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildNavButton(Icons.home, true, () {}),
 
-            _buildNavButton(Icons.chat_bubble_outline, false, () {
-              Navigator.pushNamed(context, '/chat');
-            }),
-            _buildNavButton(Icons.file_upload_outlined, false, () {
-              Navigator.pushNamed(context, '/create-post');
-            }),
-            _buildNavButton(Icons.person, false, () {
-              Navigator.pushNamed(context, '/profile');
-            }),
+                  _buildNavButton(Icons.chat_bubble_outline, false, () {
+                    Navigator.pushNamed(context, '/messages');
+                  }),
+                  _buildNavButton(Icons.file_upload_outlined, false, () {
+                    Navigator.pushNamed(context, '/create-post');
+                  }),
+                  _buildNavButton(Icons.person, false, () {
+                    Navigator.pushNamed(context, '/profile');
+                  }),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -318,7 +343,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: const Color(0xFFA0826D)),
+            Icon(icon, size: 20, color: const Color(0xFF0A3D91)),
             const SizedBox(width: 12),
             Text(
               title,
@@ -338,16 +363,16 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 56,
-        height: 56,
+        width: 70,
+        height: 70,
         decoration: BoxDecoration(
           color: isActive ? Colors.white : Colors.transparent,
           shape: BoxShape.circle,
         ),
         child: Icon(
           icon,
-          color: isActive ? const Color(0xFF8B7355) : Colors.white,
-          size: 28,
+          color: isActive ? const Color(0xFF0A3D91) : Colors.white,
+          size: 38,
         ),
       ),
     );

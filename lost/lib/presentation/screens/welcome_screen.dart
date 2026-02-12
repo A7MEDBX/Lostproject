@@ -8,6 +8,9 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Blue color (55% dark)
+    const Color darkBlue = Color(0xFF2E5A8C);
+    
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -29,13 +32,13 @@ class WelcomeScreen extends StatelessWidget {
                     width: 200,
                     height: 200,
                     decoration: BoxDecoration(
-                      color: FinderColors.lightBrown.withOpacity(0.2),
+                      color: darkBlue.withOpacity(0.2),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.search,
                       size: 80,
-                      color: FinderColors.primaryBrown,
+                      color: darkBlue,
                     ),
                   );
                 },
@@ -73,7 +76,7 @@ class WelcomeScreen extends StatelessWidget {
                     width: 16,
                     height: 16,
                     decoration: BoxDecoration(
-                      color: FinderColors.primaryBrown,
+                      color: darkBlue,
                       borderRadius: BorderRadius.circular(2),
                     ),
                     child: const Center(
@@ -93,22 +96,24 @@ class WelcomeScreen extends StatelessWidget {
 
               const Spacer(flex: 2),
 
-              // Login Button
+              // Login Button - Dark Blue
               CustomRoundedButton(
                 text: 'Login',
                 onPressed: () {
                   Navigator.pushNamed(context, '/login');
                 },
+                backgroundColor: darkBlue,
               ),
 
               const SizedBox(height: 16),
 
-              // Sign Up Button
+              // Sign Up Button - Dark Blue
               CustomRoundedButton(
                 text: 'sign up',
                 onPressed: () {
                   Navigator.pushNamed(context, '/signup');
                 },
+                backgroundColor: darkBlue,
               ),
 
               const Spacer(flex: 1),

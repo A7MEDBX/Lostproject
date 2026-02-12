@@ -15,22 +15,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black, size: 24),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Settings',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(70),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF0A3D91),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(30),
+              bottomRight: Radius.circular(30),
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const Expanded(
+                    child: Text(
+                      'Settings',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(width: 48),
+                ],
+              ),
+            ),
           ),
         ),
-        centerTitle: true,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -44,7 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // Edit Profile
                 _buildMenuItem(
                   icon: Icons.person_outline,
-                  iconColor: const Color(0xFF8B7355),
+                  iconColor: const Color(0xFF0A3D91),
                   title: 'Edit Profile',
                   subtitle: 'Update your personal information',
                   onTap: () {
@@ -57,11 +77,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // Change Password
                 _buildMenuItem(
                   icon: Icons.lock_outline,
-                  iconColor: const Color(0xFF8B7355),
+                  iconColor: const Color(0xFF0A3D91),
                   title: 'Change Password',
                   subtitle: 'Update your password',
                   onTap: () {
-                    // TODO: Navigate to change password
+                    Navigator.pushNamed(context, '/change-password');
                   },
                 ),
 
@@ -88,7 +108,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // Language
                 _buildMenuItem(
                   icon: Icons.language,
-                  iconColor: const Color(0xFF8B7355),
+                  iconColor: const Color(0xFF0A3D91),
                   title: 'Language',
                   subtitle: 'English',
                   onTap: () {
@@ -101,7 +121,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // About
                 _buildMenuItem(
                   icon: Icons.info_outline,
-                  iconColor: const Color(0xFF8B7355),
+                  iconColor: const Color(0xFF0A3D91),
                   title: 'About',
                   subtitle: 'App version 1.0.0',
                   onTap: () {
@@ -131,7 +151,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[300]!, width: 1),
+          border: Border.all(color: const Color(0xFF0A3D91), width: 2),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),
@@ -161,7 +181,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black,
+                      color: Color(0xFF0A3D91),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -185,7 +205,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[300]!, width: 1),
+        border: Border.all(color: const Color(0xFF0A3D91), width: 2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -200,12 +220,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: const Color(0xFF8B7355).withOpacity(0.1),
+              color: const Color(0xFF0A3D91).withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
               Icons.notifications_outlined,
-              color: Color(0xFF8B7355),
+              color: Color(0xFF0A3D91),
               size: 24,
             ),
           ),
@@ -219,7 +239,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black,
+                    color: Color(0xFF0A3D91),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -237,8 +257,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 notificationsEnabled = value;
               });
             },
-            activeColor: const Color(0xFF8B7355),
-            activeTrackColor: const Color(0xFF8B7355).withOpacity(0.5),
+            activeColor: const Color(0xFF0A3D91),
+            activeTrackColor: const Color(0xFF0A3D91).withOpacity(0.5),
           ),
         ],
       ),

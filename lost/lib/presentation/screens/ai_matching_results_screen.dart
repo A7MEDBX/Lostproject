@@ -173,8 +173,38 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
   Widget _buildLoadingState() {
     return Column(
       children: [
-        // Header
-        _buildHeader('Processing', showFilter: false),
+        // Blue Curved Top Bar
+        Container(
+          width: double.infinity,
+          decoration: const BoxDecoration(
+            color: Color(0xFF0A3D91),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(50),
+              bottomRight: Radius.circular(50),
+            ),
+          ),
+          padding: const EdgeInsets.only(top: 20, bottom: 30, left: 16, right: 16),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              const Expanded(
+                child: Text(
+                  'Processing',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(width: 48), // Balance the back button
+            ],
+          ),
+        ),
 
         // Loading Content
         Expanded(
@@ -184,111 +214,81 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Animated Ripple Effect
-                  SizedBox(
-                    width: 140,
-                    height: 140,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Outer ripple
-                        AnimatedBuilder(
-                          animation: _pulseController,
-                          builder: (context, child) {
-                            return Container(
-                              width: 140 * _pulseController.value,
-                              height: 140 * _pulseController.value,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: FinderColors.primaryBrown.withOpacity(
-                                    0.3 * (1 - _pulseController.value),
-                                  ),
-                                  width: 2,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                        // Middle ripple
-                        AnimatedBuilder(
-                          animation: _pulseController,
-                          builder: (context, child) {
-                            final delayedValue =
-                                (_pulseController.value + 0.3) % 1.0;
-                            return Container(
-                              width: 120 * delayedValue,
-                              height: 120 * delayedValue,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: FinderColors.primaryBrown.withOpacity(
-                                    0.5 * (1 - delayedValue),
-                                  ),
-                                  width: 2,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                        // Center icon
-                        Container(
-                          width: 80,
-                          height: 80,
+                  // Robot Image in Cyan Circle with animation
+                  AnimatedBuilder(
+                    animation: _pulseController,
+                    builder: (context, child) {
+                      return Transform.scale(
+                        scale: 1.0 + (_pulseController.value * 0.1),
+                        child: Container(
+                          width: 140,
+                          height: 140,
                           decoration: BoxDecoration(
-                            color: FinderColors.primaryBrown.withOpacity(0.1),
+                            color: const Color(0xFF00BCD4),
                             shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF00BCD4).withOpacity(0.3),
+                                blurRadius: 20,
+                                spreadRadius: _pulseController.value * 5,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
                           ),
-                          child: const Icon(
-                            Icons.smart_toy,
-                            size: 40,
-                            color: FinderColors.primaryBrown,
+                          padding: const EdgeInsets.all(10),
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/images/robot_ai.jpg',
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 40),
                   const Text(
                     'Searching for matches...',
                     style: TextStyle(
-                      color: FinderColors.textPrimary,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
                     child: Text(
                       'Our AI is currently analyzing colors, shapes, and unique features to find potential matches in our database.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: FinderColors.textSecondary,
+                        color: Colors.grey[600],
                         fontSize: 14,
                         height: 1.5,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 60),
                   // Cancel Button
-                  OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: FinderColors.lightBrown),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                  SizedBox(
+                    width: 200,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0A3D91),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
                       ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 14,
-                      ),
-                    ),
-                    child: const Text(
-                      'Cancel Search',
-                      style: TextStyle(
-                        color: FinderColors.textPrimary,
-                        fontWeight: FontWeight.bold,
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -305,8 +305,38 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
   Widget _buildResultsState() {
     return Column(
       children: [
-        // Sticky Header
-        _buildHeader('AI Analysis Results', showFilter: true),
+        // Blue Curved Top Bar
+        Container(
+          width: double.infinity,
+          decoration: const BoxDecoration(
+            color: Color(0xFF0A3D91),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(50),
+              bottomRight: Radius.circular(50),
+            ),
+          ),
+          padding: const EdgeInsets.only(top: 20, bottom: 30, left: 16, right: 16),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              const Expanded(
+                child: Text(
+                  'Processing',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(width: 48),
+            ],
+          ),
+        ),
 
         // Results Content
         Expanded(
@@ -314,37 +344,71 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Summary Banner
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${_results.length} Potential Matches',
-                        style: const TextStyle(
-                          color: FinderColors.textPrimary,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
+                const SizedBox(height: 30),
+                
+                // Robot Image
+                Center(
+                  child: Container(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00BCD4),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF00BCD4).withOpacity(0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
                         ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(10),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/images/robot_ai.jpg',
+                        fit: BoxFit.cover,
                       ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Based on visual similarity and location.',
-                        style: TextStyle(
-                          color: FinderColors.textSecondary,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
+                
+                const SizedBox(height: 30),
+                
+                // Matches Found Title
+                Center(
+                  child: Text(
+                    '${_results.length} Matches Found',
+                    style: const TextStyle(
+                      color: Colors.black87,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 8),
+                
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    child: Text(
+                      'Based on visual similarity and location.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 30),
 
                 // Results List
                 ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: _results.length,
                   itemBuilder: (context, index) {
                     final result = _results[index];
@@ -373,7 +437,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: FinderColors.lightBrown),
+        border: Border.all(color: const Color(0xFF0A3D91)),
       ),
       child: Column(
         children: [
@@ -410,7 +474,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: FinderColors.primaryBrown,
+                        color: const Color(0xFF0A3D91),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -626,7 +690,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: FinderColors.lightBrown),
+        border: Border.all(color: const Color(0xFF0A3D91)),
       ),
       child: Column(
         children: [
@@ -663,7 +727,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: FinderColors.primaryBrown.withOpacity(0.9),
+                        color: const Color(0xFF0A3D91).withOpacity(0.9),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -768,7 +832,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                         onPressed: () {},
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(
-                            color: FinderColors.lightBrown,
+                            color: Color(0xFF0A3D91),
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -789,7 +853,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                       child: ElevatedButton(
                         onPressed: () => Navigator.pushNamed(context, '/chat'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: FinderColors.primaryBrown,
+                          backgroundColor: const Color(0xFF0A3D91),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -833,7 +897,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: FinderColors.lightBrown),
+        border: Border.all(color: const Color(0xFF0A3D91)),
       ),
       child: Row(
         children: [
@@ -879,7 +943,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: FinderColors.lightBrown.withOpacity(0.5),
+                        color: const Color(0xFF0A3D91).withOpacity(0.5),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -938,7 +1002,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                   child: ElevatedButton(
                     onPressed: () {},
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: FinderColors.lightBrown,
+                      backgroundColor: const Color(0xFF0A3D91),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -948,7 +1012,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                     child: const Text(
                       'View Details',
                       style: TextStyle(
-                        color: FinderColors.textPrimary,
+                        color: Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -983,151 +1047,172 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
   Widget _buildEmptyState() {
     return Column(
       children: [
-        // Header
-        _buildHeader('Results', showFilter: false),
+        // Blue Curved Top Bar
+        Container(
+          width: double.infinity,
+          decoration: const BoxDecoration(
+            color: Color(0xFF0A3D91),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(50),
+              bottomRight: Radius.circular(50),
+            ),
+          ),
+          padding: const EdgeInsets.only(top: 20, bottom: 30, left: 16, right: 16),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              const Expanded(
+                child: Text(
+                  'Processing',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(width: 48), // Balance the back button
+            ],
+          ),
+        ),
 
         // Empty Content
         Expanded(
           child: Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: FinderColors.lightBrown,
-                    width: 2,
-                    style: BorderStyle.solid,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Robot Image in Cyan Circle
+                  Container(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00BCD4),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF00BCD4).withOpacity(0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(10),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/images/robot_ai.jpg',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
-                  color: FinderColors.lightBrown.withOpacity(0.1),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: FinderColors.lightBrown.withOpacity(0.3),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.search_off,
-                        size: 40,
-                        color: Color(0xFF9dabb9),
-                      ),
+                  const SizedBox(height: 40),
+                  
+                  const Text(
+                    'No matches found',
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'No similar items found',
-                      style: TextStyle(
-                        color: FinderColors.textPrimary,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      "We didn't find any items that strongly match your image right now.",
+                  ),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Text(
+                      "We didn't find any items that match your image right now.",
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Color(0xFF9dabb9), fontSize: 14),
-                    ),
-                    const SizedBox(height: 24),
-                    Container(
-                      width: double.infinity,
-                      height: 1,
-                      color: FinderColors.lightBrown.withOpacity(0.5),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Success message
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.check,
-                        size: 18,
-                        color: Colors.green,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Your post has been published',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Colors.grey[600],
                         fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                        height: 1.5,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'We will notify you immediately if a matching item is posted nearby.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Color(0xFF9dabb9), fontSize: 12),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // View My Post button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // Navigate to preview post screen with the user's post data
-                          Navigator.pushNamed(
-                            context,
-                            '/preview-post',
-                            arguments: widget.postData ?? {},
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: FinderColors.lightBrown),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          elevation: 0,
-                        ),
-                        child: const Text(
-                          'View My Post',
-                          style: TextStyle(
-                            color: FinderColors.textPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-
-        // Return to Dashboard link
-        Padding(
-          padding: const EdgeInsets.only(bottom: 32),
-          child: TextButton(
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, '/home');
-            },
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Return to Dashboard',
-                  style: TextStyle(
-                    color: FinderColors.primaryBrown,
-                    fontWeight: FontWeight.bold,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 40),
+
+                  // Checkbox with notification text
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0A3D91),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.check,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Your post has been published',
+                          style: TextStyle(
+                            color: Colors.grey[800],
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'We will notify you immediately if a match is found.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 13,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+
+                  // View My Post button
+                  SizedBox(
+                    width: 200,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(
+                          context,
+                          '/preview-post',
+                          arguments: widget.postData ?? {},
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0A3D91),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'View my post',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -2,7 +2,16 @@ import 'package:flutter/material.dart';
 
 /// Chat Screen
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  final String? userName;
+  final String? userId;
+  final bool? isOnline;
+
+  const ChatScreen({
+    super.key,
+    this.userName,
+    this.userId,
+    this.isOnline,
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -69,14 +78,24 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFE8DED3),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black, size: 24),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Row(
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(70),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF0A3D91),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(30),
+              bottomRight: Radius.circular(30),
+            ),
+          ),
+          child: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: Row(
           children: [
             Stack(
               children: [
@@ -89,38 +108,39 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   child: Icon(Icons.person, size: 24, color: Colors.grey[700]),
                 ),
-                Positioned(
-                  bottom: 2,
-                  right: 2,
-                  child: Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4CAF50),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
+                if (widget.isOnline ?? false)
+                  Positioned(
+                    bottom: 2,
+                    right: 2,
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4CAF50),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Ahmed Ragab',
-                    style: TextStyle(
+                    widget.userName ?? 'Ahmed Ragab',
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black,
+                      color: Colors.white,
                     ),
                   ),
                   Text(
-                    'Online',
-                    style: TextStyle(fontSize: 13, color: Colors.black54),
+                    (widget.isOnline ?? false) ? 'Online' : 'Offline',
+                    style: const TextStyle(fontSize: 13, color: Colors.white70),
                   ),
                 ],
               ),
@@ -129,12 +149,14 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.black, size: 24),
+            icon: const Icon(Icons.more_vert, color: Colors.white, size: 24),
             onPressed: () {
               // TODO: Show menu options
             },
           ),
         ],
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -144,7 +166,7 @@ class _ChatScreenState extends State<ChatScreen> {
               margin: const EdgeInsets.symmetric(vertical: 16),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFB8956A),
+                color: const Color(0xFF0A3D91),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Text(
@@ -251,7 +273,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       width: 50,
                       height: 50,
                       decoration: const BoxDecoration(
-                        color: Color(0xFF8B7355),
+                        color: Color(0xFF0A3D91),
                         shape: BoxShape.circle,
                       ),
                       child: IconButton(
@@ -311,7 +333,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: message.isSentByMe
-                        ? const Color(0xFF8B7355)
+                        ? const Color(0xFF0A3D91)
                         : Colors.grey[200],
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -337,7 +359,7 @@ class _ChatScreenState extends State<ChatScreen> {
               height: 32,
               margin: const EdgeInsets.only(left: 8),
               decoration: const BoxDecoration(
-                color: Color(0xFF8B7355),
+                color: Color(0xFF0A3D91),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.person, size: 16, color: Colors.white),

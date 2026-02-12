@@ -121,7 +121,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF8B7355),
+                          backgroundColor: const Color(0xFF0A3D91),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -182,9 +182,13 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   Widget _buildBottomNav() {
     return Container(
-      height: 80,
+      height: 100,
       decoration: BoxDecoration(
-        color: const Color(0xFF8B7355),
+        color: const Color(0xFF0A3D91),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -216,7 +220,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
         ),
         child: Icon(
           icon,
-          color: isActive ? const Color(0xFF8B7355) : Colors.white,
+          color: isActive ? const Color(0xFF0A3D91) : Colors.white,
           size: 28,
         ),
       ),

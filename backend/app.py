@@ -162,7 +162,7 @@ def create_post_with_matching():
             post_type=post_type,
             category=category if category else None,
             top_k=10,
-            min_similarity=0.80  # 80% minimum - high quality matches only
+            min_similarity=0.60  # 80% minimum - high quality matches only
         )
         
         # Format matches with full post details

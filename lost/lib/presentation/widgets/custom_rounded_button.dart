@@ -11,6 +11,7 @@ class CustomRoundedButton extends StatelessWidget {
   final double height;
   final double borderRadius;
   final bool isOutlined;
+  final Widget? prefixWidget;
 
   const CustomRoundedButton({
     super.key,
@@ -22,10 +23,29 @@ class CustomRoundedButton extends StatelessWidget {
     this.height = 50,
     this.borderRadius = 10,
     this.isOutlined = false,
+    this.prefixWidget,
   });
 
   @override
   Widget build(BuildContext context) {
+    final buttonContent = Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (prefixWidget != null) ...[
+          prefixWidget!,
+          const SizedBox(width: 12),
+        ],
+        Text(
+          text,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ],
+    );
+
     if (isOutlined) {
       return SizedBox(
         width: width ?? double.infinity,
@@ -42,14 +62,7 @@ class CustomRoundedButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(borderRadius),
             ),
           ),
-          child: Text(
-            text,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.5,
-            ),
-          ),
+          child: buttonContent,
         ),
       );
     }
@@ -67,14 +80,7 @@ class CustomRoundedButton extends StatelessWidget {
           ),
           elevation: 0,
         ),
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.5,
-          ),
-        ),
+        child: buttonContent,
       ),
     );
   }
