@@ -143,6 +143,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 16),
 
+                    // My Posts
+                    _buildMenuItem(
+                      icon: Icons.grid_view,
+                      iconColor: const Color(0xFF0A3D91),
+                      title: 'My Posts',
+                      onTap: () {
+                        Navigator.pushNamed(context, '/my-posts');
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
                     // Edit Profile
                     _buildMenuItem(
                       icon: Icons.edit_outlined,

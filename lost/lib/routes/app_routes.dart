@@ -20,6 +20,7 @@ import '../presentation/screens/filter_screen.dart';
 import '../presentation/screens/report_problem_screen.dart';
 import '../presentation/screens/edit_profile_screen.dart';
 import '../presentation/screens/change_password_screen.dart';
+import '../presentation/screens/my_posts_screen.dart';
 
 /// App Routes Configuration
 class AppRoutes {
@@ -44,6 +45,7 @@ class AppRoutes {
   static const String reportProblem = '/report-problem';
   static const String editProfile = '/edit-profile';
   static const String changePassword = '/change-password';
+  static const String myPosts = '/my-posts';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -99,6 +101,9 @@ class AppRoutes {
 
       case changePassword:
         return MaterialPageRoute(builder: (_) => const ChangePasswordScreen());
+
+      case myPosts:
+        return MaterialPageRoute(builder: (_) => const MyPostsScreen());
 
       case '/settings':
         return MaterialPageRoute(builder: (_) => const SettingsScreen());
