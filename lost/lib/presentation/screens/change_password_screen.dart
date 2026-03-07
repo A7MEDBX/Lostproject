@@ -67,7 +67,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                   const Expanded(
@@ -178,7 +182,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _obscureCurrentPassword = !_obscureCurrentPassword;
+                                _obscureCurrentPassword =
+                                    !_obscureCurrentPassword;
                               });
                             },
                           ),
@@ -253,7 +258,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           if (value == null || value.isEmpty) {
                             return 'Please enter a new password';
                           }
-                          if (!_hasMinLength || !_hasNumber || !_hasCapital || !_hasSmall) {
+                          if (!_hasMinLength ||
+                              !_hasNumber ||
+                              !_hasCapital ||
+                              !_hasSmall) {
                             return 'Password does not meet requirements';
                           }
                           return null;
@@ -303,7 +311,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _obscureConfirmPassword = !_obscureConfirmPassword;
+                                _obscureConfirmPassword =
+                                    !_obscureConfirmPassword;
                               });
                             },
                           ),
@@ -398,7 +407,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           ),
                         ),
                         SizedBox(width: 8),
-                        Icon(Icons.shield_outlined, size: 20, color: Colors.white),
+                        Icon(
+                          Icons.shield_outlined,
+                          size: 20,
+                          color: Colors.white,
+                        ),
                       ],
                     ),
                   ),

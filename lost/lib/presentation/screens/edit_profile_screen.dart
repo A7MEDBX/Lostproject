@@ -13,8 +13,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _nameController = TextEditingController(text: 'Joly Marwan');
   final _emailController = TextEditingController(text: 'Joly151@gmail.com');
   final _phoneController = TextEditingController(text: '123-456-7890');
-  final _addressController = TextEditingController(text: '45 New Avenue, New York');
-  
+  final _addressController = TextEditingController(
+    text: '45 New Avenue, New York',
+  );
+
   String _selectedCountry = 'United States';
   String _selectedGender = 'Female';
 
@@ -51,7 +53,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   top: 40,
                   left: 16,
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),
@@ -147,10 +153,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     // Full Name Field
                     const Text(
                       'Full name',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
                     ),
                     const SizedBox(height: 8),
                     Container(
@@ -176,10 +179,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     // Email Field
                     const Text(
                       'Email',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
                     ),
                     const SizedBox(height: 8),
                     Container(
@@ -206,10 +206,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     // Phone Number Field
                     const Text(
                       'Phone Number',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
                     ),
                     const SizedBox(height: 8),
                     Container(
@@ -280,7 +277,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               ),
                               const SizedBox(height: 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(8),
@@ -290,17 +289,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   child: DropdownButton<String>(
                                     value: _selectedCountry,
                                     isExpanded: true,
-                                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
-                                    items: ['United States', 'Canada', 'United Kingdom', 'Australia']
-                                        .map((String value) {
-                                      return DropdownMenuItem<String>(
-                                        value: value,
-                                        child: Text(
-                                          value,
-                                          style: const TextStyle(fontSize: 14),
-                                        ),
-                                      );
-                                    }).toList(),
+                                    icon: const Icon(
+                                      Icons.keyboard_arrow_down,
+                                      color: Colors.grey,
+                                    ),
+                                    items:
+                                        [
+                                          'United States',
+                                          'Canada',
+                                          'United Kingdom',
+                                          'Australia',
+                                        ].map((String value) {
+                                          return DropdownMenuItem<String>(
+                                            value: value,
+                                            child: Text(
+                                              value,
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
                                     onChanged: (String? newValue) {
                                       setState(() {
                                         _selectedCountry = newValue!;
@@ -327,7 +336,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               ),
                               const SizedBox(height: 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(8),
@@ -337,9 +348,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   child: DropdownButton<String>(
                                     value: _selectedGender,
                                     isExpanded: true,
-                                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
-                                    items: ['Female', 'Male', 'Other']
-                                        .map((String value) {
+                                    icon: const Icon(
+                                      Icons.keyboard_arrow_down,
+                                      color: Colors.grey,
+                                    ),
+                                    items: ['Female', 'Male', 'Other'].map((
+                                      String value,
+                                    ) {
                                       return DropdownMenuItem<String>(
                                         value: value,
                                         child: Text(
@@ -367,10 +382,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     // Address Field
                     const Text(
                       'Address',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
                     ),
                     const SizedBox(height: 8),
                     Container(

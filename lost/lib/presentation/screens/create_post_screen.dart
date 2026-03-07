@@ -110,10 +110,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   color: const Color(0xFF0A3D91).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
-                  Icons.camera_alt,
-                  color: Color(0xFF0A3D91),
-                ),
+                child: const Icon(Icons.camera_alt, color: Color(0xFF0A3D91)),
               ),
               title: const Text(
                 'Camera',
@@ -274,26 +271,26 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Report Item',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.help_outline, color: Colors.white70),
-            onPressed: () {
-              // Show help dialog
-            },
-          ),
-        ],
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: const Text(
+              'Report Item',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            centerTitle: true,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.help_outline, color: Colors.white70),
+                onPressed: () {
+                  // Show help dialog
+                },
+              ),
+            ],
           ),
         ),
       ),
@@ -360,9 +357,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                               Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF0A3D91).withOpacity(
-                                    0.1,
-                                  ),
+                                  color: const Color(
+                                    0xFF0A3D91,
+                                  ).withOpacity(0.1),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(
@@ -648,10 +645,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: Color(0xFF0A3D91),
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: Color(0xFF0A3D91), width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

@@ -1,38 +1,46 @@
-# Lost & Found AI Backend
+# Lost & Found Backend
 
-Flask backend for AI-powered lost and found item matching using CLIP embeddings.
+Flask REST API backend for the Lost & Found Flutter app.
 
 ## 🚀 Quick Start
 
-### 1. Install Dependencies
+### 1. First-time setup (creates venv + installs deps + starts server)
+
+```bat
+run.bat
+```
+
+### 2. Manual setup
 
 ```bash
-cd C:\Losstprj\backend
+cd lost/backend
+python -m venv venv
+venv\Scripts\activate
 pip install -r requirements.txt
+python run.py
 ```
 
-**Note:** First installation will download the CLIP model (~350MB). This may take a few minutes.
-
-### 2. Run the Server
-
-```bash
-python app.py
-```
-
-Server will start on: **http://localhost:5000**
+Server starts on **http://0.0.0.0:5000**
 
 ## 📁 Project Structure
 
 ```
 backend/
-├── app.py                          # Main Flask application
-├── requirements.txt                # Python dependencies
-├── services/
-│   ├── ai_service.py              # CLIP embedding generation
-│   ├── storage_service.py         # Image storage (local/Firebase)
-│   └── vector_db_service.py       # Qdrant vector database
-├── temp_uploads/                   # Temporary file storage
-└── qdrant_data/                    # Qdrant local database (auto-created)
+├── run.py                  # Entry point
+├── config.py               # Dev / Prod configuration
+├── requirements.txt
+├── .env.example            # Copy to .env and fill in values
+├── run.bat                 # Windows: setup + start
+├── app/
+│   ├── __init__.py         # App factory (create_app)
+│   ├── models/
+│   │   └── post.py         # Post data model
+│   ├── routes/
+│   │   ├── health.py       # GET /api/health
+│   │   └── posts.py        # GET/POST /api/posts
+│   └── services/
+│       └── post_service.py # Business logic (swap in DB here)
+└── temp_uploads/           # Saved uploaded images
 ```
 
 ## 🔌 API Endpoints

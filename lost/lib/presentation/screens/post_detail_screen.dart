@@ -276,7 +276,6 @@ class PostDetailScreen extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            
                           ],
                         ),
                         const SizedBox(height: 24),

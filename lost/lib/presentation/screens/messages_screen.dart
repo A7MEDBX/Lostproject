@@ -130,7 +130,9 @@ class MessagesScreen extends StatelessWidget {
   }
 
   Widget _buildConversationItem(
-      BuildContext context, ChatConversation conversation) {
+    BuildContext context,
+    ChatConversation conversation,
+  ) {
     return InkWell(
       onTap: () {
         Navigator.pushNamed(
@@ -201,10 +203,7 @@ class MessagesScreen extends StatelessWidget {
                       ),
                       Text(
                         conversation.time,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),

@@ -19,18 +19,17 @@ call venv\Scripts\activate.bat
 
 REM Install dependencies
 echo Installing dependencies...
-echo (This may take a few minutes on first run - CLIP model ~350MB)
 echo.
 pip install -r requirements.txt
 
 echo.
 echo ========================================
 echo Installation complete!
-echo Starting Flask server...
+echo Starting Flask server on http://0.0.0.0:5000 ...
 echo ========================================
 echo.
 
 REM Run the app
-python app.py
+python run.py
 
 pause

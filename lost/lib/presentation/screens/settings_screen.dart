@@ -31,7 +31,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                   const Expanded(
@@ -257,7 +261,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 notificationsEnabled = value;
               });
             },
-            activeColor: const Color(0xFF0A3D91),
+            activeThumbColor: const Color(0xFF0A3D91),
             activeTrackColor: const Color(0xFF0A3D91).withOpacity(0.5),
           ),
         ],

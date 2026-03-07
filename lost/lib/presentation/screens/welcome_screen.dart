@@ -10,7 +10,7 @@ class WelcomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Blue color (55% dark)
     const Color darkBlue = Color(0xFF2E5A8C);
-    
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -35,11 +35,7 @@ class WelcomeScreen extends StatelessWidget {
                       color: darkBlue.withOpacity(0.2),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
-                      Icons.search,
-                      size: 80,
-                      color: darkBlue,
-                    ),
+                    child: const Icon(Icons.search, size: 80, color: darkBlue),
                   );
                 },
               ),

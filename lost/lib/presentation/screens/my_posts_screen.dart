@@ -46,7 +46,11 @@ class _MyPostsScreenState extends State<MyPostsScreen>
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                   const Expanded(
@@ -61,7 +65,11 @@ class _MyPostsScreenState extends State<MyPostsScreen>
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.more_vert, color: Colors.white, size: 24),
+                    icon: const Icon(
+                      Icons.more_vert,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                     onPressed: () {},
                   ),
                 ],
@@ -73,7 +81,7 @@ class _MyPostsScreenState extends State<MyPostsScreen>
       body: Column(
         children: [
           const SizedBox(height: 16),
-          
+
           // Search Bar
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -132,10 +140,7 @@ class _MyPostsScreenState extends State<MyPostsScreen>
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: [
-                _buildPostsList('lost'),
-                _buildPostsList('found'),
-              ],
+              children: [_buildPostsList('lost'), _buildPostsList('found')],
             ),
           ),
         ],
@@ -156,7 +161,8 @@ class _MyPostsScreenState extends State<MyPostsScreen>
     final posts = type == 'lost'
         ? [
             {
-              'image': 'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=400',
+              'image':
+                  'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=400',
               'title': 'Silver iPhone 13 Pro',
               'location': 'Cairo East, NY',
               'status': 'ACTIVE',
@@ -164,7 +170,8 @@ class _MyPostsScreenState extends State<MyPostsScreen>
               'isResolved': false,
             },
             {
-              'image': 'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=400',
+              'image':
+                  'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=400',
               'title': 'Tesla Model 3 Key Fob',
               'location': 'Park City 10 St',
               'status': 'ACTIVE',
@@ -174,7 +181,8 @@ class _MyPostsScreenState extends State<MyPostsScreen>
           ]
         : [
             {
-              'image': 'https://images.unsplash.com/photo-1627123424574-724758594e93?w=400',
+              'image':
+                  'https://images.unsplash.com/photo-1627123424574-724758594e93?w=400',
               'title': 'Brown Leather Wallet',
               'location': 'Found on 46 Masking st',
               'status': 'RESOLVED',
@@ -195,7 +203,7 @@ class _MyPostsScreenState extends State<MyPostsScreen>
 
   Widget _buildPostCard(Map<String, dynamic> post) {
     final bool isResolved = post['isResolved'] as bool;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
@@ -237,9 +245,9 @@ class _MyPostsScreenState extends State<MyPostsScreen>
                   },
                 ),
               ),
-              
+
               const SizedBox(width: 12),
-              
+
               // Post Details
               Expanded(
                 child: Column(
@@ -262,14 +270,16 @@ class _MyPostsScreenState extends State<MyPostsScreen>
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
-                          color: isResolved ? Colors.grey[700] : const Color(0xFF0A3D91),
+                          color: isResolved
+                              ? Colors.grey[700]
+                              : const Color(0xFF0A3D91),
                           letterSpacing: 0.5,
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(height: 6),
-                    
+
                     // Title
                     Text(
                       post['title'] as String,
@@ -279,9 +289,9 @@ class _MyPostsScreenState extends State<MyPostsScreen>
                         color: Colors.black,
                       ),
                     ),
-                    
+
                     const SizedBox(height: 4),
-                    
+
                     // Location
                     Row(
                       children: [
@@ -303,8 +313,9 @@ class _MyPostsScreenState extends State<MyPostsScreen>
                         ),
                       ],
                     ),
-                    
-                    if (!isResolved && (post['statusText'] as String).isNotEmpty) ...[
+
+                    if (!isResolved &&
+                        (post['statusText'] as String).isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Row(
                         children: [
@@ -329,9 +340,9 @@ class _MyPostsScreenState extends State<MyPostsScreen>
               ),
             ],
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // Action Buttons
           if (isResolved)
             Row(
@@ -373,9 +384,9 @@ class _MyPostsScreenState extends State<MyPostsScreen>
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(width: 8),
-                
+
                 // Mark Resolved Button
                 Expanded(
                   child: ElevatedButton.icon(

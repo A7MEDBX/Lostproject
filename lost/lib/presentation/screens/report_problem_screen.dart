@@ -39,7 +39,7 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
           backgroundColor: Color(0xFF0A3D91),
         ),
       );
-      
+
       // Clear form
       setState(() {
         _selectedOption = null;
@@ -123,7 +123,10 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
                       'Select an option',
                       style: TextStyle(color: Colors.grey),
                     ),
-                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down,
+                      color: Colors.grey,
+                    ),
                     items: _options.map((option) {
                       return DropdownMenuItem(
                         value: option,
@@ -168,7 +171,10 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFF0A3D91), width: 2),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF0A3D91),
+                      width: 2,
+                    ),
                   ),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -213,7 +219,10 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFF0A3D91), width: 2),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF0A3D91),
+                      width: 2,
+                    ),
                   ),
                   contentPadding: const EdgeInsets.all(16),
                 ),

@@ -23,9 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Post> _posts = [];
 
   // Fallback mock data (shown when backend is unavailable)
-  final List<Post> _mockPosts = [
-   
-  ];
+  final List<Post> _mockPosts = [];
 
   @override
   void initState() {
@@ -119,17 +117,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       const FilterScreen(),
                   transitionsBuilder:
                       (context, animation, secondaryAnimation, child) {
-                    const begin = Offset(0.0, 1.0);
-                    const end = Offset.zero;
-                    const curve = Curves.easeInOut;
-                    var tween = Tween(begin: begin, end: end)
-                        .chain(CurveTween(curve: curve));
-                    var offsetAnimation = animation.drive(tween);
-                    return SlideTransition(
-                      position: offsetAnimation,
-                      child: child,
-                    );
-                  },
+                        const begin = Offset(0.0, 1.0);
+                        const end = Offset.zero;
+                        const curve = Curves.easeInOut;
+                        var tween = Tween(
+                          begin: begin,
+                          end: end,
+                        ).chain(CurveTween(curve: curve));
+                        var offsetAnimation = animation.drive(tween);
+                        return SlideTransition(
+                          position: offsetAnimation,
+                          child: child,
+                        );
+                      },
                 ),
               );
             },
@@ -139,10 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: const Color(0xFF0A3D91),
-                  width: 3,
-                ),
+                border: Border.all(color: const Color(0xFF0A3D91), width: 3),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
@@ -151,11 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.tune,
-                color: Color(0xFF0A3D91),
-                size: 24,
-              ),
+              child: const Icon(Icons.tune, color: Color(0xFF0A3D91), size: 24),
             ),
           ),
         ),
@@ -226,7 +219,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
-                  
                 ],
               ),
             ),

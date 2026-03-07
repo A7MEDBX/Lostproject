@@ -31,10 +31,7 @@ class CustomRoundedButton extends StatelessWidget {
     final buttonContent = Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        if (prefixWidget != null) ...[
-          prefixWidget!,
-          const SizedBox(width: 12),
-        ],
+        if (prefixWidget != null) ...[prefixWidget!, const SizedBox(width: 12)],
         Text(
           text,
           style: const TextStyle(

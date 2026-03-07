@@ -50,9 +50,9 @@ class Either<L, R> {
 
   T fold<T>(T Function(L left) leftFn, T Function(R right) rightFn) {
     if (isLeft) {
-      return leftFn(_left!);
+      return leftFn(_left as L);
     } else {
-      return rightFn(_right!);
+      return rightFn(_right as R);
     }
   }
 }

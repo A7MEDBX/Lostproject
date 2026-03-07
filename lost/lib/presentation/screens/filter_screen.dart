@@ -84,10 +84,7 @@ class _FilterScreenState extends State<FilterScreen> {
                   onPressed: () {},
                   child: const Text(
                     'Clear',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF0A3D91),
-                    ),
+                    style: TextStyle(fontSize: 12, color: Color(0xFF0A3D91)),
                   ),
                 ),
               ],
@@ -149,10 +146,7 @@ class _FilterScreenState extends State<FilterScreen> {
                   onChanged: (value) {},
                   activeColor: const Color(0xFF0A3D91),
                 ),
-                const Text(
-                  'Custom Date Range',
-                  style: TextStyle(fontSize: 14),
-                ),
+                const Text('Custom Date Range', style: TextStyle(fontSize: 14)),
               ],
             ),
 
@@ -175,10 +169,7 @@ class _FilterScreenState extends State<FilterScreen> {
               controller: _locationController,
               decoration: InputDecoration(
                 hintText: 'Search area or city',
-                hintStyle: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[400],
-                ),
+                hintStyle: TextStyle(fontSize: 14, color: Colors.grey[400]),
                 prefixIcon: const Icon(Icons.search, color: Colors.grey),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.my_location, color: Color(0xFF0A3D91)),
@@ -205,10 +196,7 @@ class _FilterScreenState extends State<FilterScreen> {
               children: [
                 const Text(
                   'Search Radius',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                 ),
                 Text(
                   '${searchRadius.toInt()} km',
@@ -279,10 +267,7 @@ class _FilterScreenState extends State<FilterScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'Map Preview',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
                   ],
                 ),
@@ -330,10 +315,7 @@ class _FilterScreenState extends State<FilterScreen> {
                         ),
                         Text(
                           'Match using AI image recognition',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                       ],
                     ),
@@ -345,7 +327,7 @@ class _FilterScreenState extends State<FilterScreen> {
                         aiMatchingEnabled = value;
                       });
                     },
-                    activeColor: const Color(0xFF0A3D91),
+                    activeThumbColor: const Color(0xFF0A3D91),
                   ),
                 ],
               ),
@@ -428,9 +410,7 @@ class _FilterScreenState extends State<FilterScreen> {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: isSelected
-                  ? const Color(0xFF0A3D91)
-                  : Colors.grey[100],
+              color: isSelected ? const Color(0xFF0A3D91) : Colors.grey[100],
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -465,9 +445,7 @@ class _FilterScreenState extends State<FilterScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected
-                ? const Color(0xFF0A3D91)
-                : Colors.grey[100],
+            color: isSelected ? const Color(0xFF0A3D91) : Colors.grey[100],
             borderRadius: BorderRadius.circular(8),
           ),
           child: Center(

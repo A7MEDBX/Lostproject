@@ -6,12 +6,7 @@ class ChatScreen extends StatefulWidget {
   final String? userId;
   final bool? isOnline;
 
-  const ChatScreen({
-    super.key,
-    this.userName,
-    this.userId,
-    this.isOnline,
-  });
+  const ChatScreen({super.key, this.userName, this.userId, this.isOnline});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -96,65 +91,76 @@ class _ChatScreenState extends State<ChatScreen> {
               onPressed: () => Navigator.pop(context),
             ),
             title: Row(
-          children: [
-            Stack(
               children: [
-                Container(
-                  width: 45,
-                  height: 45,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.person, size: 24, color: Colors.grey[700]),
-                ),
-                if (widget.isOnline ?? false)
-                  Positioned(
-                    bottom: 2,
-                    right: 2,
-                    child: Container(
-                      width: 12,
-                      height: 12,
+                Stack(
+                  children: [
+                    Container(
+                      width: 45,
+                      height: 45,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF4CAF50),
+                        color: Colors.grey[300],
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: Icon(
+                        Icons.person,
+                        size: 24,
+                        color: Colors.grey[700],
                       ),
                     ),
+                    if (widget.isOnline ?? false)
+                      Positioned(
+                        bottom: 2,
+                        right: 2,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4CAF50),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        widget.userName ?? 'Ahmed Ragab',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        (widget.isOnline ?? false) ? 'Online' : 'Offline',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
                   ),
+                ),
               ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    widget.userName ?? 'Ahmed Ragab',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                  Text(
-                    (widget.isOnline ?? false) ? 'Online' : 'Offline',
-                    style: const TextStyle(fontSize: 13, color: Colors.white70),
-                  ),
-                ],
+            actions: [
+              IconButton(
+                icon: const Icon(
+                  Icons.more_vert,
+                  color: Colors.white,
+                  size: 24,
+                ),
+                onPressed: () {
+                  // TODO: Show menu options
+                },
               ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.white, size: 24),
-            onPressed: () {
-              // TODO: Show menu options
-            },
-          ),
-        ],
+            ],
           ),
         ),
       ),
@@ -209,10 +215,7 @@ class _ChatScreenState extends State<ChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Message Input Label
-                Padding(
-                  padding: const EdgeInsets.only(left: 4, bottom: 8),
-                  
-                ),
+                Padding(padding: const EdgeInsets.only(left: 4, bottom: 8)),
 
                 // Message Input Field
                 Row(

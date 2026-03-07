@@ -183,7 +183,12 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
               bottomRight: Radius.circular(50),
             ),
           ),
-          padding: const EdgeInsets.only(top: 20, bottom: 30, left: 16, right: 16),
+          padding: const EdgeInsets.only(
+            top: 20,
+            bottom: 30,
+            left: 16,
+            right: 16,
+          ),
           child: Row(
             children: [
               IconButton(
@@ -315,7 +320,12 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
               bottomRight: Radius.circular(50),
             ),
           ),
-          padding: const EdgeInsets.only(top: 20, bottom: 30, left: 16, right: 16),
+          padding: const EdgeInsets.only(
+            top: 20,
+            bottom: 30,
+            left: 16,
+            right: 16,
+          ),
           child: Row(
             children: [
               IconButton(
@@ -345,7 +355,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 30),
-                
+
                 // Robot Image
                 Center(
                   child: Container(
@@ -371,9 +381,9 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 30),
-                
+
                 // Matches Found Title
                 Center(
                   child: Text(
@@ -385,19 +395,16 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 8),
-                
+
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 40),
                     child: Text(
                       'Based on visual similarity and location.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
                     ),
                   ),
                 ),
@@ -831,9 +838,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                       child: OutlinedButton(
                         onPressed: () {},
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                            color: Color(0xFF0A3D91),
-                          ),
+                          side: const BorderSide(color: Color(0xFF0A3D91)),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -1057,7 +1062,12 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
               bottomRight: Radius.circular(50),
             ),
           ),
-          padding: const EdgeInsets.only(top: 20, bottom: 30, left: 16, right: 16),
+          padding: const EdgeInsets.only(
+            top: 20,
+            bottom: 30,
+            left: 16,
+            right: 16,
+          ),
           child: Row(
             children: [
               IconButton(
@@ -1112,7 +1122,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                     ),
                   ),
                   const SizedBox(height: 40),
-                  
+
                   const Text(
                     'No matches found',
                     style: TextStyle(
