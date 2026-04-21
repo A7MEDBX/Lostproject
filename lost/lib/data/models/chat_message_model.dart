@@ -17,8 +17,8 @@ class ChatMessageModel extends ChatMessage {
       id: json['id'] as String,
       chatId: json['chat_id'] as String,
       senderId: json['sender_id'] as String,
-      message: json['message'] as String,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      message: json['content'] as String,
+      timestamp: DateTime.parse(json['created_at'] as String),
       isRead: json['is_read'] as bool? ?? false,
     );
   }
@@ -29,8 +29,8 @@ class ChatMessageModel extends ChatMessage {
       'id': id,
       'chat_id': chatId,
       'sender_id': senderId,
-      'message': message,
-      'timestamp': timestamp.toIso8601String(),
+      'content': message,
+      'created_at': timestamp.toIso8601String(),
       'is_read': isRead,
     };
   }

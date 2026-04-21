@@ -7,7 +7,11 @@ class Post {
   final String category;
   final String postType; // 'lost' or 'found'
   final String imageUrl;
-  final String? location;
+  final String country;
+  final String? state;
+  final String? city;
+  final double? latitude;
+  final double? longitude;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -19,7 +23,11 @@ class Post {
     required this.category,
     required this.postType,
     required this.imageUrl,
-    this.location,
+    required this.country,
+    this.state,
+    this.city,
+    this.latitude,
+    this.longitude,
     required this.createdAt,
     this.updatedAt,
   });
@@ -32,7 +40,11 @@ class Post {
     String? category,
     String? postType,
     String? imageUrl,
-    String? location,
+    String? country,
+    String? state,
+    String? city,
+    double? latitude,
+    double? longitude,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -44,7 +56,11 @@ class Post {
       category: category ?? this.category,
       postType: postType ?? this.postType,
       imageUrl: imageUrl ?? this.imageUrl,
-      location: location ?? this.location,
+      country: country ?? this.country,
+      state: state ?? this.state,
+      city: city ?? this.city,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

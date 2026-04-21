@@ -12,13 +12,26 @@ abstract class PostRemoteDataSource {
     required String category,
     required String postType,
     required String imagePath,
-    String? location,
+    required String country,
+    String? state,
+    String? city,
+    double? latitude,
+    double? longitude,
   });
 
   Future<PostModel> getPostById(String postId);
   Future<List<PostModel>> getAllPosts();
   Future<List<PostModel>> getUserPosts(String userId);
-  Future<List<SearchResultModel>> searchByImage(String imagePath);
+  Future<List<SearchResultModel>> searchByImage({
+    required String imagePath,
+    required String type,
+    required String country,
+    required String city,
+    String? category,
+    String? state,
+    double? latitude,
+    double? longitude,
+  });
   Future<PostModel> updatePost(PostModel post);
   Future<void> deletePost(String postId);
 }
@@ -36,28 +49,29 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
     required String category,
     required String postType,
     required String imagePath,
-    String? location,
+    required String country,
+    String? state,
+    String? city,
+    double? latitude,
+    double? longitude,
   }) async {
     try {
-      // First upload the image
-      final uploadResponse = await apiClient.postMultipart(
-        ApiConstants.uploadEndpoint,
+      final fields = <String, String>{
+        'title': title,
+        'description': description,
+        'category': category,
+        'post_type': postType,
+        'country': country,
+        if (state != null) 'state': state,
+        if (city != null) 'city': city,
+        if (latitude != null) 'latitude': latitude.toString(),
+        if (longitude != null) 'longitude': longitude.toString(),
+      };
+
+      final response = await apiClient.postMultipart(
+        ApiConstants.createPostEndpoint,
         filePath: imagePath,
-      );
-
-      final imageUrl = uploadResponse['image_url'] as String;
-
-      // Then create the post
-      final response = await apiClient.post(
-        ApiConstants.postsEndpoint,
-        body: {
-          'title': title,
-          'description': description,
-          'category': category,
-          'post_type': postType,
-          'image_url': imageUrl,
-          if (location != null) 'location': location,
-        },
+        fields: fields,
       );
 
       return PostModel.fromJson(response);
@@ -70,7 +84,7 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
   Future<PostModel> getPostById(String postId) async {
     try {
       final response = await apiClient.get(
-        '${ApiConstants.postsEndpoint}/$postId',
+        '${ApiConstants.postDetailEndpoint}/$postId',
       );
       return PostModel.fromJson(response);
     } catch (e) {
@@ -81,7 +95,7 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
   @override
   Future<List<PostModel>> getAllPosts() async {
     try {
-      final response = await apiClient.get(ApiConstants.postsEndpoint);
+      final response = await apiClient.get(ApiConstants.allPostsEndpoint);
       final List<dynamic> postsJson = response['posts'] as List<dynamic>;
       return postsJson
           .map((json) => PostModel.fromJson(json as Map<String, dynamic>))
@@ -94,9 +108,8 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
   @override
   Future<List<PostModel>> getUserPosts(String userId) async {
     try {
-      final response = await apiClient.get(
-        '${ApiConstants.postsEndpoint}?user_id=$userId',
-      );
+      // The backend /post/my-posts relies on the auth token.
+      final response = await apiClient.get(ApiConstants.myPostsEndpoint);
       final List<dynamic> postsJson = response['posts'] as List<dynamic>;
       return postsJson
           .map((json) => PostModel.fromJson(json as Map<String, dynamic>))
@@ -107,14 +120,34 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
   }
 
   @override
-  Future<List<SearchResultModel>> searchByImage(String imagePath) async {
+  Future<List<SearchResultModel>> searchByImage({
+    required String imagePath,
+    required String type,
+    required String country,
+    required String city,
+    String? category,
+    String? state,
+    double? latitude,
+    double? longitude,
+  }) async {
     try {
+      final fields = <String, String>{
+        'type': type,
+        'country': country,
+        'city': city,
+        if (category != null) 'category': category,
+        if (state != null) 'state': state,
+        if (latitude != null) 'latitude': latitude.toString(),
+        if (longitude != null) 'longitude': longitude.toString(),
+      };
+
       final response = await apiClient.postMultipart(
         ApiConstants.searchEndpoint,
         filePath: imagePath,
+        fields: fields,
       );
 
-      final List<dynamic> resultsJson = response['results'] as List<dynamic>;
+      final List<dynamic> resultsJson = response['matches'] as List<dynamic>? ?? [];
       return resultsJson
           .map(
             (json) => SearchResultModel.fromJson(json as Map<String, dynamic>),
@@ -129,7 +162,7 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
   Future<PostModel> updatePost(PostModel post) async {
     try {
       final response = await apiClient.put(
-        '${ApiConstants.postsEndpoint}/${post.id}',
+        '${ApiConstants.postDetailEndpoint}/${post.id}',
         body: post.toJson(),
       );
       return PostModel.fromJson(response);
@@ -141,7 +174,7 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
   @override
   Future<void> deletePost(String postId) async {
     try {
-      await apiClient.delete('${ApiConstants.postsEndpoint}/$postId');
+      await apiClient.delete('${ApiConstants.postDetailEndpoint}/$postId');
     } catch (e) {
       throw ServerException('Failed to delete post: $e');
     }

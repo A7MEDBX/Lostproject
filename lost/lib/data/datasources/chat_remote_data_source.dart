@@ -6,9 +6,7 @@ import '../models/chat_message_model.dart';
 /// Remote Data Source for Chat operations
 abstract class ChatRemoteDataSource {
   Future<String> startChat({
-    required String userId1,
-    required String userId2,
-    required String postId,
+    required String otherUserId,
   });
 
   Future<List<ChatMessageModel>> getChatMessages(String chatId);
@@ -30,16 +28,14 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   @override
   Future<String> startChat({
-    required String userId1,
-    required String userId2,
-    required String postId,
+    required String otherUserId,
   }) async {
     try {
       final response = await apiClient.post(
-        ApiConstants.chatStartEndpoint,
-        body: {'user_id_1': userId1, 'user_id_2': userId2, 'post_id': postId},
+        ApiConstants.createChatEndpoint,
+        body: {'other_user_id': otherUserId},
       );
-      return response['chat_id'] as String;
+      return response['id'] as String; // Assuming backend returns chat object with 'id'
     } catch (e) {
       throw ServerException('Failed to start chat: $e');
     }
@@ -49,9 +45,9 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   Future<List<ChatMessageModel>> getChatMessages(String chatId) async {
     try {
       final response = await apiClient.get(
-        '${ApiConstants.chatEndpoint}/$chatId',
+        '${ApiConstants.chatEndpoint}/$chatId/messages',
       );
-      final List<dynamic> messagesJson = response['messages'] as List<dynamic>;
+      final List<dynamic> messagesJson = response['messages'] as List<dynamic>? ?? [];
       return messagesJson
           .map(
             (json) => ChatMessageModel.fromJson(json as Map<String, dynamic>),
@@ -70,8 +66,8 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   }) async {
     try {
       final response = await apiClient.post(
-        '${ApiConstants.chatEndpoint}/$chatId/messages',
-        body: {'sender_id': senderId, 'message': message},
+        '${ApiConstants.chatEndpoint}/$chatId/send',
+        body: {'content': message},
       );
       return ChatMessageModel.fromJson(response);
     } catch (e) {
