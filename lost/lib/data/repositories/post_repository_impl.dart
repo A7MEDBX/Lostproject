@@ -19,6 +19,11 @@ class PostRepositoryImpl implements PostRepository {
     required String category,
     required String postType,
     required String imagePath,
+    required String country,
+    String? state,
+    String? city,
+    double? latitude,
+    double? longitude,
     String? location,
   }) async {
     try {
@@ -28,6 +33,11 @@ class PostRepositoryImpl implements PostRepository {
         category: category,
         postType: postType,
         imagePath: imagePath,
+        country: country,
+        state: state,
+        city: city,
+        latitude: latitude,
+        longitude: longitude,
         location: location,
       );
       return Either.right(post);
@@ -84,10 +94,26 @@ class PostRepositoryImpl implements PostRepository {
 
   @override
   Future<Either<Failure, List<SearchResult>>> searchByImage(
-    String imagePath,
-  ) async {
+    String imagePath, {
+    required String type,
+    required String country,
+    required String city,
+    String? category,
+    String? state,
+    double? latitude,
+    double? longitude,
+  }) async {
     try {
-      final results = await remoteDataSource.searchByImage(imagePath);
+      final results = await remoteDataSource.searchByImage(
+        imagePath: imagePath,
+        type: type,
+        country: country,
+        city: city,
+        category: category,
+        state: state,
+        latitude: latitude,
+        longitude: longitude,
+      );
       return Either.right(results);
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));

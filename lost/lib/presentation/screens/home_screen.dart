@@ -56,7 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         // Parse backend posts
-        final List<Post> backendPosts = postsJson.map((json) {
+        final List<Post> backendPosts = postsJson.map<Post>((json) {
           return Post(
             id: json['id'] ?? '',
             userId: json['user_id'] ?? 'unknown',
@@ -65,10 +65,18 @@ class _HomeScreenState extends State<HomeScreen> {
             category: json['category'] ?? 'Other',
             postType: json['post_type'] ?? 'lost',
             imageUrl: json['image_url'] ?? '',
+            country: json['country'] ?? 'Unknown',
+            state: json['state'],
+            city: json['city'],
+            latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
+            longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
             location: json['location'],
             createdAt: json['created_at'] != null
                 ? DateTime.parse(json['created_at'])
                 : DateTime.now(),
+            updatedAt: json['updated_at'] != null
+                ? DateTime.parse(json['updated_at'])
+                : null,
           );
         }).toList();
 

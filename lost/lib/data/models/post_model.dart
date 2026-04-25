@@ -15,6 +15,7 @@ class PostModel extends Post {
     super.city,
     super.latitude,
     super.longitude,
+    super.location,
     required super.createdAt,
     super.updatedAt,
   });
@@ -34,6 +35,7 @@ class PostModel extends Post {
       city: json['city'] as String?,
       latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
       longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
+      location: json['location'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
@@ -56,6 +58,7 @@ class PostModel extends Post {
       'city': city,
       'latitude': latitude,
       'longitude': longitude,
+      'location': location,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };
@@ -76,6 +79,7 @@ class PostModel extends Post {
       city: post.city,
       latitude: post.latitude,
       longitude: post.longitude,
+      location: post.location,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
     );

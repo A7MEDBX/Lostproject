@@ -17,6 +17,7 @@ abstract class PostRemoteDataSource {
     String? city,
     double? latitude,
     double? longitude,
+    String? location,
   });
 
   Future<PostModel> getPostById(String postId);
@@ -54,6 +55,7 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
     String? city,
     double? latitude,
     double? longitude,
+    String? location,
   }) async {
     try {
       final fields = <String, String>{
@@ -66,6 +68,7 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
         if (city != null) 'city': city,
         if (latitude != null) 'latitude': latitude.toString(),
         if (longitude != null) 'longitude': longitude.toString(),
+        if (location != null) 'location': location,
       };
 
       final response = await apiClient.postMultipart(

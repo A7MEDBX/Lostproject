@@ -12,6 +12,7 @@ class Post {
   final String? city;
   final double? latitude;
   final double? longitude;
+  final String? location;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -28,6 +29,7 @@ class Post {
     this.city,
     this.latitude,
     this.longitude,
+    this.location,
     required this.createdAt,
     this.updatedAt,
   });
@@ -45,6 +47,7 @@ class Post {
     String? city,
     double? latitude,
     double? longitude,
+    String? location,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -61,6 +64,7 @@ class Post {
       city: city ?? this.city,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
+      location: location ?? this.location,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
