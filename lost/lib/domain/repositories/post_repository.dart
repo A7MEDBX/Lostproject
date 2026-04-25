@@ -11,6 +11,11 @@ abstract class PostRepository {
     required String category,
     required String postType,
     required String imagePath,
+    required String country,
+    String? state,
+    String? city,
+    double? latitude,
+    double? longitude,
     String? location,
   });
 
@@ -24,7 +29,16 @@ abstract class PostRepository {
   Future<Either<Failure, List<Post>>> getUserPosts(String userId);
 
   /// Search posts by image
-  Future<Either<Failure, List<SearchResult>>> searchByImage(String imagePath);
+  Future<Either<Failure, List<SearchResult>>> searchByImage(
+    String imagePath, {
+    required String type,
+    required String country,
+    required String city,
+    String? category,
+    String? state,
+    double? latitude,
+    double? longitude,
+  });
 
   /// Update post
   Future<Either<Failure, Post>> updatePost(Post post);

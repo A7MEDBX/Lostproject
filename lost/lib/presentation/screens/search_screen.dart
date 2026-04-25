@@ -32,8 +32,13 @@ class SearchScreen extends StatelessWidget {
                     onPressed: searchProvider.isSearching
                         ? null
                         : () {
+                            // TODO: Replace these with actual values from your UI or user input
                             searchProvider.searchByImage(
-                              searchProvider.selectedImage!.path,
+                              imagePath: searchProvider.selectedImage!.path,
+                              type: 'lost', // or 'found', depending on context
+                              country: 'YourCountry', // replace with actual country
+                              city: 'YourCity', // replace with actual city
+                              // category, state, latitude, longitude can be added if available
                             );
                           },
                     icon: const Icon(Icons.search),

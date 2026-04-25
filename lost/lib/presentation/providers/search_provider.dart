@@ -29,12 +29,30 @@ class SearchProvider with ChangeNotifier {
   }
 
   // Search by image
-  Future<void> searchByImage(String imagePath) async {
+  Future<void> searchByImage({
+    required String imagePath,
+    required String type,
+    required String country,
+    required String city,
+    String? category,
+    String? state,
+    double? latitude,
+    double? longitude,
+  }) async {
     _isSearching = true;
     _errorMessage = null;
     notifyListeners();
 
-    final result = await searchByImageUseCase(imagePath);
+    final result = await searchByImageUseCase(
+      imagePath: imagePath,
+      type: type,
+      country: country,
+      city: city,
+      category: category,
+      state: state,
+      latitude: latitude,
+      longitude: longitude,
+    );
 
     result.fold(
       (failure) {

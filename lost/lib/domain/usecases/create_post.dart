@@ -14,6 +14,11 @@ class CreatePostUseCase {
     required String category,
     required String postType,
     required String imagePath,
+    required String country,
+    String? state,
+    String? city,
+    double? latitude,
+    double? longitude,
     String? location,
   }) async {
     return await repository.createPost(
@@ -22,6 +27,11 @@ class CreatePostUseCase {
       category: category,
       postType: postType,
       imagePath: imagePath,
+      country: country,
+      state: state,
+      city: city,
+      latitude: latitude,
+      longitude: longitude,
       location: location,
     );
   }
