@@ -6,7 +6,7 @@ import 'package:geocoding/geocoding.dart';
 import '../../core/constants/finder_colors.dart';
 
 class MapLocationPicker extends StatefulWidget {
-  final Function(String address, LatLng coordinates) onLocationSelected;
+  final Function(String address, String country, String state, String city, LatLng coordinates) onLocationSelected;
 
   const MapLocationPicker({super.key, required this.onLocationSelected});
 
@@ -18,6 +18,9 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
   final MapController _mapController = MapController();
   LatLng _selectedPosition = LatLng(40.7128, -74.0060); // Default: New York
   String _selectedAddress = '';
+  String _selectedCountry = 'Unknown';
+  String _selectedState = '';
+  String _selectedCity = 'Unknown';
   bool _isLoading = true;
 
   @override
@@ -70,6 +73,14 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
         setState(() {
+          _selectedCountry = (place.country?.isNotEmpty == true) ? place.country! : 'Unknown';
+          _selectedState = place.administrativeArea ?? '';
+          
+          String city = place.locality ?? '';
+          if (city.isEmpty) city = place.subAdministrativeArea ?? '';
+          if (city.isEmpty) city = 'Unknown';
+          _selectedCity = city;
+
           _selectedAddress =
               '${place.street}, ${place.locality}, ${place.administrativeArea}';
         });
@@ -78,6 +89,9 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
       setState(() {
         _selectedAddress =
             'Lat: ${position.latitude.toStringAsFixed(4)}, Lng: ${position.longitude.toStringAsFixed(4)}';
+        _selectedCountry = 'Unknown';
+        _selectedState = '';
+        _selectedCity = 'Unknown';
       });
     }
   }
@@ -108,7 +122,7 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
   }
 
   void _confirmLocation() {
-    widget.onLocationSelected(_selectedAddress, _selectedPosition);
+    widget.onLocationSelected(_selectedAddress, _selectedCountry, _selectedState, _selectedCity, _selectedPosition);
     Navigator.pop(context);
   }
 

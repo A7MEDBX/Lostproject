@@ -19,6 +19,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   String _selectedCountry = 'United States';
   String _selectedGender = 'Female';
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -405,37 +406,61 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                     const SizedBox(height: 40),
 
-                    // Submit Button
+                    // Save Button
                     SizedBox(
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Profile updated successfully!'),
-                                backgroundColor: Color(0xFF0A3D91),
-                              ),
-                            );
-                            Navigator.pop(context);
-                          }
-                        },
+                        onPressed: _isLoading
+                            ? null
+                            : () async {
+                                if (_formKey.currentState!.validate()) {
+                                  setState(() {
+                                    _isLoading = true;
+                                  });
+                                  
+                                  // Mock API delay
+                                  await Future.delayed(const Duration(seconds: 2));
+                                  
+                                  if (mounted) {
+                                    setState(() {
+                                      _isLoading = false;
+                                    });
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Profile updated successfully!'),
+                                        backgroundColor: Color(0xFF0A3D91),
+                                      ),
+                                    );
+                                    Navigator.pop(context);
+                                  }
+                                }
+                              },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0A3D91),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                           elevation: 0,
+                          disabledBackgroundColor: const Color(0xFF0A3D91).withOpacity(0.5),
                         ),
-                        child: const Text(
-                          'Submit',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                'Save',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
                       ),
                     ),
 

@@ -29,7 +29,9 @@ class AIMatchingRemoteDataSource {
     required String title,
     required String description,
     required String category,
-    required String location,
+    required String country,
+    required String state,
+    required String city,
     required String postType,
     double? latitude,
     double? longitude,
@@ -55,8 +57,10 @@ class AIMatchingRemoteDataSource {
       request.fields['title'] = title;
       request.fields['description'] = description;
       request.fields['category'] = category;
-      request.fields['location'] = location;
-      request.fields['type'] = postType;
+      request.fields['country'] = country;
+      request.fields['state'] = state;
+      request.fields['city'] = city;
+      request.fields['post_type'] = postType;
 
       if (latitude != null) {
         request.fields['latitude'] = latitude.toString();

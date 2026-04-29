@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/finder_colors.dart';
 
 /// New Password Screen - Step 3: Set New Password
 class NewPasswordScreen extends StatefulWidget {
@@ -103,7 +104,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: const BorderSide(
-                              color: Color(0xFF0A3D91),
+                              color: FinderColors.primaryBlue,
                               width: 1.5,
                             ),
                           ),
@@ -171,7 +172,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: const BorderSide(
-                              color: Color(0xFF0A3D91),
+                              color: FinderColors.primaryBlue,
                               width: 1.5,
                             ),
                           ),
@@ -226,7 +227,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                             }
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0A3D91),
+                            backgroundColor: FinderColors.primaryBlue,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -260,7 +261,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
     return Container(
       height: 100,
       decoration: BoxDecoration(
-        color: const Color(0xFF0A3D91),
+        color: FinderColors.primaryBlue,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(30),
           topRight: Radius.circular(30),
@@ -296,7 +297,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
         ),
         child: Icon(
           icon,
-          color: isActive ? const Color(0xFF0A3D91) : Colors.white,
+          color: isActive ? FinderColors.primaryBlue : Colors.white,
           size: 28,
         ),
       ),

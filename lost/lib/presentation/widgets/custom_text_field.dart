@@ -86,7 +86,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(
-                color: FinderColors.primaryBrown,
+                color: FinderColors.primaryBlue,
                 width: 1.5,
               ),
             ),

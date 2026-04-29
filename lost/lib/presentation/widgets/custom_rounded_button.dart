@@ -50,9 +50,9 @@ class CustomRoundedButton extends StatelessWidget {
         child: OutlinedButton(
           onPressed: onPressed,
           style: OutlinedButton.styleFrom(
-            foregroundColor: textColor ?? FinderColors.primaryBrown,
+            foregroundColor: textColor ?? FinderColors.primaryBlue,
             side: BorderSide(
-              color: backgroundColor ?? FinderColors.primaryBrown,
+              color: backgroundColor ?? FinderColors.primaryBlue,
               width: 1.5,
             ),
             shape: RoundedRectangleBorder(
@@ -70,7 +70,7 @@ class CustomRoundedButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor ?? FinderColors.primaryBrown,
+          backgroundColor: backgroundColor ?? FinderColors.primaryBlue,
           foregroundColor: textColor ?? Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),

@@ -21,7 +21,11 @@ import '../presentation/screens/report_problem_screen.dart';
 import '../presentation/screens/edit_profile_screen.dart';
 import '../presentation/screens/change_password_screen.dart';
 import '../presentation/screens/my_posts_screen.dart';
-
+import '../presentation/screens/email_verification_screen.dart';
+import '../presentation/screens/kyc_verification_screen.dart';
+import '../presentation/screens/privacy_policy_screen.dart';
+import '../presentation/screens/support_screen.dart';
+import '../presentation/screens/support_request_detail_screen.dart';
 /// App Routes Configuration
 class AppRoutes {
   static const String welcome = '/';
@@ -46,6 +50,11 @@ class AppRoutes {
   static const String editProfile = '/edit-profile';
   static const String changePassword = '/change-password';
   static const String myPosts = '/my-posts';
+  static const String emailVerification = '/email-verification';
+  static const String kycVerification = '/kyc-verification';
+  static const String privacyPolicy = '/privacy-policy';
+  static const String support = '/support';
+  static const String supportRequestDetail = '/support-request-detail';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -132,6 +141,41 @@ class AppRoutes {
 
       case verification:
         return MaterialPageRoute(builder: (_) => const VerificationScreen());
+
+      case emailVerification:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => EmailVerificationScreen(
+            email: args?['email'] as String? ?? 'user@example.com',
+          ),
+        );
+
+      case kycVerification:
+        return MaterialPageRoute(builder: (_) => const KycVerificationScreen());
+
+      case privacyPolicy:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => PrivacyPolicyScreen(
+            isFromOnboarding: args?['isFromOnboarding'] ?? false,
+          ),
+        );
+
+      case support:
+        return MaterialPageRoute(builder: (_) => const SupportScreen());
+
+      case supportRequestDetail:
+        final args = settings.arguments as Map<String, dynamic>?;
+        if (args == null) {
+          return MaterialPageRoute(
+            builder: (_) => const Scaffold(
+              body: Center(child: Text('No ticket data provided')),
+            ),
+          );
+        }
+        return MaterialPageRoute(
+          builder: (_) => SupportRequestDetailScreen(ticketData: args),
+        );
 
       case newPassword:
         return MaterialPageRoute(builder: (_) => const NewPasswordScreen());

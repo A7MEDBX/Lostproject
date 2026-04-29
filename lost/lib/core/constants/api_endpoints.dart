@@ -6,7 +6,7 @@ class ApiEndpoints {
   //   To find your IP: Open CMD and type 'ipconfig', look for IPv4 Address
 
   static const String baseUrl =
-      'http://192.168.1.6:5000'; // Using PC's actual IP address
+      'http://192.168.1.6:3500/api/v1'; // Using PC's actual IP address and Backend's path
 
   // API endpoints
   static const String health = '/api/health';

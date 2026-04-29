@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/constants/finder_colors.dart';
 
 /// Verification Screen - Step 2: Enter Verification Code
 class VerificationScreen extends StatefulWidget {
@@ -121,7 +122,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0A3D91),
+                          backgroundColor: FinderColors.primaryBlue,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -184,7 +185,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
     return Container(
       height: 100,
       decoration: BoxDecoration(
-        color: const Color(0xFF0A3D91),
+        color: FinderColors.primaryBlue,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(30),
           topRight: Radius.circular(30),
@@ -220,7 +221,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
         ),
         child: Icon(
           icon,
-          color: isActive ? const Color(0xFF0A3D91) : Colors.white,
+          color: isActive ? FinderColors.primaryBlue : Colors.white,
           size: 28,
         ),
       ),

@@ -8,9 +8,6 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Blue color (55% dark)
-    const Color darkBlue = Color(0xFF2E5A8C);
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -32,10 +29,10 @@ class WelcomeScreen extends StatelessWidget {
                     width: 200,
                     height: 200,
                     decoration: BoxDecoration(
-                      color: darkBlue.withOpacity(0.2),
+                      color: FinderColors.primaryBlue.withOpacity(0.2),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.search, size: 80, color: darkBlue),
+                    child: const Icon(Icons.search, size: 80, color: FinderColors.primaryBlue),
                   );
                 },
               ),
@@ -72,7 +69,7 @@ class WelcomeScreen extends StatelessWidget {
                     width: 16,
                     height: 16,
                     decoration: BoxDecoration(
-                      color: darkBlue,
+                      color: FinderColors.primaryBlue,
                       borderRadius: BorderRadius.circular(2),
                     ),
                     child: const Center(
@@ -98,7 +95,7 @@ class WelcomeScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.pushNamed(context, '/login');
                 },
-                backgroundColor: darkBlue,
+                backgroundColor: FinderColors.primaryBlue,
               ),
 
               const SizedBox(height: 16),
@@ -109,7 +106,7 @@ class WelcomeScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.pushNamed(context, '/signup');
                 },
-                backgroundColor: darkBlue,
+                backgroundColor: FinderColors.primaryBlue,
               ),
 
               const Spacer(flex: 1),

@@ -54,13 +54,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2E5A8C).withOpacity(0.2),
+                    color: FinderColors.primaryBlue.withOpacity(0.2),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.person_outline,
                     size: 40,
-                    color: FinderColors.textSecondary,
+                    color: FinderColors.primaryBlue,
                   ),
                 ),
 
@@ -110,7 +110,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   onPressed: () {
                     // TODO: Implement Google sign up
                   },
-                  backgroundColor: const Color(0xFF2E5A8C),
+                  backgroundColor: FinderColors.primaryBlue,
                   height: 50,
                 ),
 
@@ -200,10 +200,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
                       // TODO: Implement sign up logic
-                      Navigator.pushReplacementNamed(context, '/home');
+                      Navigator.pushReplacementNamed(
+                        context, 
+                        '/email-verification',
+                        arguments: {'email': _emailController.text},
+                      );
                     }
                   },
-                  backgroundColor: const Color(0xFF2E5A8C),
+                  backgroundColor: FinderColors.primaryBlue,
                   height: 50,
                 ),
 

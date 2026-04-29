@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/constants/finder_colors.dart';
 import '../widgets/success_message_screen.dart';
 
 /// Forgot Password Screen - All steps in one page
@@ -211,7 +212,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: const BorderSide(
-                  color: Color(0xFF0A3D91),
+                  color: FinderColors.primaryBlue,
                   width: 1.5,
                 ),
               ),
@@ -236,7 +237,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             child: ElevatedButton(
               onPressed: _handleSubmit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0A3D91),
+                backgroundColor: FinderColors.primaryBlue,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -387,7 +388,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: const BorderSide(
-                  color: Color(0xFF0A3D91),
+                  color: FinderColors.primaryBlue,
                   width: 1.5,
                 ),
               ),
@@ -453,7 +454,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: const BorderSide(
-                  color: Color(0xFF0A3D91),
+                  color: FinderColors.primaryBlue,
                   width: 1.5,
                 ),
               ),
@@ -491,7 +492,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             child: ElevatedButton(
               onPressed: _handleSubmit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0A3D91),
+                backgroundColor: FinderColors.primaryBlue,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),

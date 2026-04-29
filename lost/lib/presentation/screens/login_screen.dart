@@ -50,13 +50,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2E5A8C).withOpacity(0.2),
+                    color: FinderColors.primaryBlue.withOpacity(0.2),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.person_outline,
                     size: 40,
-                    color: FinderColors.textSecondary,
+                    color: FinderColors.primaryBlue,
                   ),
                 ),
 
@@ -106,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: () {
                     // TODO: Implement Google login
                   },
-                  backgroundColor: const Color(0xFF2E5A8C),
+                  backgroundColor: FinderColors.primaryBlue,
                   height: 50,
                 ),
 
@@ -184,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Navigator.pushReplacementNamed(context, '/home');
                     }
                   },
-                  backgroundColor: const Color(0xFF2E5A8C),
+                  backgroundColor: FinderColors.primaryBlue,
                   height: 50,
                 ),
 

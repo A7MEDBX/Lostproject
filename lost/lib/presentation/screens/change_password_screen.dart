@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/finder_colors.dart';
 
 /// Change Password Screen
 class ChangePasswordScreen extends StatefulWidget {
@@ -55,7 +56,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         preferredSize: const Size.fromHeight(70),
         child: Container(
           decoration: const BoxDecoration(
-            color: Color(0xFF0A3D91),
+            color: FinderColors.primaryBlue,
             borderRadius: BorderRadius.only(
               bottomLeft: Radius.circular(30),
               bottomRight: Radius.circular(30),
@@ -107,13 +108,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0A3D91).withOpacity(0.1),
+                    color: FinderColors.primaryBlue.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.lock_outline,
                     size: 40,
-                    color: Color(0xFF0A3D91),
+                    color: FinderColors.primaryBlue,
                   ),
                 ),
 
@@ -389,7 +390,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0A3D91),
+                      backgroundColor: FinderColors.primaryBlue,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

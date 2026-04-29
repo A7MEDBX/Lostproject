@@ -155,13 +155,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     const SizedBox(height: 12),
 
-                    // Edit Profile
+                    // Edit Profile removed from here
+
+                    // Verify Account (KYC)
                     _buildMenuItem(
-                      icon: Icons.edit_outlined,
+                      icon: Icons.verified_user_outlined,
                       iconColor: const Color(0xFF0A3D91),
-                      title: 'Edit Profile',
+                      title: 'Verify Account',
                       onTap: () {
-                        Navigator.pushNamed(context, '/edit-profile');
+                        Navigator.pushNamed(
+                          context,
+                          '/privacy-policy',
+                          arguments: {'isFromOnboarding': true},
+                        );
                       },
                     ),
 
@@ -185,7 +191,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       iconColor: const Color(0xFF0A3D91),
                       title: 'Support',
                       onTap: () {
-                        // Navigator.pushNamed(pass);
+                        Navigator.pushNamed(context, '/support');
                       },
                     ),
 
@@ -209,7 +215,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       iconColor: const Color(0xFF0A3D91),
                       title: 'Privacy Policy',
                       onTap: () {
-                        // Navigator.pushNamed(context, '/settings');
+                        Navigator.pushNamed(
+                          context,
+                          '/privacy-policy',
+                          arguments: {'isFromOnboarding': false},
+                        );
                       },
                     ),
 

@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import '../../core/constants/finder_colors.dart';
 import '../widgets/map_location_picker.dart';
 import '../../data/datasources/ai_matching_remote_data_source.dart';
+import '../../core/utils/location_data.dart';
+import '../widgets/location_autocomplete_field.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -18,13 +20,14 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _locationController = TextEditingController();
+  final _countryController = TextEditingController();
+  final _stateController = TextEditingController();
+  final _cityController = TextEditingController();
 
   String _selectedCategory = 'Wallet';
   String _selectedType = 'Lost';
   File? _selectedImage;
   bool _isLoading = false;
-  LatLng? _selectedCoordinates;
 
   // Backend data source
   late final AIMatchingRemoteDataSource _dataSource;
@@ -53,7 +56,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
-    _locationController.dispose();
+    _countryController.dispose();
+    _stateController.dispose();
+    _cityController.dispose();
     super.dispose();
   }
 
@@ -157,22 +162,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     );
   }
 
-  void _openMapPicker() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MapLocationPicker(
-          onLocationSelected: (address, coordinates) {
-            setState(() {
-              _locationController.text = address;
-              _selectedCoordinates = coordinates;
-            });
-          },
-        ),
-      ),
-    );
-  }
-
   Future<void> _submitPost() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedImage == null) {
@@ -199,10 +188,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           title: _titleController.text,
           description: _descriptionController.text,
           category: _selectedCategory,
-          location: _locationController.text,
+          country: _countryController.text,
+          state: _stateController.text,
+          city: _cityController.text,
           postType: _selectedType.toLowerCase(),
-          latitude: _selectedCoordinates?.latitude,
-          longitude: _selectedCoordinates?.longitude,
         );
 
         print('✅ Backend response received: $result');
@@ -222,10 +211,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               'title': _titleController.text,
               'description': _descriptionController.text,
               'category': _selectedCategory,
-              'location': _locationController.text,
+              'country': _countryController.text,
+              'state': _stateController.text,
+              'city': _cityController.text,
               'postType': _selectedType,
-              'latitude': _selectedCoordinates?.latitude,
-              'longitude': _selectedCoordinates?.longitude,
               'imageUrl': _selectedImage?.path ?? '',
             },
           );
@@ -525,25 +514,78 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Location Field with Map Picker
+                // Location Fields (Autocomplete Input)
                 _buildLabel('Location'),
                 const SizedBox(height: 8),
-                GestureDetector(
-                  onTap: _openMapPicker,
-                  child: AbsorbPointer(
-                    child: _buildTextField(
-                      controller: _locationController,
-                      hint: 'Tap to select location from map',
-                      prefixIcon: Icons.location_on_outlined,
-                      suffixIcon: Icons.map_outlined,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please select a location';
-                        }
-                        return null;
-                      },
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: LocationAutocompleteField(
+                        controller: _countryController,
+                        hint: 'Country (e.g., USA)',
+                        optionsBuilder: (textEditingValue) {
+                          return LocationDataService.getCountries(textEditingValue.text);
+                        },
+                        onSelected: (String selection) {
+                          setState(() {
+                            _countryController.text = selection;
+                            _stateController.clear();
+                            _cityController.clear();
+                          });
+                        },
+                        itemPrefixBuilder: LocationDataService.getCountryFlag,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) return 'Required';
+                          if (value.trim().length < 2) return 'Min 2 chars';
+                          return null;
+                        },
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: LocationAutocompleteField(
+                        controller: _cityController,
+                        hint: 'City (e.g., NY)',
+                        optionsBuilder: (textEditingValue) {
+                          return LocationDataService.getCities(
+                            _countryController.text, 
+                            _stateController.text, 
+                            textEditingValue.text
+                          );
+                        },
+                        onSelected: (String selection) {
+                          setState(() {
+                            _cityController.text = selection;
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) return 'Required';
+                          if (value.trim().length < 2) return 'Min 2 chars';
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                LocationAutocompleteField(
+                  controller: _stateController,
+                  hint: 'State/Province (Optional)',
+                  optionsBuilder: (textEditingValue) {
+                    return LocationDataService.getStates(
+                      _countryController.text, 
+                      textEditingValue.text
+                    );
+                  },
+                  onSelected: (String selection) {
+                    setState(() {
+                      _stateController.text = selection;
+                      _cityController.clear();
+                    });
+                  },
                 ),
                 const SizedBox(height: 32),
 

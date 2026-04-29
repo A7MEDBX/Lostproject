@@ -44,13 +44,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final List<dynamic> postsJson = data['posts'] ?? [];
+        final List<dynamic> postsJson = data['data']?['posts'] ?? data['posts'] ?? [];
 
         if (postsJson.isEmpty) {
-          // Backend is working but no posts - show mock data
           setState(() {
-            _posts = _mockPosts;
+            _posts = [];
             _isLoading = false;
+            _errorMessage = 'No posts found.';
           });
           return;
         }
@@ -85,25 +85,29 @@ class _HomeScreenState extends State<HomeScreen> {
           _isLoading = false;
         });
       } else {
-        // Backend returned error - use mock data
+        // Backend returned error
         setState(() {
-          _posts = _mockPosts;
+          _posts = [];
           _isLoading = false;
+          _hasError = true;
+          _errorMessage = 'Failed to load posts (Code: ${response.statusCode})';
         });
       }
     } on SocketException {
-      // No internet/backend - use mock data
+      // No internet/backend
       setState(() {
-        _posts = _mockPosts;
+        _posts = [];
         _isLoading = false;
-        _errorMessage = 'Using offline data (backend not available)';
+        _hasError = true;
+        _errorMessage = 'Network error: Cannot connect to server';
       });
     } catch (e) {
-      // Any other error - use mock data
+      // Any other error
       setState(() {
-        _posts = _mockPosts;
+        _posts = [];
         _isLoading = false;
-        _errorMessage = 'Using offline data';
+        _hasError = true;
+        _errorMessage = 'Error: $e';
       });
     }
   }

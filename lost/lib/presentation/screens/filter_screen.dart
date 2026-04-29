@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/utils/location_data.dart';
+import '../widgets/location_autocomplete_field.dart';
 
 /// Filter Screen
 class FilterScreen extends StatefulWidget {
@@ -13,11 +15,15 @@ class _FilterScreenState extends State<FilterScreen> {
   String selectedTimeRange = 'Last 24h';
   double searchRadius = 25.0;
   bool aiMatchingEnabled = false;
-  final TextEditingController _locationController = TextEditingController();
+  final TextEditingController _countryController = TextEditingController();
+  final TextEditingController _stateController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
 
   @override
   void dispose() {
-    _locationController.dispose();
+    _countryController.dispose();
+    _stateController.dispose();
+    _cityController.dispose();
     super.dispose();
   }
 
@@ -48,7 +54,9 @@ class _FilterScreenState extends State<FilterScreen> {
                 selectedTimeRange = 'Last 24h';
                 searchRadius = 25.0;
                 aiMatchingEnabled = false;
-                _locationController.clear();
+                _countryController.clear();
+                _stateController.clear();
+                _cityController.clear();
               });
             },
             child: const Text(
@@ -164,117 +172,67 @@ class _FilterScreenState extends State<FilterScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Location Search Field
-            TextField(
-              controller: _locationController,
-              decoration: InputDecoration(
-                hintText: 'Search area or city',
-                hintStyle: TextStyle(fontSize: 14, color: Colors.grey[400]),
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.my_location, color: Color(0xFF0A3D91)),
-                  onPressed: () {},
-                ),
-                filled: true,
-                fillColor: Colors.grey[100],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Search Radius
+            // Location Search Fields
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Search Radius',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                Expanded(
+                  child: LocationAutocompleteField(
+                    controller: _countryController,
+                    hint: 'Country',
+                    optionsBuilder: (textEditingValue) {
+                      return LocationDataService.getCountries(textEditingValue.text);
+                    },
+                    onSelected: (String selection) {
+                      setState(() {
+                        _countryController.text = selection;
+                        _stateController.clear();
+                        _cityController.clear();
+                      });
+                    },
+                    itemPrefixBuilder: LocationDataService.getCountryFlag,
+                  ),
                 ),
-                Text(
-                  '${searchRadius.toInt()} km',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF0A3D91),
-                    fontWeight: FontWeight.w600,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: LocationAutocompleteField(
+                    controller: _cityController,
+                    hint: 'City',
+                    optionsBuilder: (textEditingValue) {
+                      return LocationDataService.getCities(
+                        _countryController.text, 
+                        _stateController.text, 
+                        textEditingValue.text
+                      );
+                    },
+                    onSelected: (String selection) {
+                      setState(() {
+                        _cityController.text = selection;
+                      });
+                    },
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-
-            // Radius Slider
-            SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                activeTrackColor: const Color(0xFF0A3D91),
-                inactiveTrackColor: Colors.grey[300],
-                thumbColor: const Color(0xFF0A3D91),
-                overlayColor: const Color(0xFF0A3D91).withOpacity(0.2),
-                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
-                trackHeight: 4,
-              ),
-              child: Slider(
-                value: searchRadius,
-                min: 1,
-                max: 100,
-                onChanged: (value) {
-                  setState(() {
-                    searchRadius = value;
-                  });
-                },
-              ),
+            const SizedBox(height: 12),
+            LocationAutocompleteField(
+              controller: _stateController,
+              hint: 'State/Province (Optional)',
+              optionsBuilder: (textEditingValue) {
+                return LocationDataService.getStates(
+                  _countryController.text, 
+                  textEditingValue.text
+                );
+              },
+              onSelected: (String selection) {
+                setState(() {
+                  _stateController.text = selection;
+                  _cityController.clear();
+                });
+              },
             ),
 
             const SizedBox(height: 16),
-
-            // Map Preview
-            Container(
-              height: 200,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0A3D91).withOpacity(0.1),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFF0A3D91).withOpacity(0.3),
-                          width: 2,
-                        ),
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.location_on,
-                          size: 40,
-                          color: Color(0xFF0A3D91),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Map Preview',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
 
             // AI Matching Toggle
             Container(
