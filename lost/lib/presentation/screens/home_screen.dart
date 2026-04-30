@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'dart:io';
 import '../widgets/post_card.dart';
 import '../../domain/entities/post.dart';
-import '../../core/constants/api_endpoints.dart';
+import '../../mock_backend/services/post_service.dart';
+import '../../mock_backend/utils/network_simulator.dart';
 import 'filter_screen.dart';
 
 /// Home Screen - Suggested Posts
@@ -22,8 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _errorMessage = '';
   List<Post> _posts = [];
 
-  // Fallback mock data (shown when backend is unavailable)
-  final List<Post> _mockPosts = [];
+
 
   @override
   void initState() {
@@ -38,76 +35,31 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      final response = await http
-          .get(Uri.parse('${ApiEndpoints.baseUrl}${ApiEndpoints.getPosts}'))
-          .timeout(const Duration(seconds: 10));
+      final response = await PostService.getAllPosts(page: 1, limit: 20);
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final List<dynamic> postsJson = data['data']?['posts'] ?? data['posts'] ?? [];
-
-        if (postsJson.isEmpty) {
-          setState(() {
-            _posts = [];
-            _isLoading = false;
-            _errorMessage = 'No posts found.';
-          });
-          return;
-        }
-
-        // Parse backend posts
-        final List<Post> backendPosts = postsJson.map<Post>((json) {
-          return Post(
-            id: json['id'] ?? '',
-            userId: json['user_id'] ?? 'unknown',
-            title: json['title'] ?? '',
-            description: json['description'] ?? '',
-            category: json['category'] ?? 'Other',
-            postType: json['post_type'] ?? 'lost',
-            imageUrl: json['image_url'] ?? '',
-            country: json['country'] ?? 'Unknown',
-            state: json['state'],
-            city: json['city'],
-            latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
-            longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
-            location: json['location'],
-            createdAt: json['created_at'] != null
-                ? DateTime.parse(json['created_at'])
-                : DateTime.now(),
-            updatedAt: json['updated_at'] != null
-                ? DateTime.parse(json['updated_at'])
-                : null,
-          );
-        }).toList();
-
+      if (response.success && response.data != null) {
         setState(() {
-          _posts = backendPosts;
+          _posts = response.data!;
           _isLoading = false;
         });
       } else {
-        // Backend returned error
         setState(() {
-          _posts = [];
           _isLoading = false;
           _hasError = true;
-          _errorMessage = 'Failed to load posts (Code: ${response.statusCode})';
+          _errorMessage = response.error?.message ?? 'Failed to load posts';
         });
       }
-    } on SocketException {
-      // No internet/backend
+    } on MockNetworkException catch (e) {
       setState(() {
-        _posts = [];
         _isLoading = false;
         _hasError = true;
-        _errorMessage = 'Network error: Cannot connect to server';
+        _errorMessage = e.message;
       });
     } catch (e) {
-      // Any other error
       setState(() {
-        _posts = [];
         _isLoading = false;
         _hasError = true;
-        _errorMessage = 'Error: $e';
+        _errorMessage = 'Unexpected error: $e';
       });
     }
   }

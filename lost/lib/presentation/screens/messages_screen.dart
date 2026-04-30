@@ -1,45 +1,38 @@
 import 'package:flutter/material.dart';
+import '../../mock_backend/services/chat_service.dart';
+import '../../mock_backend/mocks/chats.mock.dart';
+import '../../mock_backend/mocks/users.mock.dart';
 
 /// Messages Screen - Chat List
-class MessagesScreen extends StatelessWidget {
+class MessagesScreen extends StatefulWidget {
   const MessagesScreen({super.key});
 
   @override
+  State<MessagesScreen> createState() => _MessagesScreenState();
+}
+
+class _MessagesScreenState extends State<MessagesScreen> {
+  bool _isLoading = true;
+  List<MockChat> _chats = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadChats();
+  }
+
+  Future<void> _loadChats() async {
+    final response = await ChatService.getUserChats(currentMockUser.id);
+    if (mounted) {
+      setState(() {
+        _chats = response.data ?? [];
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final conversations = [
-      ChatConversation(
-        userId: '1',
-        userName: 'Ahmed Ragab',
-        lastMessage: 'I found it near the campus library',
-        time: '10:33 AM',
-        unreadCount: 2,
-        isOnline: true,
-      ),
-      ChatConversation(
-        userId: '2',
-        userName: 'Sarah Mohamed',
-        lastMessage: 'Thanks for helping me find my wallet!',
-        time: 'Yesterday',
-        unreadCount: 0,
-        isOnline: false,
-      ),
-      ChatConversation(
-        userId: '3',
-        userName: 'John Smith',
-        lastMessage: 'Is this your phone?',
-        time: '2 days ago',
-        unreadCount: 1,
-        isOnline: true,
-      ),
-      ChatConversation(
-        userId: '4',
-        userName: 'Emily Chen',
-        lastMessage: "I'll be there in 10 minutes",
-        time: 'Monday',
-        unreadCount: 0,
-        isOnline: false,
-      ),
-    ];
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -67,13 +60,26 @@ class MessagesScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: conversations.length,
-        itemBuilder: (context, index) {
-          final conversation = conversations[index];
-          return _buildConversationItem(context, conversation);
-        },
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF0A3D91)))
+          : _chats.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey[400]),
+                      const SizedBox(height: 16),
+                      Text('No conversations yet', style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: _chats.length,
+                  itemBuilder: (context, index) {
+                    final chat = _chats[index];
+                    return _buildChatItem(context, chat);
+                  },
+                ),
       bottomNavigationBar: SizedBox(
         height: 100,
         child: Stack(
@@ -129,44 +135,36 @@ class MessagesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildConversationItem(
-    BuildContext context,
-    ChatConversation conversation,
-  ) {
+  Widget _buildChatItem(BuildContext context, MockChat chat) {
     return InkWell(
       onTap: () {
         Navigator.pushNamed(
           context,
           '/chat',
           arguments: {
-            'userId': conversation.userId,
-            'userName': conversation.userName,
-            'isOnline': conversation.isOnline,
+            'chatId': chat.id,
+            'userId': chat.user2,
+            'userName': chat.otherUserName,
+            'isOnline': chat.isOnline,
           },
         );
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: Colors.grey[200]!, width: 1),
-          ),
+          border: Border(bottom: BorderSide(color: Colors.grey[200]!, width: 1)),
         ),
         child: Row(
           children: [
-            // User Avatar with Online Indicator
             Stack(
               children: [
                 Container(
                   width: 56,
                   height: 56,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    shape: BoxShape.circle,
-                  ),
+                  decoration: BoxDecoration(color: Colors.grey[300], shape: BoxShape.circle),
                   child: Icon(Icons.person, size: 28, color: Colors.grey[700]),
                 ),
-                if (conversation.isOnline)
+                if (chat.isOnline)
                   Positioned(
                     bottom: 2,
                     right: 2,
@@ -182,10 +180,7 @@ class MessagesScreen extends StatelessWidget {
                   ),
               ],
             ),
-
             const SizedBox(width: 16),
-
-            // Message Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,18 +188,8 @@ class MessagesScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        conversation.userName,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
-                        ),
-                      ),
-                      Text(
-                        conversation.time,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
+                      Text(chat.otherUserName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      Text(chat.time, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -212,39 +197,22 @@ class MessagesScreen extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          conversation.lastMessage,
+                          chat.lastMessage,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 14,
-                            color: conversation.unreadCount > 0
-                                ? Colors.black87
-                                : Colors.grey[600],
-                            fontWeight: conversation.unreadCount > 0
-                                ? FontWeight.w500
-                                : FontWeight.normal,
+                            color: chat.unreadCount > 0 ? Colors.black87 : Colors.grey[600],
+                            fontWeight: chat.unreadCount > 0 ? FontWeight.w500 : FontWeight.normal,
                           ),
                         ),
                       ),
-                      if (conversation.unreadCount > 0) ...[
+                      if (chat.unreadCount > 0) ...[
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF0A3D91),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Text(
-                            '${conversation.unreadCount}',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(color: Color(0xFF0A3D91), shape: BoxShape.circle),
+                          child: Text('${chat.unreadCount}', style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ],
@@ -278,21 +246,3 @@ class MessagesScreen extends StatelessWidget {
   }
 }
 
-/// Chat Conversation Model
-class ChatConversation {
-  final String userId;
-  final String userName;
-  final String lastMessage;
-  final String time;
-  final int unreadCount;
-  final bool isOnline;
-
-  ChatConversation({
-    required this.userId,
-    required this.userName,
-    required this.lastMessage,
-    required this.time,
-    required this.unreadCount,
-    required this.isOnline,
-  });
-}

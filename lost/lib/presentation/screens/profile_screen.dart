@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../mock_backend/mocks/users.mock.dart';
 
 /// Profile Screen
 class ProfileScreen extends StatefulWidget {
@@ -107,9 +108,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 20),
 
               // User Name
-              const Text(
-                'Alex Johnson',
-                style: TextStyle(
+              Text(
+                currentMockUser.name ?? 'Unknown User',
+                style: const TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
@@ -120,7 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               // Email
               Text(
-                'alex.j@example.com',
+                currentMockUser.email,
                 style: TextStyle(fontSize: 15, color: Colors.grey[600]),
               ),
 

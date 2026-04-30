@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../mock_backend/services/notification_service.dart';
+import '../../mock_backend/mocks/notifications.mock.dart';
+import '../../mock_backend/mocks/users.mock.dart';
 
 /// Notifications Screen
 class NotificationsScreen extends StatefulWidget {
@@ -9,40 +12,24 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  final List<NotificationItem> _notifications = [
-    NotificationItem(
-      title: 'Item Found',
-      message: 'Someone found your lost wallet near campus',
-      time: '2h ago',
-      isRead: false,
-      icon: Icons.check_circle,
-      iconColor: Colors.green,
-    ),
-    NotificationItem(
-      title: 'New Match',
-      message: 'Your lost item matches a recently found item',
-      time: '5h ago',
-      isRead: false,
-      icon: Icons.stars,
-      iconColor: Colors.orange,
-    ),
-    NotificationItem(
-      title: 'Message Received',
-      message: 'You have a new message about your post',
-      time: '1d ago',
-      isRead: true,
-      icon: Icons.message,
-      iconColor: const Color(0xFF8B7355),
-    ),
-    NotificationItem(
-      title: 'Post Approved',
-      message: 'Your lost item post has been approved',
-      time: '2d ago',
-      isRead: true,
-      icon: Icons.approval,
-      iconColor: Colors.blue,
-    ),
-  ];
+  List<MockNotification> _notifications = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+  }
+
+  Future<void> _loadNotifications() async {
+    final response = await NotificationService.getUserNotifications(currentMockUser.id);
+    if (mounted) {
+      setState(() {
+        _notifications = response.data ?? [];
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +97,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
             // Notifications List
             Expanded(
-              child: _notifications.isEmpty
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF0A3D91)))
+                  : _notifications.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -153,10 +142,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   width: double.infinity,
                   height: 48,
                   child: OutlinedButton(
-                    onPressed: () {
+                    onPressed: () async {
+                      await NotificationService.markAllAsRead(currentMockUser.id);
                       setState(() {
-                        for (var notification in _notifications) {
-                          notification.isRead = true;
+                        for (var n in _notifications) {
+                          n.isRead = true;
                         }
                       });
                     },
@@ -212,92 +202,53 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildNotificationItem(NotificationItem notification) {
+  Widget _buildNotificationItem(MockNotification notification) {
+    Color iconColor;
+    IconData icon;
+    switch (notification.type) {
+      case 'match_found': iconColor = Colors.orange; icon = Icons.stars; break;
+      case 'contact_request': iconColor = const Color(0xFF0A3D91); icon = Icons.person_add; break;
+      case 'contact_accepted': iconColor = Colors.green; icon = Icons.check_circle; break;
+      case 'post_resolved': iconColor = Colors.grey; icon = Icons.task_alt; break;
+      default: iconColor = const Color(0xFF8B7355); icon = Icons.notifications; break;
+    }
     return Container(
       color: notification.isRead ? Colors.white : Colors.grey[50],
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         leading: Container(
           width: 48,
           height: 48,
-          decoration: BoxDecoration(
-            color: notification.iconColor.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            notification.icon,
-            color: notification.iconColor,
-            size: 24,
-          ),
+          decoration: BoxDecoration(color: iconColor.withOpacity(0.1), shape: BoxShape.circle),
+          child: Icon(icon, color: iconColor, size: 24),
         ),
         title: Row(
           children: [
-            Expanded(
-              child: Text(
-                notification.title,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: notification.isRead
-                      ? FontWeight.normal
-                      : FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-            if (!notification.isRead)
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF8B7355),
-                  shape: BoxShape.circle,
-                ),
-              ),
+            Expanded(child: Text(notification.displayTitle, style: TextStyle(fontSize: 15, fontWeight: notification.isRead ? FontWeight.normal : FontWeight.w600))),
+            if (!notification.isRead) Container(width: 8, height: 8, decoration: const BoxDecoration(color: Color(0xFF0A3D91), shape: BoxShape.circle)),
           ],
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            Text(
-              notification.message,
-              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-            ),
+            Text(notification.displayMessage, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
             const SizedBox(height: 4),
-            Text(
-              notification.time,
-              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-            ),
+            Text(_timeAgo(notification.createdAt), style: TextStyle(fontSize: 12, color: Colors.grey[500])),
           ],
         ),
-        onTap: () {
-          setState(() {
-            notification.isRead = true;
-          });
-          // TODO: Navigate to notification detail or related screen
+        onTap: () async {
+          await NotificationService.markAsRead(notification.id);
+          setState(() { notification.isRead = true; });
         },
       ),
     );
   }
-}
 
-class NotificationItem {
-  final String title;
-  final String message;
-  final String time;
-  bool isRead;
-  final IconData icon;
-  final Color iconColor;
-
-  NotificationItem({
-    required this.title,
-    required this.message,
-    required this.time,
-    required this.isRead,
-    required this.icon,
-    required this.iconColor,
-  });
+  String _timeAgo(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
+  }
 }
