@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
 
 class PostDetailScreen extends StatelessWidget {
   final Map<String, dynamic> postData;
@@ -34,7 +32,7 @@ class PostDetailScreen extends StatelessWidget {
           SliverAppBar(
             expandedHeight: 300,
             pinned: true,
-            backgroundColor: const Color(0xFF8B7355),
+            backgroundColor: const Color(0xFF0A3D91),
             leading: Container(
               margin: const EdgeInsets.all(8),
               decoration: BoxDecoration(
@@ -194,7 +192,7 @@ class PostDetailScreen extends StatelessWidget {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFE8DED3),
+                                color: const Color(0xFF0A3D91).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
@@ -202,7 +200,7 @@ class PostDetailScreen extends StatelessWidget {
                                 style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF8B7355),
+                                  color: Color(0xFF0A3D91),
                                 ),
                               ),
                             ),
@@ -231,13 +229,13 @@ class PostDetailScreen extends StatelessWidget {
                               width: 50,
                               height: 50,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFE8DED3),
+                                color: const Color(0xFF0A3D91).withOpacity(0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
                                 Icons.person,
                                 size: 28,
-                                color: Color(0xFF8B7355),
+                                color: Color(0xFF0A3D91),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -260,7 +258,7 @@ class PostDetailScreen extends StatelessWidget {
                                         const Icon(
                                           Icons.verified,
                                           size: 18,
-                                          color: Color(0xFF8B7355),
+                                          color: Color(0xFF0A3D91),
                                         ),
                                       ],
                                     ],
@@ -410,69 +408,57 @@ class PostDetailScreen extends StatelessWidget {
                                 style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF8B7355),
+                                  color: Color(0xFF0A3D91),
                                 ),
                               ),
                           ],
                         ),
                         const SizedBox(height: 12),
 
-                        // Map
                         Container(
-                          height: 200,
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
+                            color: const Color(0xFFF5F5F5),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: Colors.grey[300]!),
                           ),
-                          clipBehavior: Clip.antiAlias,
-                          child: latitude != null && longitude != null
-                              ? FlutterMap(
-                                  options: MapOptions(
-                                    initialCenter: LatLng(latitude, longitude),
-                                    initialZoom: 14.0,
-                                  ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0A3D91).withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.location_on, color: Color(0xFF0A3D91)),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    TileLayer(
-                                      urlTemplate:
-                                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                      userAgentPackageName: 'com.example.lost',
+                                    const Text(
+                                      'Location',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.grey,
+                                      ),
                                     ),
-                                    MarkerLayer(
-                                      markers: [
-                                        Marker(
-                                          point: LatLng(latitude, longitude),
-                                          width: 60,
-                                          height: 60,
-                                          child: const Icon(
-                                            Icons.location_pin,
-                                            color: Color(0xFF8B7355),
-                                            size: 40,
-                                          ),
-                                        ),
-                                      ],
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      location,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black87,
+                                      ),
                                     ),
                                   ],
-                                )
-                              : Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.location_off,
-                                        size: 40,
-                                        color: Colors.grey[400],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        location,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey[600],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
                                 ),
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 24),
                       ],
@@ -509,11 +495,11 @@ class PostDetailScreen extends StatelessWidget {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFF8B7355)),
+                  border: Border.all(color: const Color(0xFF0A3D91)),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.share, color: Color(0xFF8B7355)),
+                  icon: const Icon(Icons.share, color: Color(0xFF0A3D91)),
                   onPressed: () {
                     // TODO: Share functionality
                   },
@@ -526,7 +512,7 @@ class PostDetailScreen extends StatelessWidget {
                     Navigator.pushNamed(context, '/chat');
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8B7355),
+                    backgroundColor: const Color(0xFF0A3D91),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
