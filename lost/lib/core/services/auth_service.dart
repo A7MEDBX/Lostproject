@@ -1,4 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+
+/// Thrown when Firebase rate-limits verification email sending.
+class TooManyRequestsException implements Exception {
+  final String message;
+  const TooManyRequestsException([this.message = 'Too many attempts. Please wait a few minutes before requesting another email.']);
+  @override
+  String toString() => message;
+}
 
 class AuthService {
   AuthService._();
@@ -72,7 +81,26 @@ class AuthService {
         message: 'No authenticated user found.',
       );
     }
-    await user.sendEmailVerification();
+
+    // Skip sending if already verified
+    if (user.emailVerified) {
+      debugPrint('[AuthService] User email is already verified.');
+      return;
+    }
+
+    try {
+      await user.sendEmailVerification();
+      debugPrint('[AuthService] Verification email sent to ${user.email}');
+    } on FirebaseAuthException catch (e) {
+      debugPrint('[AuthService] sendEmailVerification error: ${e.code} — ${e.message}');
+      if (e.code == 'too-many-requests') {
+        throw const TooManyRequestsException();
+      }
+      rethrow;
+    } catch (e) {
+      debugPrint('[AuthService] Unexpected error in sendEmailVerification: $e');
+      rethrow;
+    }
   }
 
   Future<bool> reloadAndCheckEmailVerified() async {

@@ -297,41 +297,54 @@ class _SignUpScreenState extends State<SignUpScreen> {
     });
 
     try {
+      // Step 1: Create Firebase account
       await AuthService.instance.signUpWithEmail(
         email: _emailController.text.trim(),
         password: _passwordController.text,
         displayName: _nameController.text.trim(),
       );
-
-      await AuthService.instance.sendEmailVerification();
-
-      if (!mounted) {
-        return;
-      }
-
-      Navigator.pushReplacementNamed(
-        context,
-        '/email-verification',
-        arguments: {'email': _emailController.text.trim()},
-      );
     } on Exception catch (e) {
-      if (!mounted) {
-        return;
-      }
-
+      if (!mounted) return;
       setState(() {
+        _isLoading = false;
         _errorMessage = _mapAuthError(e);
       });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      return;
     }
+
+    try {
+      // Step 2: Send verification email
+      await AuthService.instance.sendEmailVerification();
+    } on Exception catch (e) {
+      // Account was created but email sending failed.
+      // Still navigate — user can resend from the verification screen.
+      debugPrint('[SignUpScreen] sendEmailVerification failed: $e');
+    }
+
+    if (!mounted) return;
+
+    setState(() => _isLoading = false);
+
+    Navigator.pushReplacementNamed(
+      context,
+      '/email-verification',
+      arguments: {'email': _emailController.text.trim()},
+    );
   }
 
   String _mapAuthError(Object error) {
-    return error.toString().replaceAll('Exception: ', '');
+    final raw = error.toString();
+    if (raw.contains('email-already-in-use')) {
+      return 'This email is already registered. Please log in instead.';
+    } else if (raw.contains('invalid-email')) {
+      return 'The email address is not valid.';
+    } else if (raw.contains('weak-password')) {
+      return 'Your password is too weak. Use at least 6 characters.';
+    } else if (raw.contains('network-request-failed')) {
+      return 'No internet connection. Please check your network.';
+    } else if (raw.contains('operation-not-allowed')) {
+      return 'Email/password sign-up is not enabled. Contact support.';
+    }
+    return raw.replaceAll('Exception: ', '').replaceAll('[firebase_auth/]', '').trim();
   }
 }

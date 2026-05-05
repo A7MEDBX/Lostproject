@@ -21,11 +21,12 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   Timer? _timer;
   bool _isLoading = false;
   String? _statusMessage;
+  bool _isError = false;
 
   @override
   void initState() {
     super.initState();
-    _startTimer();
+    _startTimer(30);
     _ensureAuthenticatedUser();
   }
 
@@ -46,8 +47,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     }
   }
 
-  void _startTimer() {
-    setState(() => _remainingSeconds = 30);
+  void _startTimer(int seconds) {
+    setState(() => _remainingSeconds = seconds);
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_remainingSeconds > 0) {
@@ -68,6 +69,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     setState(() {
       _isLoading = true;
       _statusMessage = null;
+      _isError = false;
     });
 
     final verified = await AuthService.instance.reloadAndCheckEmailVerified();
@@ -78,27 +80,45 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       Navigator.pushReplacementNamed(context, '/home');
     } else {
       setState(() {
-        _statusMessage = 'Email not verified yet. Please check your inbox.';
+        _isError = true;
+        _statusMessage = 'Email not verified yet. Please check your inbox (and spam folder).';
+        _isLoading = false;
       });
     }
-
-    setState(() {
-      _isLoading = false;
-    });
   }
 
   Future<void> _resendVerificationEmail() async {
+    setState(() {
+      _isLoading = true;
+      _statusMessage = null;
+      _isError = false;
+    });
+
     try {
       await AuthService.instance.sendEmailVerification();
       if (!mounted) return;
-      _startTimer();
+      // Start a 60-second cooldown after a successful resend
+      _startTimer(60);
       setState(() {
-        _statusMessage = 'Verification email sent. Please check your inbox.';
+        _isError = false;
+        _statusMessage = 'Verification email sent! Please check your inbox and spam folder.';
+        _isLoading = false;
+      });
+    } on TooManyRequestsException catch (e) {
+      if (!mounted) return;
+      // Firebase is rate-limiting — enforce a 3-minute wait
+      _startTimer(180);
+      setState(() {
+        _isError = true;
+        _statusMessage = e.message;
+        _isLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _statusMessage = 'Failed to resend email: $e';
+        _isError = true;
+        _statusMessage = 'Failed to resend email. Please try again later.';
+        _isLoading = false;
       });
     }
   }
@@ -156,13 +176,40 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
               if (_statusMessage != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: Text(
-                    _statusMessage!,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: FinderColors.textSecondary,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _isError
+                          ? Colors.red.withOpacity(0.08)
+                          : Colors.green.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: _isError
+                            ? Colors.red.withOpacity(0.3)
+                            : Colors.green.withOpacity(0.3),
+                      ),
                     ),
-                    textAlign: TextAlign.center,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          _isError ? Icons.error_outline : Icons.check_circle_outline,
+                          size: 16,
+                          color: _isError ? Colors.red : Colors.green,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _statusMessage!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _isError ? Colors.red.shade700 : Colors.green.shade700,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               SizedBox(
@@ -189,13 +236,15 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
               ),
               const SizedBox(height: 16),
               GestureDetector(
-                onTap: _remainingSeconds == 0 ? _onResendEmail : null,
+                onTap: (_remainingSeconds == 0 && !_isLoading) ? _onResendEmail : null,
                 child: Text(
                   _remainingSeconds == 0
                       ? 'Resend verification email'
-                      : 'Resend email in $_remainingSeconds s',
+                      : _remainingSeconds > 60
+                          ? 'Resend in ${_remainingSeconds ~/ 60}m ${_remainingSeconds % 60}s'
+                          : 'Resend email in $_remainingSeconds s',
                   style: TextStyle(
-                    color: _remainingSeconds == 0
+                    color: (_remainingSeconds == 0 && !_isLoading)
                         ? FinderColors.primaryBlue
                         : FinderColors.textSecondary,
                     fontWeight: FontWeight.w600,
