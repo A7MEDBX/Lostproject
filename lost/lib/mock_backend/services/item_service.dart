@@ -4,7 +4,7 @@ import '../utils/network_simulator.dart';
 
 class ItemService {
   // In-memory mock database
-  static final List<PostDto> _mockDb = List.from(mockItems);
+  static final List<PostDto> _mockDb = <PostDto>[];
 
   Future<ApiResponse<List<PostDto>>> getItems({int page = 1, int limit = 10}) async {
     if (NetworkSimulator.USE_MOCK_API) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/constants/finder_colors.dart';
 import '../widgets/success_message_screen.dart';
+import '../../core/services/auth_service.dart';
 
 /// Forgot Password Screen - All steps in one page
 class ForgotPasswordScreen extends StatefulWidget {
@@ -72,10 +73,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   void _handleSubmit() {
     if (_currentStep == 0) {
       if (_formKey1.currentState!.validate()) {
-        // TODO: Send verification code to email
-        setState(() {
-          _currentStep = 1;
-        });
+        _sendPasswordReset();
       }
     } else if (_currentStep == 1) {
       final code = _getCode();
@@ -108,6 +106,44 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _sendPasswordReset() async {
+    try {
+      await AuthService.instance.sendPasswordResetEmail(
+        _emailController.text.trim(),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SuccessMessageScreen(
+            message: 'Password reset email sent. Check your inbox.',
+            onComplete: () {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/login',
+                (route) => false,
+              );
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to send reset email: $e'),
+        ),
+      );
     }
   }
 

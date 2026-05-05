@@ -3,6 +3,7 @@ import '../widgets/custom_rounded_button.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_divider.dart';
 import '../../core/constants/finder_colors.dart';
+import '../../core/services/auth_service.dart';
 
 /// Sign Up/Register Screen
 class SignUpScreen extends StatefulWidget {
@@ -18,6 +19,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -108,7 +111,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 CustomRoundedButton(
                   text: 'Sign up with Google',
                   onPressed: () {
-                    // TODO: Implement Google sign up
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Google sign up is not enabled yet.'),
+                      ),
+                    );
                   },
                   backgroundColor: FinderColors.primaryBlue,
                   height: 50,
@@ -198,18 +205,30 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 CustomRoundedButton(
                   text: 'Sign Up',
                   onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      // TODO: Implement sign up logic
-                      Navigator.pushReplacementNamed(
-                        context, 
-                        '/email-verification',
-                        arguments: {'email': _emailController.text},
-                      );
-                    }
+                    _handleSignUp();
                   },
                   backgroundColor: FinderColors.primaryBlue,
                   height: 50,
                 ),
+
+                if (_isLoading) ...[
+                  const SizedBox(height: 16),
+                  const CircularProgressIndicator(
+                    color: FinderColors.primaryBlue,
+                  ),
+                ],
+
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _errorMessage!,
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontSize: 12,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
 
                 const SizedBox(height: 24),
 
@@ -265,5 +284,54 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleSignUp() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await AuthService.instance.signUpWithEmail(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        displayName: _nameController.text.trim(),
+      );
+
+      await AuthService.instance.sendEmailVerification();
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.pushReplacementNamed(
+        context,
+        '/email-verification',
+        arguments: {'email': _emailController.text.trim()},
+      );
+    } on Exception catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _errorMessage = _mapAuthError(e);
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  String _mapAuthError(Object error) {
+    return error.toString().replaceAll('Exception: ', '');
   }
 }
