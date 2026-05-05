@@ -6,6 +6,7 @@ const PostRoute=require('./post.route');
 const MatchingRoute = require('./matching.route');
 const ContactReqRoute = require('./contactReq.route');
 const ChatRoute = require('./chat.route');
+const ReportRoute = require('./report.route');
 
 Router.use('/user',userRoute);
 Router.use('/admin',adminRoute);
@@ -13,6 +14,7 @@ Router.use('/post',PostRoute);
 Router.use('/match', MatchingRoute);
 Router.use('/contact-request', ContactReqRoute);
 Router.use('/chat', ChatRoute);
+Router.use('/report', ReportRoute);
 Router.get('/status',(req,res)=>{
     res.status(200).send('API working correctly');
 })

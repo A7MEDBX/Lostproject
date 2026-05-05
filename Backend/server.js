@@ -13,10 +13,11 @@ const io = new Server(server,{
         origin: '*'
 }});
 
+// Make io accessible to controllers
+app.set('io', io);
 
-io.on('connection',(socket)=>{
-    console.log('a user connected:', socket.id);
-});
+// Initialize Socket.io logic
+require('./Socket/index')(io);
 
 app.use(express.json());
 app.use(logger('dev'))

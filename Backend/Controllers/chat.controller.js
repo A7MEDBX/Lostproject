@@ -102,6 +102,12 @@ class ChatController {
                 return response.ErrorResponse(res, result.message, null, 400);
             }
             
+            // Emit socket event
+            const io = req.app.get('io');
+            if (io) {
+                io.to(`chat:${chatId}`).emit('new_message', result.data);
+            }
+            
             return response.Success(res, result.message, result.data, 201);
         } catch (error) {
             console.error('Error in sendMessage:', error);
