@@ -1,8 +1,9 @@
-Success = (res, message, data = null, status = 200) => {
+Success = (res, message, data = null, status = 200, meta = null) => {
   return res.status(status).json({
     success: true,
     message,
-    data
+    data,
+    ...(meta ? { meta } : {})
   });
 };
 

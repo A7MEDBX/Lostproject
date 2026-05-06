@@ -42,7 +42,7 @@ class PostController {
     // Get a specific post by ID
     async getPostById(req, res) {
         try {
-            const { postId } = req.params;
+            const { id: postId } = req.params;
             const result = await PostService.getPostById(postId);
             
             if (!result.success) {
@@ -96,7 +96,13 @@ class PostController {
                 return response.ErrorResponse(res, result.message, null, 400);
             }
             
-            return response.Success(res, result.message, result.data, 200);
+            return response.Success(
+                res,
+                result.message,
+                result.data,
+                200,
+                result.pagination || null
+            );
         } catch (error) {
             console.error('Error getting posts:', error);
             return response.ErrorResponse(res, error.message, null, 500);
@@ -109,7 +115,7 @@ class PostController {
     async updatePost(req, res) {
         try {
             const userId = req.user.id; // Database UUID
-            const { postId } = req.params;
+            const { id: postId } = req.params;
             const updateData = req.body;
 
             const result = await PostService.updateUserPost(userId, postId, updateData);
@@ -129,7 +135,7 @@ class PostController {
     async deletePost(req, res) {
         try {
             const userId = req.user.id; // Database UUID
-            const { postId } = req.params;
+            const { id: postId } = req.params;
 
             const result = await PostService.deleteUserPost(userId, postId);
             
@@ -147,7 +153,7 @@ class PostController {
     // Update post status
     async updatePostStatus(req, res) {
         try {
-            const { postId } = req.params;
+            const { id: postId } = req.params;
             const { status } = req.body;
 
             const result = await PostService.updatePostStatus(postId, status);

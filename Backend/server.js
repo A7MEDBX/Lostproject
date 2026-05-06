@@ -1,5 +1,6 @@
 const express = require('express');
 const logger = require('morgan');
+const cors = require('cors');
 const app = express();
 require('dotenv').config();
 const http = require('node:http');
@@ -8,10 +9,33 @@ const routes = require('./Routes/app.route');
 const server = http.createServer(app);
 const port = process.env.PORT || 3500;
 const { Server} = require('socket.io');
-const io = new Server(server,{
-    cors:{
-        origin: '*'
-}});
+const allowedOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+const allowAllOrigins = allowedOrigins.length === 0 && process.env.NODE_ENV !== 'production';
+
+const corsOptions = {
+    origin: (origin, callback) => {
+        if (allowAllOrigins || !origin) {
+            return callback(null, true);
+        }
+
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true
+};
+
+const io = new Server(server, {
+    cors: {
+        origin: allowAllOrigins ? '*' : allowedOrigins,
+        credentials: true
+    }
+});
 
 // Make io accessible to controllers
 app.set('io', io);
@@ -19,6 +43,7 @@ app.set('io', io);
 // Initialize Socket.io logic
 require('./Socket/index')(io);
 
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(logger('dev'))
 app.get('/',(req,res)=>{

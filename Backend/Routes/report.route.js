@@ -2,9 +2,9 @@ const express = require('express');
 const router = express.Router();
 const reportController = require('../Controllers/report.controller');
 const { createReportValidator, updateReportStatusValidator } = require('../validators/report.validator');
-const { validate } = require('../Middlewares/validation');
+const validate = require('../Middlewares/validation');
 const { requireAuthentication, requireVerification } = require('../Middlewares/isVerfied.middleware');
-const verifyFirebaseToken = require('../Middlewares/auth.middleware');
+const { verfyFirebaseToken: verifyFirebaseToken } = require('../Middlewares/auth.middleware');
 const isAdmin = require('../Middlewares/isAdmin.middleware');
 
 // User routes

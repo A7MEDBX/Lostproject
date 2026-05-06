@@ -1,15 +1,12 @@
 const authController = require('../Controllers/auth.controller');
 const UserController = require('../Controllers/User.controller');
-const {verfyFirebaseToken} = require('../Middlewares/auth.middleware');
+const { verfyFirebaseToken, verfyFirebaseTokenLite } = require('../Middlewares/auth.middleware');
 const { requireAuthentication } = require('../Middlewares/isVerfied.middleware');
 const { createUserValidator } = require('../validators/user.validator');
 const { submitVerificationValidator } = require('../validators/verification.validator');
 const validate = require('../Middlewares/validation');
 const express =require('express');
 const Router = express.Router();
-
-Router.use(verfyFirebaseToken);
-Router.use(requireAuthentication); 
 
 /**
  * @route   POST /api/v1/user/login
@@ -18,9 +15,13 @@ Router.use(requireAuthentication);
  * @body    { name, email }
  */
 Router.post('/login',
+       verfyFirebaseTokenLite,
       createUserValidator, 
       validate,
        authController.login);
+
+Router.use(verfyFirebaseToken);
+Router.use(requireAuthentication); 
 
 /**
  * @route   GET /api/v1/user/me
