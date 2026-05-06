@@ -67,7 +67,7 @@ const requireVerification = async (req, res, next) => {
         }
 
         // If verification approved but verified flag not set
-        if (verification_status === 'approved' && !verified) {
+        if ((verification_status === 'approved' || verification_status === 'accepted') && !verified) {
             return response.ErrorResponse(
                 res,
                 'Verification inconsistency detected. Please contact support.',
@@ -77,7 +77,7 @@ const requireVerification = async (req, res, next) => {
         }
 
         // If verified
-        if (verified && verification_status === 'approved') {
+        if (verified && (verification_status === 'approved' || verification_status === 'accepted')) {
             return next();
         }
 

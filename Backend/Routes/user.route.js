@@ -4,6 +4,7 @@ const { verfyFirebaseToken, verfyFirebaseTokenLite } = require('../Middlewares/a
 const { requireAuthentication } = require('../Middlewares/isVerfied.middleware');
 const { createUserValidator } = require('../validators/user.validator');
 const { submitVerificationValidator } = require('../validators/verification.validator');
+const { uploadKycMiddleware, uploadVerificationToCloudinary } = require('../Middlewares/multer.middleware');
 const validate = require('../Middlewares/validation');
 const express =require('express');
 const Router = express.Router();
@@ -57,6 +58,8 @@ Router.delete('/me',
  * @body    { national_id, phone_number, id_image_url }
  */
 Router.post('/verification/submit',
+    uploadKycMiddleware,
+    uploadVerificationToCloudinary,
     submitVerificationValidator,
     validate,
     UserController.submitVerification);

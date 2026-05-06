@@ -613,6 +613,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                             context,
                             '/post-detail',
                             arguments: {
+                              'userId': result.id, // Add userId
                               'title': result.title,
                               'category': 'Accessories',
                               'timeAgo': result.timeAgo,
@@ -1200,7 +1201,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                       onPressed: () {
                         Navigator.pushNamed(
                           context,
-                          '/preview-post',
+                          '/post-detail',
                           arguments: widget.postData ?? {},
                         );
                       },

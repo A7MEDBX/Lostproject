@@ -52,6 +52,7 @@ class PostCard extends StatelessWidget {
           context,
           '/post-detail',
           arguments: {
+            'userId': post.userId,
             'title': post.title,
             'category': post.category,
             'timeAgo': _getTimeAgo(),

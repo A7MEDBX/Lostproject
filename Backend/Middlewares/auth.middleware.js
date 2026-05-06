@@ -47,7 +47,9 @@ const verfyFirebaseToken = async (req, res, next) => {
             firebase_uid: decodedToken.uid,
             email: decodedToken.email,
             id: user.id,           // Supabase user ID
-            role: user.role        // Important: Include role for isAdmin middleware
+            role: user.role,       // Important: Include role for isAdmin middleware
+            verification_status: user.verification_status,
+            verified: user.verified
         };
 
         next();

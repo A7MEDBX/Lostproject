@@ -1,4 +1,6 @@
 import '../../domain/entities/post.dart';
+import '../../core/constants/api_constants.dart';
+
 
 /// Post Model - Data Layer (extends Entity)
 class PostModel extends Post {
@@ -29,7 +31,7 @@ class PostModel extends Post {
       description: json['description'] as String,
       category: json['category'] as String,
       postType: json['post_type'] as String,
-      imageUrl: json['image_url'] as String,
+      imageUrl: _formatImageUrl(json['image_url'] as String?),
       country: json['country'] as String,
       state: json['state'] as String?,
       city: json['city'] as String?,
@@ -41,6 +43,14 @@ class PostModel extends Post {
           ? DateTime.parse(json['updated_at'] as String)
           : null,
     );
+  }
+
+  static String _formatImageUrl(String? rawUrl) {
+    if (rawUrl == null || rawUrl.isEmpty) return '';
+    if (rawUrl.startsWith('http')) return rawUrl;
+    // Remove leading slash if present to avoid double slashes
+    final path = rawUrl.startsWith('/') ? rawUrl.substring(1) : rawUrl;
+    return '${ApiConstants.baseUrl}/$path';
   }
 
   /// To JSON

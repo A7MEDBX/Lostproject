@@ -23,7 +23,12 @@ abstract class PostRepository {
   Future<Either<Failure, Post>> getPostById(String postId);
 
   /// Get all posts
-  Future<Either<Failure, List<Post>>> getAllPosts();
+  Future<Either<Failure, List<Post>>> getAllPosts({
+    String? postType,
+    String? category,
+    String? country,
+    String? city,
+  });
 
   /// Get user's posts
   Future<Either<Failure, List<Post>>> getUserPosts(String userId);

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/utils/location_data.dart';
 import '../widgets/location_autocomplete_field.dart';
+import '../providers/post_provider.dart';
 
 /// Filter Screen
 class FilterScreen extends StatefulWidget {
@@ -299,7 +301,11 @@ class _FilterScreenState extends State<FilterScreen> {
               height: 50,
               child: ElevatedButton(
                 onPressed: () {
-                  // TODO: Apply filters logic
+                  context.read<PostProvider>().loadPosts(
+                    category: selectedCategory == 'All' ? null : selectedCategory,
+                    country: _countryController.text.trim(),
+                    city: _cityController.text.trim(),
+                  );
                   Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(

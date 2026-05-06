@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/finder_colors.dart';
 import '../../core/services/auth_service.dart';
+import '../providers/user_provider.dart';
 
 /// Email Verification Screen
 class EmailVerificationScreen extends StatefulWidget {
@@ -77,6 +79,11 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     if (!mounted) return;
 
     if (verified) {
+      // Load backend user profile before navigating home (non-fatal).
+      if (mounted) {
+        await context.read<UserProvider>().loadUser();
+      }
+      if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/home');
     } else {
       setState(() {

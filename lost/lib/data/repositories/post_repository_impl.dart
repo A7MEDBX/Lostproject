@@ -65,9 +65,19 @@ class PostRepositoryImpl implements PostRepository {
   }
 
   @override
-  Future<Either<Failure, List<Post>>> getAllPosts() async {
+  Future<Either<Failure, List<Post>>> getAllPosts({
+    String? postType,
+    String? category,
+    String? country,
+    String? city,
+  }) async {
     try {
-      final posts = await remoteDataSource.getAllPosts();
+      final posts = await remoteDataSource.getAllPosts(
+        postType: postType,
+        category: category,
+        country: country,
+        city: city,
+      );
       return Either.right(posts);
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));

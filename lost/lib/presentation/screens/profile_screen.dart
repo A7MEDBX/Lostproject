@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../mock_backend/mocks/users.mock.dart';
+import 'package:provider/provider.dart';
+import '../../core/services/auth_service.dart';
+import '../providers/user_provider.dart';
 
 /// Profile Screen
 class ProfileScreen extends StatefulWidget {
@@ -12,6 +14,16 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
+    final firebaseUser = AuthService.instance.currentUser;
+    final backendUser = context.watch<UserProvider>().backendUser;
+
+    // Prefer backend name; fall back to Firebase displayName.
+    final displayName =
+        backendUser?.name ?? firebaseUser?.displayName ?? 'Unknown User';
+    final email = backendUser?.email ?? firebaseUser?.email ?? '';
+    final trustScore = backendUser?.trustScore;
+    final verificationStatus = backendUser?.verificationStatus;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: PreferredSize(
@@ -109,7 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               // User Name
               Text(
-                currentMockUser.name ?? 'Unknown User',
+                displayName,
                 style: const TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
@@ -121,9 +133,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               // Email
               Text(
-                currentMockUser.email,
+                email,
                 style: TextStyle(fontSize: 15, color: Colors.grey[600]),
               ),
+
+              // Trust score + verification status badges
+              if (trustScore != null || verificationStatus != null) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 8,
+                  children: [
+                    if (trustScore != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0A3D91).withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.star,
+                              color: Color(0xFF0A3D91),
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Trust ${trustScore.toStringAsFixed(1)}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF0A3D91),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (verificationStatus != null)
+                      _buildVerificationChip(verificationStatus),
+                  ],
+                ),
+              ],
 
               const SizedBox(height: 40),
 
@@ -163,12 +218,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.verified_user_outlined,
                       iconColor: const Color(0xFF0A3D91),
                       title: 'Verify Account',
-                      onTap: () {
-                        Navigator.pushNamed(
+                      onTap: () async {
+                        await Navigator.pushNamed(
                           context,
                           '/privacy-policy',
                           arguments: {'isFromOnboarding': true},
                         );
+                        if (context.mounted) {
+                          await context.read<UserProvider>().loadUser();
+                        }
                       },
                     ),
 
@@ -229,7 +287,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     // Log Out Button
                     Center(
                       child: TextButton.icon(
-                        onPressed: () {
+                        onPressed: () async {
+                          // Clear backend user state
+                          context.read<UserProvider>().clear();
+                          // Sign out from Firebase
+                          await AuthService.instance.signOut();
+                          if (!context.mounted) return;
                           Navigator.pushNamedAndRemoveUntil(
                             context,
                             '/login',
@@ -308,6 +371,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 }),
                 _buildNavButton(Icons.person, true, () {}),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerificationChip(String status) {
+    Color bg;
+    Color fg;
+    IconData icon;
+    String label;
+
+    switch (status) {
+      case 'approved':
+        bg = Colors.green.shade50;
+        fg = Colors.green.shade700;
+        icon = Icons.verified;
+        label = 'Verified';
+        break;
+      case 'pending':
+        bg = Colors.amber.shade50;
+        fg = Colors.amber.shade800;
+        icon = Icons.hourglass_top;
+        label = 'Pending';
+        break;
+      case 'rejected':
+        bg = Colors.red.shade50;
+        fg = Colors.red.shade700;
+        icon = Icons.cancel_outlined;
+        label = 'Rejected';
+        break;
+      default:
+        bg = Colors.grey.shade100;
+        fg = Colors.grey.shade600;
+        icon = Icons.shield_outlined;
+        label = 'Unverified';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: fg, size: 14),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: fg,
             ),
           ),
         ],

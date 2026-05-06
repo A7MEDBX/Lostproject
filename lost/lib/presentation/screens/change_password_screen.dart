@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/constants/finder_colors.dart';
+import '../../core/services/auth_service.dart';
 
 /// Change Password Screen
 class ChangePasswordScreen extends StatefulWidget {
@@ -18,6 +20,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   bool _obscureCurrentPassword = true;
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
 
   bool _hasMinLength = false;
   bool _hasNumber = false;
@@ -377,18 +380,78 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        // TODO: Update password
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Password updated successfully!'),
-                            backgroundColor: Color(0xFF0A3D91),
-                          ),
-                        );
-                        Navigator.pop(context);
-                      }
-                    },
+                    onPressed: _isLoading
+                        ? null
+                        : () async {
+                            if (!_formKey.currentState!.validate()) return;
+
+                            final currentUser = AuthService.instance.currentUser;
+                            if (currentUser == null || currentUser.email == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('No authenticated user found. Please log in again.'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
+                            setState(() => _isLoading = true);
+
+                            try {
+                              // Step 1 — Reauthenticate with current password
+                              final credential = EmailAuthProvider.credential(
+                                email: currentUser.email!,
+                                password: _currentPasswordController.text,
+                              );
+                              await currentUser.reauthenticateWithCredential(credential);
+
+                              // Step 2 — Update to new password
+                              await currentUser.updatePassword(_newPasswordController.text);
+
+                              if (!context.mounted) return;
+                              setState(() => _isLoading = false);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Password updated successfully!'),
+                                  backgroundColor: Color(0xFF0A3D91),
+                                ),
+                              );
+                              Navigator.pop(context);
+                            } on FirebaseAuthException catch (e) {
+                              setState(() => _isLoading = false);
+                              String message;
+                              switch (e.code) {
+                                case 'wrong-password':
+                                  message = 'Current password is incorrect.';
+                                  break;
+                                case 'weak-password':
+                                  message = 'New password is too weak.';
+                                  break;
+                                case 'too-many-requests':
+                                  message = 'Too many attempts. Please wait a few minutes.';
+                                  break;
+                                default:
+                                  message = e.message ?? 'Failed to update password.';
+                              }
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(message),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            } catch (e) {
+                              setState(() => _isLoading = false);
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Unexpected error: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: FinderColors.primaryBlue,
                       shape: RoundedRectangleBorder(
@@ -396,25 +459,30 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       ),
                       elevation: 0,
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Text(
-                          'Update Password',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Text(
+                                'Update Password',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Icon(Icons.shield_outlined, size: 20, color: Colors.white),
+                            ],
                           ),
-                        ),
-                        SizedBox(width: 8),
-                        Icon(
-                          Icons.shield_outlined,
-                          size: 20,
-                          color: Colors.white,
-                        ),
-                      ],
-                    ),
                   ),
                 ),
 

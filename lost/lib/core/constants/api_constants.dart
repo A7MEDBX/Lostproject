@@ -1,19 +1,17 @@
 /// API Configuration Constants
 class ApiConstants {
-  // Base URL - 10.0.2.2 is used for Android Emulator to connect to localhost.
-  // Use 'http://localhost:3500/api/v1' for iOS Simulator or Web.
-  static const String baseUrl = 'http://10.0.2.2:3500/api/v1';
+  // Base URL - 10.0.2.2 is used for Android Emulator, 192.168.1.3 for physical device on local network
+  static const String baseUrl = 'http://192.168.1.3:3500/api/v1';
 
-  // Auth Endpoints
-  static const String registerEndpoint = '/auth/register';
-  static const String loginEndpoint = '/auth/login';
-
-  // User Endpoints
-  static const String userProfileEndpoint = '/user/profile';
+  // Auth/User Endpoints
+  static const String loginEndpoint = '/user/login';
+  static const String userProfileEndpoint = '/user/me';
+  static const String submitVerificationEndpoint = '/user/verification/submit';
+  static const String verificationStatusEndpoint = '/user/verification/status';
 
   // Post Endpoints
   static const String createPostEndpoint = '/post/create';
-  static const String allPostsEndpoint = '/post/all';
+  static const String allPostsEndpoint = '/post';
   static const String myPostsEndpoint = '/post/my-posts';
   static const String postDetailEndpoint = '/post'; // Used as /post/:id
 
@@ -24,11 +22,21 @@ class ApiConstants {
   static const String sendContactRequestEndpoint = '/contact-request/send';
   static const String respondContactRequestEndpoint = '/contact-request'; // /:id/respond
   static const String receivedContactRequestsEndpoint = '/contact-request/received';
+  static const String sentContactRequestsEndpoint = '/contact-request/sent';
+  static const String checkContactRequestEndpoint = '/contact-request/check'; // /:postId
+  static const String pendingContactRequestsEndpoint = '/contact-request/post'; // /:postId/pending
 
   // Chat Endpoints
   static const String createChatEndpoint = '/chat/create';
   static const String myChatsEndpoint = '/chat/my-chats';
   static const String chatEndpoint = '/chat'; // Used as /chat/:id and /chat/:id/messages
+
+  // Reports
+  static const String createReportEndpoint = '/report/create';
+  static const String reportsEndpoint = '/report';
+
+  // Health
+  static const String healthEndpoint = '/health';
 
   // Timeout durations
   static const Duration connectTimeout = Duration(seconds: 30);

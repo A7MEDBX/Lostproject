@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/post_card.dart';
-import '../../domain/entities/post.dart';
-import '../../mock_backend/services/post_service.dart';
-import '../../mock_backend/utils/network_simulator.dart';
+import 'package:provider/provider.dart';
+import '../providers/post_provider.dart';
 import 'filter_screen.dart';
 
 /// Home Screen - Suggested Posts
@@ -15,57 +14,25 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool isDarkMode = false;
-  bool _isLoading = true;
-  bool _hasError = false;
-  String _errorMessage = '';
-  List<Post> _posts = [];
-
-
+  
 
   @override
   void initState() {
     super.initState();
-    _fetchPosts();
+    Future.microtask(() => context.read<PostProvider>().loadPosts());
   }
 
   Future<void> _fetchPosts() async {
-    setState(() {
-      _isLoading = true;
-      _hasError = false;
-    });
-
-    try {
-      final response = await PostService.getAllPosts(page: 1, limit: 20);
-
-      if (response.success && response.data != null) {
-        setState(() {
-          _posts = response.data!;
-          _isLoading = false;
-        });
-      } else {
-        setState(() {
-          _isLoading = false;
-          _hasError = true;
-          _errorMessage = response.error?.message ?? 'Failed to load posts';
-        });
-      }
-    } on MockNetworkException catch (e) {
-      setState(() {
-        _isLoading = false;
-        _hasError = true;
-        _errorMessage = e.message;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _hasError = true;
-        _errorMessage = 'Unexpected error: $e';
-      });
-    }
+    await context.read<PostProvider>().loadPosts();
   }
 
   @override
   Widget build(BuildContext context) {
+    final postProvider = context.watch<PostProvider>();
+    final isLoading = postProvider.isLoading;
+    final errorMessage = postProvider.errorMessage;
+    final posts = postProvider.posts;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -112,7 +79,26 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-              child: const Icon(Icons.tune, color: Color(0xFF0A3D91), size: 24),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  const Icon(Icons.tune, color: Color(0xFF0A3D91), size: 24),
+                  if (postProvider.hasActiveFilters)
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -198,30 +184,41 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // Posts List
             Expanded(
-              child: _isLoading
+              child: isLoading
                   ? const Center(
                       child: CircularProgressIndicator(
                         color: Color(0xFF0A3D91),
                       ),
                     )
-                  : RefreshIndicator(
-                      onRefresh: _fetchPosts,
-                      color: const Color(0xFF0A3D91),
-                      child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        itemCount: _posts.length,
-                        itemBuilder: (context, index) {
-                          final post = _posts[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 20),
-                            child: PostCard(
-                              post: post,
-                              backgroundColor: _getCardBackgroundColor(index),
+                  : errorMessage != null
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Text(
+                              errorMessage,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.grey[700], fontSize: 14),
                             ),
-                          );
-                        },
-                      ),
-                    ),
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _fetchPosts,
+                          color: const Color(0xFF0A3D91),
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            itemCount: posts.length,
+                            itemBuilder: (context, index) {
+                              final post = posts[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 20),
+                                child: PostCard(
+                                  post: post,
+                                  backgroundColor: _getCardBackgroundColor(index),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
             ),
           ],
         ),

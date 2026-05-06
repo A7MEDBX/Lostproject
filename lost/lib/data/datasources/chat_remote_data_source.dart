@@ -18,6 +18,9 @@ abstract class ChatRemoteDataSource {
   });
 
   Future<void> markAsRead(String chatId, String userId);
+
+  /// GET /chat/my-chats — returns a list of chat maps from the backend.
+  Future<List<Map<String, dynamic>>> getMyChats();
 }
 
 /// Implementation of ChatRemoteDataSource
@@ -35,7 +38,8 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         ApiConstants.createChatEndpoint,
         body: {'other_user_id': otherUserId},
       );
-      return response['id'] as String; // Assuming backend returns chat object with 'id'
+      final data = response['data'] as Map<String, dynamic>;
+      return data['id'] as String;
     } catch (e) {
       throw ServerException('Failed to start chat: $e');
     }
@@ -47,7 +51,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       final response = await apiClient.get(
         '${ApiConstants.chatEndpoint}/$chatId/messages',
       );
-      final List<dynamic> messagesJson = response['messages'] as List<dynamic>? ?? [];
+      final List<dynamic> messagesJson = response['data'] as List<dynamic>? ?? [];
       return messagesJson
           .map(
             (json) => ChatMessageModel.fromJson(json as Map<String, dynamic>),
@@ -69,7 +73,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         '${ApiConstants.chatEndpoint}/$chatId/send',
         body: {'content': message},
       );
-      return ChatMessageModel.fromJson(response);
+      return ChatMessageModel.fromJson(response['data'] as Map<String, dynamic>);
     } catch (e) {
       throw ServerException('Failed to send message: $e');
     }
@@ -84,6 +88,20 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       );
     } catch (e) {
       throw ServerException('Failed to mark as read: $e');
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getMyChats() async {
+    try {
+      final response = await apiClient.get(ApiConstants.myChatsEndpoint);
+      final List<dynamic> chatsJson =
+          response['data'] as List<dynamic>? ?? [];
+      return chatsJson
+          .map((item) => item as Map<String, dynamic>)
+          .toList();
+    } catch (e) {
+      throw ServerException('Failed to fetch chats: $e');
     }
   }
 }

@@ -8,7 +8,7 @@ require('./loaders/sys_req');
 const routes = require('./Routes/app.route');
 const server = http.createServer(app);
 const port = process.env.PORT || 3500;
-const { Server} = require('socket.io');
+const { Server } = require('socket.io');
 const allowedOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || '')
     .split(',')
     .map((origin) => origin.trim())
@@ -50,7 +50,17 @@ app.get('/',(req,res)=>{
     res.send('Welcome to Finder App Backend');
 });
 app.use('/api/v1', routes);
-server.listen(port,()=>{
 
+// Global Error Handler to log errors explicitly
+app.use((err, req, res, next) => {
+    console.error('🔥 Backend Error Detected:', err);
+    res.status(err.status || 500).json({
+        success: false,
+        message: err.message || 'Internal Server Error',
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
+});
+
+server.listen(port, '0.0.0.0', () => {
     console.log(`backend running on port ${port}`);
-})
+});

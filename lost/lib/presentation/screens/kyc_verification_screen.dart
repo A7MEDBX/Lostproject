@@ -1,8 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 import '../widgets/custom_rounded_button.dart';
 import '../widgets/custom_text_field.dart';
+import '../../core/constants/api_constants.dart';
+import '../../core/services/auth_service.dart';
 
 /// KYC Verification Screen
 class KycVerificationScreen extends StatefulWidget {
@@ -52,33 +55,76 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
 
   Future<void> _submitVerification() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     if (_idImage == null || _selfieImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please upload both ID photo and Selfie photo.')),
+        const SnackBar(
+          content: Text('Please upload both ID photo and Selfie photo.'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
-    // Simulate API Call for OCR, Face Matching, and Data submission
-    await Future.delayed(const Duration(seconds: 3));
-
-    setState(() {
-      _isLoading = false;
-      _isSuccess = true;
-    });
-
-    // Show Success State briefly before popping
-    await Future.delayed(const Duration(seconds: 2));
-    if (mounted) {
-      Navigator.pop(context); // Return to profile
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Account successfully verified!')),
+    try {
+      final token = await AuthService.instance.getIdToken();
+      final uri = Uri.parse(
+        '${ApiConstants.baseUrl}${ApiConstants.submitVerificationEndpoint}',
       );
+
+      final request = http.MultipartRequest('POST', uri)
+        ..headers['Authorization'] = 'Bearer $token'
+        ..fields['national_id'] = _idController.text.trim()
+        ..fields['phone'] = _phoneController.text.trim()
+        ..files.add(
+          await http.MultipartFile.fromPath('id_image', _idImage!.path),
+        )
+        ..files.add(
+          await http.MultipartFile.fromPath('selfie_image', _selfieImage!.path),
+        );
+
+      final streamed = await request.send();
+      final response = await http.Response.fromStream(streamed);
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        setState(() {
+          _isLoading = false;
+          _isSuccess = true;
+        });
+        // Brief success display then go back
+        await Future.delayed(const Duration(seconds: 2));
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Verification submitted! We will review your documents.'),
+              backgroundColor: Color(0xFF0A3D91),
+            ),
+          );
+        }
+      } else {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Submission failed (${response.statusCode}). Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

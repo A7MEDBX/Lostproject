@@ -21,7 +21,12 @@ abstract class PostRemoteDataSource {
   });
 
   Future<PostModel> getPostById(String postId);
-  Future<List<PostModel>> getAllPosts();
+  Future<List<PostModel>> getAllPosts({
+    String? postType,
+    String? category,
+    String? country,
+    String? city,
+  });
   Future<List<PostModel>> getUserPosts(String userId);
   Future<List<SearchResultModel>> searchByImage({
     required String imagePath,
@@ -77,7 +82,7 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
         fields: fields,
       );
 
-      return PostModel.fromJson(response);
+      return PostModel.fromJson(response['data'] as Map<String, dynamic>);
     } catch (e) {
       throw ServerException('Failed to create post: $e');
     }
@@ -89,17 +94,29 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
       final response = await apiClient.get(
         '${ApiConstants.postDetailEndpoint}/$postId',
       );
-      return PostModel.fromJson(response);
+      return PostModel.fromJson(response['data'] as Map<String, dynamic>);
     } catch (e) {
       throw ServerException('Failed to get post: $e');
     }
   }
 
   @override
-  Future<List<PostModel>> getAllPosts() async {
+  Future<List<PostModel>> getAllPosts({
+    String? postType,
+    String? category,
+    String? country,
+    String? city,
+  }) async {
     try {
-      final response = await apiClient.get(ApiConstants.allPostsEndpoint);
-      final List<dynamic> postsJson = response['posts'] as List<dynamic>;
+      final queryParams = <String>[];
+      if (postType != null && postType.isNotEmpty) queryParams.add('post_type=$postType');
+      if (category != null && category.isNotEmpty) queryParams.add('category=$category');
+      if (country != null && country.isNotEmpty) queryParams.add('country=$country');
+      if (city != null && city.isNotEmpty) queryParams.add('city=$city');
+      
+      final queryString = queryParams.isNotEmpty ? '?${queryParams.join('&')}' : '';
+      final response = await apiClient.get('${ApiConstants.allPostsEndpoint}$queryString');
+      final List<dynamic> postsJson = response['data'] as List<dynamic>;
       return postsJson
           .map((json) => PostModel.fromJson(json as Map<String, dynamic>))
           .toList();
@@ -113,7 +130,7 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
     try {
       // The backend /post/my-posts relies on the auth token.
       final response = await apiClient.get(ApiConstants.myPostsEndpoint);
-      final List<dynamic> postsJson = response['posts'] as List<dynamic>;
+      final List<dynamic> postsJson = response['data'] as List<dynamic>;
       return postsJson
           .map((json) => PostModel.fromJson(json as Map<String, dynamic>))
           .toList();
@@ -150,7 +167,7 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
         fields: fields,
       );
 
-      final List<dynamic> resultsJson = response['matches'] as List<dynamic>? ?? [];
+      final List<dynamic> resultsJson = response['data'] as List<dynamic>? ?? [];
       return resultsJson
           .map(
             (json) => SearchResultModel.fromJson(json as Map<String, dynamic>),
@@ -168,7 +185,11 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
         '${ApiConstants.postDetailEndpoint}/${post.id}',
         body: post.toJson(),
       );
-      return PostModel.fromJson(response);
+      final data = response['data'];
+      if (data == null) {
+        return post;
+      }
+      return PostModel.fromJson(data as Map<String, dynamic>);
     } catch (e) {
       throw ServerException('Failed to update post: $e');
     }

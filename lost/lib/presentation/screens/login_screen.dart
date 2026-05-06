@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/custom_rounded_button.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_divider.dart';
 import '../../core/constants/finder_colors.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/network/api_client.dart';
+import '../../core/constants/api_constants.dart';
+import '../providers/user_provider.dart';
 
 /// Login/Sign In Screen
 class LoginScreen extends StatefulWidget {
@@ -25,6 +29,32 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  String _buildSafeName(String? displayName, String email) {
+    var name = (displayName ?? '').trim();
+    if (name.isEmpty) {
+      name = email.split('@').first;
+    }
+    name = name.replaceAll(RegExp(r'[^A-Za-z\s]'), ' ');
+    name = name.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (name.length < 2) {
+      return 'User';
+    }
+    if (name.length > 100) {
+      return name.substring(0, 100).trim();
+    }
+    return name;
+  }
+
+  Future<void> _syncBackendUser({required String name, required String email}) async {
+    final apiClient = ApiClient(
+      tokenProvider: AuthService.instance.getIdToken,
+    );
+    await apiClient.post(
+      ApiConstants.loginEndpoint,
+      body: {'name': name, 'email': email},
+    );
   }
 
   @override
@@ -282,6 +312,18 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+
+      final user = AuthService.instance.currentUser;
+      final email = user?.email ?? _emailController.text.trim();
+      final name = _buildSafeName(user?.displayName, email);
+
+      await _syncBackendUser(name: name, email: email);
+
+      // Load the full backend user profile and store in app state.
+      // Non-fatal: if this fails the user still reaches home.
+      if (mounted) {
+        await context.read<UserProvider>().loadUser();
+      }
 
       if (!mounted) {
         return;

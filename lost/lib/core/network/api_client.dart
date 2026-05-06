@@ -7,14 +7,17 @@ import '../errors/exceptions.dart';
 class ApiClient {
   final http.Client client;
   String? authToken; // Optional auth token for Firebase Auth
+  final Future<String?> Function()? tokenProvider;
 
-  ApiClient({http.Client? client, this.authToken}) : client = client ?? http.Client();
+  ApiClient({http.Client? client, this.authToken, this.tokenProvider})
+      : client = client ?? http.Client();
 
   /// Helper to get headers with optional auth token
-  Map<String, String> _getHeaders() {
+  Future<Map<String, String>> _getHeaders() async {
     final headers = Map<String, String>.from(ApiConstants.headers);
-    if (authToken != null) {
-      headers['Authorization'] = 'Bearer $authToken';
+    final token = authToken ?? await tokenProvider?.call();
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
     }
     return headers;
   }
@@ -23,8 +26,8 @@ class ApiClient {
   Future<Map<String, dynamic>> get(String endpoint) async {
     try {
       final url = Uri.parse('${ApiConstants.baseUrl}$endpoint');
-      final response = await client
-          .get(url, headers: _getHeaders())
+        final response = await client
+          .get(url, headers: await _getHeaders())
           .timeout(ApiConstants.receiveTimeout);
 
       return _handleResponse(response);
@@ -43,7 +46,7 @@ class ApiClient {
       final response = await client
           .post(
             url,
-            headers: _getHeaders(),
+        headers: await _getHeaders(),
             body: body != null ? jsonEncode(body) : null,
           )
           .timeout(ApiConstants.receiveTimeout);
@@ -65,7 +68,7 @@ class ApiClient {
       final request = http.MultipartRequest('POST', url);
 
       // Add headers
-      request.headers.addAll(_getHeaders());
+      request.headers.addAll(await _getHeaders());
 
       // Add file
       request.files.add(await http.MultipartFile.fromPath('image', filePath));
@@ -96,7 +99,28 @@ class ApiClient {
       final response = await client
           .put(
             url,
-            headers: _getHeaders(),
+        headers: await _getHeaders(),
+            body: body != null ? jsonEncode(body) : null,
+          )
+          .timeout(ApiConstants.receiveTimeout);
+
+      return _handleResponse(response);
+    } catch (e) {
+      throw NetworkException('Failed to connect to server: $e');
+    }
+  }
+
+  /// Generic PATCH request
+  Future<Map<String, dynamic>> patch(
+    String endpoint, {
+    Map<String, dynamic>? body,
+  }) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}$endpoint');
+      final response = await client
+          .patch(
+            url,
+            headers: await _getHeaders(),
             body: body != null ? jsonEncode(body) : null,
           )
           .timeout(ApiConstants.receiveTimeout);
@@ -111,8 +135,8 @@ class ApiClient {
   Future<Map<String, dynamic>> delete(String endpoint) async {
     try {
       final url = Uri.parse('${ApiConstants.baseUrl}$endpoint');
-      final response = await client
-          .delete(url, headers: _getHeaders())
+        final response = await client
+          .delete(url, headers: await _getHeaders())
           .timeout(ApiConstants.receiveTimeout);
 
       return _handleResponse(response);

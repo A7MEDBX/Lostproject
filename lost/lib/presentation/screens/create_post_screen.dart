@@ -8,6 +8,7 @@ import '../widgets/map_location_picker.dart';
 import '../../data/datasources/ai_matching_remote_data_source.dart';
 import '../../core/utils/location_data.dart';
 import '../widgets/location_autocomplete_field.dart';
+import '../../core/services/auth_service.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -49,7 +50,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   @override
   void initState() {
     super.initState();
-    _dataSource = AIMatchingRemoteDataSource(client: http.Client());
+    _dataSource = AIMatchingRemoteDataSource(
+      client: http.Client(),
+      tokenProvider: AuthService.instance.getIdToken,
+    );
   }
 
   @override
@@ -197,16 +201,19 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         print('✅ Backend response received: $result');
         setState(() => _isLoading = false);
 
+        final postData = result['data'] as Map<String, dynamic>?;
+        final matches = (result['matches'] as List<dynamic>?) ?? const [];
+
         // Navigate to AI matching results with real data from backend
         if (mounted) {
           Navigator.pushReplacementNamed(
             context,
             '/ai-matching-results',
             arguments: {
-              'postId': result['post_id'],
-              'matchesCount': result['matches_count'],
-              'matches': result['matches'],
-              'success': result['success'],
+              'postId': postData?['id'],
+              'matchesCount': matches.length,
+              'matches': matches,
+              'success': result['success'] ?? true,
               // Include user's post data for preview
               'title': _titleController.text,
               'description': _descriptionController.text,

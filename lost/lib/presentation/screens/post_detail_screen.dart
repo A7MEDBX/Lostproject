@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
+import '../../core/network/api_client.dart';
+import '../../core/services/auth_service.dart';
+import '../../data/datasources/chat_remote_data_source.dart';
+
 
 class PostDetailScreen extends StatelessWidget {
   final Map<String, dynamic> postData;
@@ -23,6 +28,7 @@ class PostDetailScreen extends StatelessWidget {
     final int matchPercentage = postData['matchPercentage'] ?? 0;
     final double? latitude = postData['latitude'];
     final double? longitude = postData['longitude'];
+    final String userId = postData['userId'] ?? '';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -501,15 +507,53 @@ class PostDetailScreen extends StatelessWidget {
                 child: IconButton(
                   icon: const Icon(Icons.share, color: Color(0xFF0A3D91)),
                   onPressed: () {
-                    // TODO: Share functionality
+                    Share.share('Check this $status item: $title in $location — found on LostFinder app');
                   },
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/chat');
+                  onPressed: () async {
+                    if (userId.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Cannot message this user.')),
+                      );
+                      return;
+                    }
+
+                    // Show loading
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+
+                    try {
+                      final apiClient = ApiClient(
+                        tokenProvider: AuthService.instance.getIdToken,
+                      );
+                      final ds = ChatRemoteDataSourceImpl(apiClient: apiClient);
+                      final chatId = await ds.startChat(otherUserId: userId);
+
+                      if (!context.mounted) return;
+                      Navigator.pop(context); // close dialog
+
+                      Navigator.pushNamed(context, '/chat', arguments: {
+                        'chatId': chatId,
+                        'userName': posterName,
+                        'userId': userId,
+                        'isOnline': false,
+                      });
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      Navigator.pop(context); // close dialog
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to start chat: $e')),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0A3D91),

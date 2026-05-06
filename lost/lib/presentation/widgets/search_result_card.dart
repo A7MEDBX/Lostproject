@@ -19,7 +19,24 @@ class SearchResultCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       child: InkWell(
         onTap: () {
-          Navigator.pushNamed(context, '/post-detail', arguments: post);
+          Navigator.pushNamed(context, '/post-detail', arguments: {
+            'userId': post.userId,
+            'title': post.title,
+            'category': post.category,
+            'timeAgo': 'Recently', // Simplified since we don't have _getTimeAgo here easily
+            'posterName': 'User',
+            'isVerified': false,
+            'dateLost': '${post.createdAt.month}/${post.createdAt.day}/${post.createdAt.year}',
+            'refId': '#${post.id.substring(0, 8)}',
+            'description': post.description,
+            'location': post.location ?? 'Location Unknown',
+            'distance': 'Unknown distance',
+            'imageUrl': post.imageUrl,
+            'status': post.postType,
+            'matchPercentage': (searchResult.similarity * 100).toInt(),
+            'latitude': post.latitude ?? 0.0,
+            'longitude': post.longitude ?? 0.0,
+          });
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(

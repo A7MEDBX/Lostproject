@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/custom_rounded_button.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_divider.dart';
 import '../../core/constants/finder_colors.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/network/api_client.dart';
+import '../../core/constants/api_constants.dart';
+import '../providers/user_provider.dart';
 
 /// Sign Up/Register Screen
 class SignUpScreen extends StatefulWidget {
@@ -29,6 +33,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  String _buildSafeName(String? rawName, String email) {
+    var name = (rawName ?? '').trim();
+    if (name.isEmpty) {
+      name = email.split('@').first;
+    }
+    name = name.replaceAll(RegExp(r'[^A-Za-z\s]'), ' ');
+    name = name.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (name.length < 2) {
+      return 'User';
+    }
+    if (name.length > 100) {
+      return name.substring(0, 100).trim();
+    }
+    return name;
+  }
+
+  Future<void> _syncBackendUser({required String name, required String email}) async {
+    final apiClient = ApiClient(
+      tokenProvider: AuthService.instance.getIdToken,
+    );
+    await apiClient.post(
+      ApiConstants.loginEndpoint,
+      body: {'name': name, 'email': email},
+    );
   }
 
   @override
@@ -308,6 +338,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
       setState(() {
         _isLoading = false;
         _errorMessage = _mapAuthError(e);
+      });
+      return;
+    }
+
+    try {
+      final user = AuthService.instance.currentUser;
+      final email = user?.email ?? _emailController.text.trim();
+      final name = _buildSafeName(user?.displayName, email);
+      await _syncBackendUser(name: name, email: email);
+
+      // Load the full backend user and store in app state (non-fatal).
+      if (mounted) {
+        await context.read<UserProvider>().loadUser();
+      }
+    } on Exception catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Failed to register user in backend: ${e.toString()}';
       });
       return;
     }

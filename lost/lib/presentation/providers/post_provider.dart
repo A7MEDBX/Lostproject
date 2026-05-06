@@ -14,18 +14,38 @@ class PostProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
+  bool _hasActiveFilters = false;
+
   // Getters
   List<Post> get posts => _posts;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  bool get hasActiveFilters => _hasActiveFilters;
 
   // Load all posts
-  Future<void> loadPosts() async {
+  Future<void> loadPosts({
+    String? postType,
+    String? category,
+    String? country,
+    String? city,
+  }) async {
     _isLoading = true;
     _errorMessage = null;
+    
+    // Check if any filter is actually active
+    _hasActiveFilters = (postType != null && postType.isNotEmpty) ||
+                        (category != null && category.isNotEmpty && category != 'All Categories') ||
+                        (country != null && country.isNotEmpty) ||
+                        (city != null && city.isNotEmpty);
+
     notifyListeners();
 
-    final result = await getAllPostsUseCase();
+    final result = await getAllPostsUseCase(
+      postType: postType,
+      category: category == 'All Categories' ? null : category,
+      country: country,
+      city: city,
+    );
 
     result.fold(
       (failure) {

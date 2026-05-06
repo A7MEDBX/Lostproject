@@ -8,7 +8,17 @@ class GetAllPostsUseCase {
 
   GetAllPostsUseCase(this.repository);
 
-  Future<Either<Failure, List<Post>>> call() async {
-    return await repository.getAllPosts();
+  Future<Either<Failure, List<Post>>> call({
+    String? postType,
+    String? category,
+    String? country,
+    String? city,
+  }) async {
+    return await repository.getAllPosts(
+      postType: postType,
+      category: category,
+      country: country,
+      city: city,
+    );
   }
 }

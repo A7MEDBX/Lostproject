@@ -112,7 +112,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           final code = _getCode();
                           if (code.length == 4) {
                             // TODO: Verify code
-                            Navigator.pushNamed(context, '/new-password');
+                            Navigator.pushNamed(context, '/login');
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(

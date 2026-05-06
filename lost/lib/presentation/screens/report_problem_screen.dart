@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../core/network/api_client.dart';
+import '../../core/constants/api_constants.dart';
+import '../../core/services/auth_service.dart';
+
 
 /// Report a Problem Screen
 class ReportProblemScreen extends StatefulWidget {
@@ -13,6 +17,7 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   String? _selectedOption;
+  bool _isLoading = false;
 
   final List<String> _options = [
     'Bug Report',
@@ -30,22 +35,49 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
     super.dispose();
   }
 
-  void _submitReport() {
+  Future<void> _submitReport() async {
     if (_formKey.currentState!.validate() && _selectedOption != null) {
-      // TODO: Submit report to backend
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Report submitted successfully!'),
-          backgroundColor: Color(0xFF0A3D91),
-        ),
-      );
+      setState(() => _isLoading = true);
 
-      // Clear form
-      setState(() {
-        _selectedOption = null;
-        _titleController.clear();
-        _descriptionController.clear();
-      });
+      try {
+        final apiClient = ApiClient(
+          tokenProvider: AuthService.instance.getIdToken,
+        );
+
+        await apiClient.post(
+          ApiConstants.createReportEndpoint,
+          body: {
+            'type': _selectedOption,
+            'title': _titleController.text.trim(),
+            'description': _descriptionController.text.trim(),
+          },
+        );
+
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _selectedOption = null;
+            _titleController.clear();
+            _descriptionController.clear();
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Report submitted successfully!'),
+              backgroundColor: Color(0xFF0A3D91),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to submit report: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     } else if (_selectedOption == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -241,22 +273,32 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _submitReport,
+                  onPressed: _isLoading ? null : _submitReport,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0A3D91),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                     elevation: 0,
+                    disabledBackgroundColor: const Color(0xFF0A3D91).withOpacity(0.5),
                   ),
-                  child: const Text(
-                    'Submit',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Submit',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
             ],

@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../core/network/api_client.dart';
+import '../../core/constants/api_constants.dart';
+import '../../core/services/auth_service.dart';
+import '../providers/user_provider.dart';
 
 /// Edit Profile Screen
 class EditProfileScreen extends StatefulWidget {
@@ -10,16 +15,33 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController(text: 'Joly Marwan');
-  final _emailController = TextEditingController(text: 'Joly151@gmail.com');
-  final _phoneController = TextEditingController(text: '123-456-7890');
-  final _addressController = TextEditingController(
-    text: '45 New Avenue, New York',
-  );
+  late final TextEditingController _nameController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _phoneController;
+  final _addressController = TextEditingController();
 
   String _selectedCountry = 'United States';
   String _selectedGender = 'Female';
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill from backend user if available, fall back to Firebase.
+    final backendUser =
+        context.read<UserProvider>().backendUser;
+    final firebaseUser = AuthService.instance.currentUser;
+
+    _nameController = TextEditingController(
+      text: backendUser?.name ?? firebaseUser?.displayName ?? '',
+    );
+    _emailController = TextEditingController(
+      text: backendUser?.email ?? firebaseUser?.email ?? '',
+    );
+    _phoneController = TextEditingController(
+      text: backendUser?.phoneNumber ?? '',
+    );
+  }
 
   @override
   void dispose() {
@@ -131,15 +153,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
             const SizedBox(height: 60),
 
-            // Joly Marwan Name
-            const Text(
-              'Joly Marwan',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+              // User's name from backend
+              Text(
+                _nameController.text.isEmpty ? 'Your Profile' : _nameController.text,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
               ),
-            ),
 
             const SizedBox(height: 30),
 
@@ -414,18 +436,35 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         onPressed: _isLoading
                             ? null
                             : () async {
-                                if (_formKey.currentState!.validate()) {
-                                  setState(() {
-                                    _isLoading = true;
-                                  });
-                                  
-                                  // Mock API delay
-                                  await Future.delayed(const Duration(seconds: 2));
-                                  
+                                if (!_formKey.currentState!.validate()) return;
+
+                                setState(() => _isLoading = true);
+
+                                try {
+                                  final apiClient = ApiClient(
+                                    tokenProvider: AuthService.instance.getIdToken,
+                                  );
+
+                                  // Update backend profile
+                                  await apiClient.patch(
+                                    ApiConstants.userProfileEndpoint,
+                                    body: {
+                                      'name': _nameController.text.trim(),
+                                      'phone': _phoneController.text.trim(),
+                                    },
+                                  );
+
+                                  // Update Firebase display name too
+                                  await AuthService.instance.currentUser
+                                      ?.updateDisplayName(_nameController.text.trim());
+
+                                  // Reload UserProvider so Profile screen updates
                                   if (mounted) {
-                                    setState(() {
-                                      _isLoading = false;
-                                    });
+                                    await context.read<UserProvider>().loadUser();
+                                  }
+
+                                  if (mounted) {
+                                    setState(() => _isLoading = false);
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text('Profile updated successfully!'),
@@ -433,6 +472,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       ),
                                     );
                                     Navigator.pop(context);
+                                  }
+                                } catch (e) {
+                                  if (mounted) {
+                                    setState(() => _isLoading = false);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Failed to save: $e'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
                                   }
                                 }
                               },

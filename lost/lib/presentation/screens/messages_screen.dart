@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../mock_backend/services/chat_service.dart';
-import '../../mock_backend/mocks/chats.mock.dart';
-import '../../mock_backend/mocks/users.mock.dart';
+import '../../core/network/api_client.dart';
+import '../../core/services/auth_service.dart';
+import '../../data/datasources/chat_remote_data_source.dart';
 
 /// Messages Screen - Chat List
 class MessagesScreen extends StatefulWidget {
@@ -13,7 +13,17 @@ class MessagesScreen extends StatefulWidget {
 
 class _MessagesScreenState extends State<MessagesScreen> {
   bool _isLoading = true;
-  List<MockChat> _chats = [];
+  bool _isSearching = false;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+  // Each map holds: id, otherUserName, lastMessage, time, unreadCount, isOnline
+  List<Map<String, dynamic>> _chats = [];
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -22,12 +32,25 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 
   Future<void> _loadChats() async {
-    final response = await ChatService.getUserChats(currentMockUser.id);
-    if (mounted) {
-      setState(() {
-        _chats = response.data ?? [];
-        _isLoading = false;
-      });
+    try {
+      final apiClient = ApiClient(
+        tokenProvider: AuthService.instance.getIdToken,
+      );
+      final dataSource = ChatRemoteDataSourceImpl(apiClient: apiClient);
+      final chats = await dataSource.getMyChats();
+      if (mounted) {
+        setState(() {
+          _chats = chats;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _chats = [];
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -43,43 +66,80 @@ class _MessagesScreenState extends State<MessagesScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black, size: 24),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Messages',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
-        ),
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Search conversations...',
+                  border: InputBorder.none,
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value.toLowerCase();
+                  });
+                },
+              )
+            : const Text(
+                'Messages',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search, color: Colors.black, size: 24),
+            icon: Icon(_isSearching ? Icons.close : Icons.search, color: Colors.black, size: 24),
             onPressed: () {
-              // TODO: Search conversations
+              setState(() {
+                if (_isSearching) {
+                  _isSearching = false;
+                  _searchController.clear();
+                  _searchQuery = '';
+                } else {
+                  _isSearching = true;
+                }
+              });
             },
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF0A3D91)))
-          : _chats.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey[400]),
-                      const SizedBox(height: 16),
-                      Text('No conversations yet', style: TextStyle(color: Colors.grey[600], fontSize: 16)),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  itemCount: _chats.length,
-                  itemBuilder: (context, index) {
-                    final chat = _chats[index];
-                    return _buildChatItem(context, chat);
-                  },
+      body: Builder(builder: (context) {
+        if (_isLoading) {
+          return const Center(child: CircularProgressIndicator(color: Color(0xFF0A3D91)));
+        }
+
+        final filteredChats = _chats.where((chat) {
+          final name = (chat['otherUserName'] as String?)?.toLowerCase() ?? '';
+          final lastMessage = (chat['lastMessage'] as String?)?.toLowerCase() ?? '';
+          return name.contains(_searchQuery) || lastMessage.contains(_searchQuery);
+        }).toList();
+
+        if (filteredChats.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                Text(
+                  _searchQuery.isEmpty ? 'No conversations yet' : 'No matches found',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 16),
                 ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          itemCount: filteredChats.length,
+          itemBuilder: (context, index) {
+            final chat = filteredChats[index];
+            return _buildChatItem(context, chat);
+          },
+        );
+      }),
       bottomNavigationBar: SizedBox(
         height: 100,
         child: Stack(
@@ -135,17 +195,25 @@ class _MessagesScreenState extends State<MessagesScreen> {
     );
   }
 
-  Widget _buildChatItem(BuildContext context, MockChat chat) {
+  Widget _buildChatItem(BuildContext context, Map<String, dynamic> chat) {
+    final chatId = chat['id'] as String? ?? '';
+    final otherUserId = chat['other_user_id'] as String? ?? '';
+    final otherUserName = chat['other_user_name'] as String? ?? 'Unknown';
+    final lastMessage = chat['last_message'] as String? ?? '';
+    final time = chat['updated_at'] as String? ?? '';
+    final unreadCount = (chat['unread_count'] as num?)?.toInt() ?? 0;
+    final isOnline = (chat['is_online'] as bool?) ?? false;
+
     return InkWell(
       onTap: () {
         Navigator.pushNamed(
           context,
           '/chat',
           arguments: {
-            'chatId': chat.id,
-            'userId': chat.user2,
-            'userName': chat.otherUserName,
-            'isOnline': chat.isOnline,
+            'chatId': chatId,
+            'userId': otherUserId,
+            'userName': otherUserName,
+            'isOnline': isOnline,
           },
         );
       },
@@ -164,7 +232,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                   decoration: BoxDecoration(color: Colors.grey[300], shape: BoxShape.circle),
                   child: Icon(Icons.person, size: 28, color: Colors.grey[700]),
                 ),
-                if (chat.isOnline)
+                if (isOnline)
                   Positioned(
                     bottom: 2,
                     right: 2,
@@ -188,8 +256,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(chat.otherUserName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                      Text(chat.time, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                      Text(otherUserName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      Text(time, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -197,22 +265,22 @@ class _MessagesScreenState extends State<MessagesScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          chat.lastMessage,
+                          lastMessage,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 14,
-                            color: chat.unreadCount > 0 ? Colors.black87 : Colors.grey[600],
-                            fontWeight: chat.unreadCount > 0 ? FontWeight.w500 : FontWeight.normal,
+                            color: unreadCount > 0 ? Colors.black87 : Colors.grey[600],
+                            fontWeight: unreadCount > 0 ? FontWeight.w500 : FontWeight.normal,
                           ),
                         ),
                       ),
-                      if (chat.unreadCount > 0) ...[
+                      if (unreadCount > 0) ...[
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: const BoxDecoration(color: Color(0xFF0A3D91), shape: BoxShape.circle),
-                          child: Text('${chat.unreadCount}', style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold)),
+                          child: Text('$unreadCount', style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ],

@@ -8,14 +8,12 @@ import '../presentation/screens/profile_screen.dart';
 import '../presentation/screens/settings_screen.dart';
 import '../presentation/screens/forgot_password_screen.dart';
 import '../presentation/screens/verification_screen.dart';
-import '../presentation/screens/new_password_screen.dart';
 import '../presentation/screens/notifications_screen.dart';
 import '../presentation/screens/chat_screen.dart';
 import '../presentation/screens/messages_screen.dart';
 import '../presentation/screens/create_post_screen.dart';
 import '../presentation/screens/ai_matching_results_screen.dart';
 import '../presentation/screens/post_detail_screen.dart';
-import '../presentation/screens/preview_post_screen.dart';
 import '../presentation/screens/filter_screen.dart';
 import '../presentation/screens/report_problem_screen.dart';
 import '../presentation/screens/edit_profile_screen.dart';
@@ -33,7 +31,6 @@ class AppRoutes {
   static const String search = '/search';
   static const String createPost = '/create-post';
   static const String postDetail = '/post-detail';
-  static const String previewPost = '/preview-post';
   static const String profile = '/profile';
   static const String settingsRoute = '/settings';
   static const String chat = '/chat';
@@ -42,7 +39,6 @@ class AppRoutes {
   static const String signup = '/signup';
   static const String forgotPassword = '/forgot-password';
   static const String verification = '/verification';
-  static const String newPassword = '/new-password';
   static const String notifications = '/notifications';
   static const String aiMatchingResults = '/ai-matching-results';
   static const String filter = '/filter';
@@ -83,19 +79,6 @@ class AppRoutes {
           builder: (_) => PostDetailScreen(postData: args),
         );
 
-      case previewPost:
-        final args = settings.arguments as Map<String, dynamic>?;
-        if (args == null) {
-          return MaterialPageRoute(
-            builder: (_) => const Scaffold(
-              body: Center(child: Text('No post data provided')),
-            ),
-          );
-        }
-        return MaterialPageRoute(
-          builder: (_) => PreviewPostScreen(postData: args),
-        );
-
       case aiMatchingResults:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
@@ -124,9 +107,10 @@ class AppRoutes {
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
           builder: (_) => ChatScreen(
-            userName: args?['userName'],
-            userId: args?['userId'],
-            isOnline: args?['isOnline'],
+            chatId: args?['chatId'] as String?,
+            userName: args?['userName'] as String?,
+            userId: args?['userId'] as String?,
+            isOnline: args?['isOnline'] as bool?,
           ),
         );
 
@@ -176,9 +160,6 @@ class AppRoutes {
         return MaterialPageRoute(
           builder: (_) => SupportRequestDetailScreen(ticketData: args),
         );
-
-      case newPassword:
-        return MaterialPageRoute(builder: (_) => const NewPasswordScreen());
 
       case notifications:
         return MaterialPageRoute(builder: (_) => const NotificationsScreen());

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../mock_backend/services/post_service.dart';
-import '../../mock_backend/mocks/users.mock.dart';
+import '../../core/network/api_client.dart';
+import '../../core/services/auth_service.dart';
+import '../../data/datasources/post_remote_data_source.dart';
 import '../../domain/entities/post.dart';
 
 /// My Posts Screen
@@ -26,12 +27,26 @@ class _MyPostsScreenState extends State<MyPostsScreen>
   }
 
   Future<void> _loadUserPosts() async {
-    final response = await PostService.getUserPosts(currentMockUser.id);
-    if (mounted) {
-      setState(() {
-        _allUserPosts = response.data ?? [];
-        _isLoading = false;
-      });
+    try {
+      final apiClient = ApiClient(
+        tokenProvider: AuthService.instance.getIdToken,
+      );
+      final dataSource = PostRemoteDataSourceImpl(apiClient: apiClient);
+      // /post/my-posts identifies the user via the Firebase bearer token.
+      final posts = await dataSource.getUserPosts('');
+      if (mounted) {
+        setState(() {
+          _allUserPosts = posts;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _allUserPosts = [];
+          _isLoading = false;
+        });
+      }
     }
   }
 

@@ -6,12 +6,15 @@ import 'package:http/http.dart' as http;
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_strings.dart';
 import 'core/network/api_client.dart';
+import 'core/services/auth_service.dart';
 import 'data/datasources/post_remote_data_source.dart';
+import 'data/datasources/user_remote_data_source.dart';
 import 'data/repositories/post_repository_impl.dart';
 import 'domain/usecases/get_all_posts.dart';
 import 'domain/usecases/search_by_image.dart';
 import 'presentation/providers/post_provider.dart';
 import 'presentation/providers/search_provider.dart';
+import 'presentation/providers/user_provider.dart';
 import 'routes/app_routes.dart';
 
 Future<void> main() async {
@@ -28,7 +31,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Initialize dependencies
-    final apiClient = ApiClient(client: http.Client());
+    final apiClient = ApiClient(
+      client: http.Client(),
+      tokenProvider: AuthService.instance.getIdToken,
+    );
     final postRemoteDataSource = PostRemoteDataSourceImpl(apiClient: apiClient);
     final postRepository = PostRepositoryImpl(
       remoteDataSource: postRemoteDataSource,
@@ -36,6 +42,12 @@ class MyApp extends StatelessWidget {
 
     return MultiProvider(
       providers: [
+        // User Provider — loads /user/me after login
+        ChangeNotifierProvider(
+          create: (_) => UserProvider(
+            remoteDataSource: UserRemoteDataSourceImpl(apiClient: apiClient),
+          ),
+        ),
         // Post Provider
         ChangeNotifierProvider(
           create: (_) => PostProvider(
