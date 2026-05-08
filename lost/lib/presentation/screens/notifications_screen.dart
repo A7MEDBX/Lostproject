@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../mock_backend/services/notification_service.dart';
-import '../../mock_backend/mocks/notifications.mock.dart';
-import '../../mock_backend/mocks/users.mock.dart';
+import '../../core/network/api_client.dart';
+import '../../core/services/auth_service.dart';
+import '../../core/constants/api_constants.dart';
 
-/// Notifications Screen
+/// Notifications Screen — wired to real backend API
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
 
@@ -12,23 +12,63 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  List<MockNotification> _notifications = [];
+  List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = true;
+  late final ApiClient _apiClient;
 
   @override
   void initState() {
     super.initState();
+    _apiClient = ApiClient(tokenProvider: AuthService.instance.getIdToken);
     _loadNotifications();
   }
 
   Future<void> _loadNotifications() async {
-    final response = await NotificationService.getUserNotifications(currentMockUser.id);
-    if (mounted) {
-      setState(() {
-        _notifications = response.data ?? [];
-        _isLoading = false;
-      });
+    try {
+      final response = await _apiClient.get(ApiConstants.notificationsEndpoint);
+      final List<dynamic> raw = response['data'] as List<dynamic>? ?? [];
+      if (mounted) {
+        setState(() {
+          _notifications = raw.map((n) => n as Map<String, dynamic>).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _notifications = [];
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  Future<void> _markAsRead(String id, int index) async {
+    try {
+      await _apiClient.patch(
+        '${ApiConstants.notificationsEndpoint}/$id/read',
+        body: {},
+      );
+      if (mounted) {
+        setState(() => _notifications[index]['is_read'] = true);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _markAllAsRead() async {
+    try {
+      await _apiClient.post(
+        ApiConstants.notificationReadAllEndpoint,
+        body: {},
+      );
+      if (mounted) {
+        setState(() {
+          for (var n in _notifications) {
+            n['is_read'] = true;
+          }
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -71,7 +111,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
             const SizedBox(height: 16),
 
-            // Title
             const Text(
               'Notifications',
               style: TextStyle(
@@ -83,7 +122,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
             const SizedBox(height: 8),
 
-            // Subtitle
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Text(
@@ -100,58 +138,45 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator(color: Color(0xFF0A3D91)))
                   : _notifications.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.notifications_none,
-                            size: 64,
-                            color: Colors.grey[400],
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.notifications_none, size: 64, color: Colors.grey[400]),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No notifications yet',
+                                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No notifications yet',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[600],
-                            ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _loadNotifications,
+                          color: const Color(0xFF0A3D91),
+                          child: ListView.separated(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: _notifications.length,
+                            separatorBuilder: (_, _s) => Divider(height: 1, color: Colors.grey[300]),
+                            itemBuilder: (context, index) =>
+                                _buildNotificationItem(_notifications[index], index),
                           ),
-                        ],
-                      ),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: _notifications.length,
-                      separatorBuilder: (context, index) =>
-                          Divider(height: 1, color: Colors.grey[300]),
-                      itemBuilder: (context, index) {
-                        final notification = _notifications[index];
-                        return _buildNotificationItem(notification);
-                      },
-                    ),
+                        ),
             ),
 
             const SizedBox(height: 16),
 
             // Mark all as read button
-            if (_notifications.any((n) => !n.isRead))
+            if (_notifications.any((n) => n['is_read'] == false))
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: SizedBox(
                   width: double.infinity,
                   height: 48,
                   child: OutlinedButton(
-                    onPressed: () async {
-                      await NotificationService.markAllAsRead(currentMockUser.id);
-                      setState(() {
-                        for (var n in _notifications) {
-                          n.isRead = true;
-                        }
-                      });
-                    },
+                    onPressed: _markAllAsRead,
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF8B7355)),
+                      side: const BorderSide(color: Color(0xFF0A3D91)),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -161,7 +186,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF8B7355),
+                        color: Color(0xFF0A3D91),
                       ),
                     ),
                   ),
@@ -170,20 +195,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
             const SizedBox(height: 16),
 
-            // Bottom help text
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    'Need help? ',
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                  ),
+                  Text('Need help? ', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
                   GestureDetector(
-                    onTap: () {
-                      // TODO: Navigate to help/support
-                    },
+                    onTap: () => Navigator.pushNamed(context, '/support'),
                     child: const Text(
                       'Contact Support',
                       style: TextStyle(
@@ -202,18 +221,50 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildNotificationItem(MockNotification notification) {
+  Widget _buildNotificationItem(Map<String, dynamic> notification, int index) {
+    final type = notification['type'] as String? ?? 'info';
+    final isRead = notification['is_read'] as bool? ?? false;
+    final createdAt = notification['created_at'] as String? ?? '';
+
     Color iconColor;
     IconData icon;
-    switch (notification.type) {
-      case 'match_found': iconColor = Colors.orange; icon = Icons.stars; break;
-      case 'contact_request': iconColor = const Color(0xFF0A3D91); icon = Icons.person_add; break;
-      case 'contact_accepted': iconColor = Colors.green; icon = Icons.check_circle; break;
-      case 'post_resolved': iconColor = Colors.grey; icon = Icons.task_alt; break;
-      default: iconColor = const Color(0xFF8B7355); icon = Icons.notifications; break;
+    String title;
+    String message;
+
+    switch (type) {
+      case 'match_found':
+        iconColor = Colors.orange;
+        icon = Icons.stars;
+        title = 'Match Found';
+        message = 'A potential match was found for your item.';
+        break;
+      case 'contact_request':
+        iconColor = const Color(0xFF0A3D91);
+        icon = Icons.person_add;
+        title = 'Contact Request';
+        message = 'Someone wants to contact you about an item.';
+        break;
+      case 'contact_accepted':
+        iconColor = Colors.green;
+        icon = Icons.check_circle;
+        title = 'Request Accepted';
+        message = 'Your contact request was accepted.';
+        break;
+      case 'post_resolved':
+        iconColor = Colors.grey;
+        icon = Icons.task_alt;
+        title = 'Post Resolved';
+        message = 'An item you were following was resolved.';
+        break;
+      default:
+        iconColor = const Color(0xFF8B7355);
+        icon = Icons.notifications;
+        title = 'Notification';
+        message = 'You have a new notification.';
     }
+
     return Container(
-      color: notification.isRead ? Colors.white : Colors.grey[50],
+      color: isRead ? Colors.white : Colors.grey[50],
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         leading: Container(
@@ -224,31 +275,48 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ),
         title: Row(
           children: [
-            Expanded(child: Text(notification.displayTitle, style: TextStyle(fontSize: 15, fontWeight: notification.isRead ? FontWeight.normal : FontWeight.w600))),
-            if (!notification.isRead) Container(width: 8, height: 8, decoration: const BoxDecoration(color: Color(0xFF0A3D91), shape: BoxShape.circle)),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: isRead ? FontWeight.normal : FontWeight.w600,
+                ),
+              ),
+            ),
+            if (!isRead)
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(color: Color(0xFF0A3D91), shape: BoxShape.circle),
+              ),
           ],
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            Text(notification.displayMessage, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+            Text(message, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
             const SizedBox(height: 4),
-            Text(_timeAgo(notification.createdAt), style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+            Text(_timeAgo(createdAt), style: TextStyle(fontSize: 12, color: Colors.grey[500])),
           ],
         ),
-        onTap: () async {
-          await NotificationService.markAsRead(notification.id);
-          setState(() { notification.isRead = true; });
+        onTap: () {
+          if (!isRead) _markAsRead(notification['id'] as String, index);
         },
       ),
     );
   }
 
-  String _timeAgo(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
+  String _timeAgo(String isoDate) {
+    try {
+      final dt = DateTime.parse(isoDate);
+      final diff = DateTime.now().difference(dt);
+      if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+      if (diff.inHours < 24) return '${diff.inHours}h ago';
+      return '${diff.inDays}d ago';
+    } catch (_) {
+      return '';
+    }
   }
 }

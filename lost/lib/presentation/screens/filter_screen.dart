@@ -15,11 +15,25 @@ class FilterScreen extends StatefulWidget {
 class _FilterScreenState extends State<FilterScreen> {
   String selectedCategory = 'All';
   String selectedTimeRange = 'Last 24h';
-  double searchRadius = 25.0;
   bool aiMatchingEnabled = false;
   final TextEditingController _countryController = TextEditingController();
   final TextEditingController _stateController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Restore previous filter values if they exist
+    final provider = context.read<PostProvider>();
+    final saved = provider.activeFilters;
+    if (saved != null) {
+      selectedCategory = saved['category'] ?? 'All';
+      selectedTimeRange = saved['timeRange'] ?? 'Last 24h';
+      _countryController.text = saved['country'] ?? '';
+      _stateController.text = saved['state'] ?? '';
+      _cityController.text = saved['city'] ?? '';
+    }
+  }
 
   @override
   void dispose() {
@@ -27,6 +41,35 @@ class _FilterScreenState extends State<FilterScreen> {
     _stateController.dispose();
     _cityController.dispose();
     super.dispose();
+  }
+
+  void _applyFilters() {
+    final filters = {
+      'category': selectedCategory,
+      'timeRange': selectedTimeRange,
+      'country': _countryController.text.trim(),
+      'state': _stateController.text.trim(),
+      'city': _cityController.text.trim(),
+    };
+    context.read<PostProvider>().applyFilters(
+      filters: filters,
+      category: selectedCategory == 'All' ? null : selectedCategory,
+      country: _countryController.text.trim(),
+      state: _stateController.text.trim(),
+      city: _cityController.text.trim(),
+    );
+    Navigator.pop(context);
+  }
+
+  void _resetFilters() {
+    setState(() {
+      selectedCategory = 'All';
+      selectedTimeRange = 'Last 24h';
+      aiMatchingEnabled = false;
+      _countryController.clear();
+      _stateController.clear();
+      _cityController.clear();
+    });
   }
 
   @override
@@ -50,17 +93,7 @@ class _FilterScreenState extends State<FilterScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              setState(() {
-                selectedCategory = 'All';
-                selectedTimeRange = 'Last 24h';
-                searchRadius = 25.0;
-                aiMatchingEnabled = false;
-                _countryController.clear();
-                _stateController.clear();
-                _cityController.clear();
-              });
-            },
+            onPressed: _resetFilters,
             child: const Text(
               'Reset',
               style: TextStyle(
@@ -91,7 +124,7 @@ class _FilterScreenState extends State<FilterScreen> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () => setState(() => selectedCategory = 'All'),
                   child: const Text(
                     'Clear',
                     style: TextStyle(fontSize: 12, color: Color(0xFF0A3D91)),
@@ -146,23 +179,10 @@ class _FilterScreenState extends State<FilterScreen> {
                 _buildTimeRangeButton('Last Month'),
               ],
             ),
-            const SizedBox(height: 16),
-
-            // Custom Date Range
-            Row(
-              children: [
-                Checkbox(
-                  value: false,
-                  onChanged: (value) {},
-                  activeColor: const Color(0xFF0A3D91),
-                ),
-                const Text('Custom Date Range', style: TextStyle(fontSize: 14)),
-              ],
-            ),
 
             const SizedBox(height: 32),
 
-            // Location Section
+            // Location Section — Country → State → City order
             const Text(
               'LOCATION',
               style: TextStyle(
@@ -174,62 +194,57 @@ class _FilterScreenState extends State<FilterScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Location Search Fields
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: LocationAutocompleteField(
-                    controller: _countryController,
-                    hint: 'Country',
-                    optionsBuilder: (textEditingValue) {
-                      return LocationDataService.getCountries(textEditingValue.text);
-                    },
-                    onSelected: (String selection) {
-                      setState(() {
-                        _countryController.text = selection;
-                        _stateController.clear();
-                        _cityController.clear();
-                      });
-                    },
-                    itemPrefixBuilder: LocationDataService.getCountryFlag,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: LocationAutocompleteField(
-                    controller: _cityController,
-                    hint: 'City',
-                    optionsBuilder: (textEditingValue) {
-                      return LocationDataService.getCities(
-                        _countryController.text, 
-                        _stateController.text, 
-                        textEditingValue.text
-                      );
-                    },
-                    onSelected: (String selection) {
-                      setState(() {
-                        _cityController.text = selection;
-                      });
-                    },
-                  ),
-                ),
-              ],
+            // 1. Country
+            LocationAutocompleteField(
+              controller: _countryController,
+              hint: 'Country',
+              optionsBuilder: (textEditingValue) {
+                return LocationDataService.getCountries(textEditingValue.text);
+              },
+              onSelected: (String selection) {
+                setState(() {
+                  _countryController.text = selection;
+                  _stateController.clear();
+                  _cityController.clear();
+                });
+              },
+              itemPrefixBuilder: LocationDataService.getCountryFlag,
             ),
             const SizedBox(height: 12),
+
+            // 2. State / Province
             LocationAutocompleteField(
               controller: _stateController,
-              hint: 'State/Province (Optional)',
+              hint: 'State / Province (Optional)',
               optionsBuilder: (textEditingValue) {
                 return LocationDataService.getStates(
-                  _countryController.text, 
-                  textEditingValue.text
+                  _countryController.text,
+                  textEditingValue.text,
                 );
               },
               onSelected: (String selection) {
                 setState(() {
                   _stateController.text = selection;
-                  _cityController.clear();
+                  _cityController.clear(); // City must be re-selected after state changes
+                });
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // 3. City  (depends on country + optionally state)
+            LocationAutocompleteField(
+              controller: _cityController,
+              hint: 'City',
+              optionsBuilder: (textEditingValue) {
+                return LocationDataService.getCities(
+                  _countryController.text,
+                  _stateController.text,
+                  textEditingValue.text,
+                );
+              },
+              onSelected: (String selection) {
+                setState(() {
+                  _cityController.text = selection;
                 });
               },
             ),
@@ -300,14 +315,7 @@ class _FilterScreenState extends State<FilterScreen> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: () {
-                  context.read<PostProvider>().loadPosts(
-                    category: selectedCategory == 'All' ? null : selectedCategory,
-                    country: _countryController.text.trim(),
-                    city: _cityController.text.trim(),
-                  );
-                  Navigator.pop(context);
-                },
+                onPressed: _applyFilters,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0A3D91),
                   shape: RoundedRectangleBorder(
@@ -321,33 +329,6 @@ class _FilterScreenState extends State<FilterScreen> {
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Advanced Button
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: OutlinedButton(
-                onPressed: () {
-                  // TODO: Advanced filters
-                },
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFF0A3D91)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Advanced',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF0A3D91),
                   ),
                 ),
               ),

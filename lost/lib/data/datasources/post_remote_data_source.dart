@@ -40,6 +40,7 @@ abstract class PostRemoteDataSource {
   });
   Future<PostModel> updatePost(PostModel post);
   Future<void> deletePost(String postId);
+  Future<void> updatePostStatus(String postId, String status);
 }
 
 /// Implementation of PostRemoteDataSource
@@ -201,6 +202,18 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
       await apiClient.delete('${ApiConstants.postDetailEndpoint}/$postId');
     } catch (e) {
       throw ServerException('Failed to delete post: $e');
+    }
+  }
+
+  @override
+  Future<void> updatePostStatus(String postId, String status) async {
+    try {
+      await apiClient.patch(
+        '${ApiConstants.postDetailEndpoint}/$postId/status',
+        body: {'status': status},
+      );
+    } catch (e) {
+      throw ServerException('Failed to update post status: $e');
     }
   }
 }

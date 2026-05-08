@@ -168,6 +168,7 @@ class MatchingService {
                     return {
                         ...post.toJSON(),
                         similarity_score: Math.round(match.score * 100) / 100,
+                        match_percentage: Math.round(match.score * 100),
                         distance_km: post.dataValues.distance_km || null
                     };
                 })

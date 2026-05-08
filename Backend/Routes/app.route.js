@@ -7,6 +7,7 @@ const MatchingRoute = require('./matching.route');
 const ContactReqRoute = require('./contactReq.route');
 const ChatRoute = require('./chat.route');
 const ReportRoute = require('./report.route');
+const NotificationRoute = require('./notification.route');
 const response = require('../utils/response.util');
 
 Router.use('/user',userRoute);
@@ -16,6 +17,7 @@ Router.use('/match', MatchingRoute);
 Router.use('/contact-request', ContactReqRoute);
 Router.use('/chat', ChatRoute);
 Router.use('/report', ReportRoute);
+Router.use('/notification', NotificationRoute);
 Router.get('/status', (req, res) => {
     return response.Success(res, 'API working correctly', { status: 'ok' }, 200);
 });

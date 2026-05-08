@@ -1,4 +1,4 @@
-const PostService = require('../services/post.service');
+const PostService = require('../services/Post.service');
 const response = require('../utils/response.util');
 
 class PostController {
@@ -15,7 +15,12 @@ class PostController {
                 return response.ErrorResponse(res, result.message, null, 400);
             }
             
-            return response.Success(res, result.message, result.data, 201);
+            return res.status(201).json({
+                success: true,
+                message: result.message,
+                data: result.data,
+                matches: result.matches
+            });
         } catch (error) {
             console.error('Error creating post:', error);
             return response.ErrorResponse(res, error.message, null, 400);

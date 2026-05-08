@@ -56,7 +56,7 @@ class PostCard extends StatelessWidget {
             'title': post.title,
             'category': post.category,
             'timeAgo': _getTimeAgo(),
-            'posterName': 'User',
+            'posterName': post.ownerName ?? 'Unknown User',
             'isVerified': false,
             'dateLost':
                 '${post.createdAt.month}/${post.createdAt.day}/${post.createdAt.year}',

@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/finder_colors.dart';
+import '../../core/network/api_client.dart';
+import '../../core/services/auth_service.dart';
+import '../../core/constants/api_constants.dart';
+import '../providers/user_provider.dart';
 
 /// Settings Screen
 class SettingsScreen extends StatefulWidget {
@@ -11,6 +16,50 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool notificationsEnabled = true;
+  bool _checkingVerification = false;
+
+  Future<void> _handleVerifyAccount() async {
+    setState(() => _checkingVerification = true);
+    try {
+      final apiClient = ApiClient(tokenProvider: AuthService.instance.getIdToken);
+      final response = await apiClient.get(ApiConstants.verificationStatusEndpoint);
+      final status = (response['data']?['status'] as String?) ?? 'not_submitted';
+      if (!mounted) return;
+      setState(() => _checkingVerification = false);
+      if (status == 'approved') {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Row(children: [
+              Icon(Icons.verified, color: Colors.green, size: 24),
+              SizedBox(width: 8),
+              Text('Already Verified'),
+            ]),
+            content: const Text('Your account is already verified. You have full access to all features.'),
+            actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK', style: TextStyle(color: FinderColors.primaryBlue)))],
+          ),
+        );
+      } else if (status == 'pending') {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Row(children: [
+              Icon(Icons.hourglass_empty, color: Colors.orange, size: 24),
+              SizedBox(width: 8),
+              Text('Under Review'),
+            ]),
+            content: const Text('Your verification documents are being reviewed. This usually takes 24-48 hours.'),
+            actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK', style: TextStyle(color: FinderColors.primaryBlue)))],
+          ),
+        );
+      } else {
+        Navigator.pushNamed(context, '/privacy-policy', arguments: {'isFromOnboarding': true});
+      }
+    } catch (_) {
+      setState(() => _checkingVerification = false);
+      if (mounted) Navigator.pushNamed(context, '/privacy-policy', arguments: {'isFromOnboarding': true});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,32 +163,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 const SizedBox(height: 16),
 
-                // My Posts
-                _buildMenuItem(
-                  icon: Icons.grid_view_outlined,
-                  iconColor: FinderColors.primaryBlue,
-                  title: 'My Posts',
-                  subtitle: 'Manage your listings',
-                  onTap: () {
-                    Navigator.pushNamed(context, '/my-posts');
-                  },
-                ),
-
-                const SizedBox(height: 16),
-
                 // Verify Account
                 _buildMenuItem(
                   icon: Icons.verified_user_outlined,
                   iconColor: FinderColors.primaryBlue,
                   title: 'Verify Account',
                   subtitle: 'Complete KYC verification',
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      '/privacy-policy',
-                      arguments: {'isFromOnboarding': true},
-                    );
-                  },
+                  onTap: _checkingVerification ? null : _handleVerifyAccount,
+                  trailingWidget: _checkingVerification
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: FinderColors.primaryBlue))
+                      : null,
                 ),
 
                 const SizedBox(height: 32),
@@ -167,22 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
 
-                const SizedBox(height: 16),
 
-                // Privacy Policy
-                _buildMenuItem(
-                  icon: Icons.shield_outlined,
-                  iconColor: FinderColors.primaryBlue,
-                  title: 'Privacy Policy',
-                  subtitle: 'Read our data policy and terms',
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      '/privacy-policy',
-                      arguments: {'isFromOnboarding': false},
-                    );
-                  },
-                ),
 
                 const SizedBox(height: 32),
 
@@ -215,18 +233,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Language
-                _buildMenuItem(
-                  icon: Icons.language,
-                  iconColor: FinderColors.primaryBlue,
-                  title: 'Language',
-                  subtitle: 'English',
-                  onTap: () {
-                    // TODO: Language selection
-                  },
-                ),
 
-                const SizedBox(height: 16),
 
                 // Support
                 _buildMenuItem(
@@ -262,6 +269,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildProfilePreviewCard() {
+    final userProvider = context.watch<UserProvider>();
+    final firebaseUser = AuthService.instance.currentUser;
+    final userName = userProvider.backendUser?.name ?? firebaseUser?.displayName ?? 'User';
+    final userEmail = userProvider.backendUser?.email ?? firebaseUser?.email ?? '';
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -304,9 +315,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Joly Marwan',
-                  style: TextStyle(
+                Text(
+                  userName,
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -314,7 +325,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Joly151@gmail.com',
+                  userEmail,
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.white.withOpacity(0.8),
@@ -333,7 +344,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required Color iconColor,
     required String title,
     required String subtitle,
-    required VoidCallback onTap,
+    required VoidCallback? onTap,
     Widget? trailingWidget,
   }) {
     return InkWell(

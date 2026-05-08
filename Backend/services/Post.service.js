@@ -51,10 +51,32 @@ class PostService {
                 // TODO: Add to retry queue
             });
 
+            // Generate matches synchronously to return to user
+            let matches = [];
+            try {
+                const MatchingService = require('./matching.service');
+                const matchResult = await MatchingService.checkMatch(
+                    postData.image_url,
+                    postData.post_type,
+                    postData.category,
+                    postData.country,
+                    postData.state,
+                    postData.city,
+                    postData.latitude,
+                    postData.longitude
+                );
+                if (matchResult.success) {
+                    matches = matchResult.data;
+                }
+            } catch (err) {
+                console.error("Failed to generate matches during post creation:", err);
+            }
+
             return {
                 success: true,
                 message: 'Post created successfully',
-                data: newPost
+                data: newPost,
+                matches: matches
             };
         } catch (err) {
             throw err;
@@ -73,21 +95,28 @@ class PostService {
             const embedding = await AIService.generateEmbedding(post.image_url);
             
             // Store vector in Pinecone
+            // NOTE: Pinecone forbids null metadata values — only include lat/lng if numeric
+            const pineconeMetadata = {
+                user_id: post.user_id,
+                post_type: post.post_type,
+                category: post.category || '',
+                country: post.country || '',
+                state: post.state || '',
+                city: post.city || '',
+                status: post.status,
+                created_at: post.created_at.toISOString()
+            };
+
+            // Only add coordinates if they are valid numbers
+            if (post.latitude != null && post.longitude != null) {
+                pineconeMetadata.lat = parseFloat(post.latitude);
+                pineconeMetadata.lng = parseFloat(post.longitude);
+            }
+
             await pineconeIndex.upsert([{
                 id: post.id,
                 values: embedding,
-                metadata: {
-                    user_id: post.user_id,
-                    post_type: post.post_type,
-                    category: post.category || '',
-                    country: post.country,
-                    state: post.state || '',
-                    city: post.city || '',
-                    lat: post.latitude || null,
-                    lng: post.longitude || null,
-                    status: post.status,
-                    created_at: post.created_at.toISOString()
-                }
+                metadata: pineconeMetadata
             }]);
 
             console.log(`Vector stored in Pinecone: ${post.id}`);

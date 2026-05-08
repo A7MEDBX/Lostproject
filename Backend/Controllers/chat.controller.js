@@ -116,6 +116,23 @@ class ChatController {
     }
 
     /**
+     * Upload an image for a chat message
+     */
+    async uploadImage(req, res) {
+        try {
+            // uploadToCloudinary sets req.body.image_url
+            if (!req.body.image_url) {
+                return response.ErrorResponse(res, 'Image upload failed', null, 400);
+            }
+            
+            return response.Success(res, 'Image uploaded successfully', { url: req.body.image_url }, 200);
+        } catch (error) {
+            console.error('Error in uploadImage:', error);
+            return response.ErrorResponse(res, 'Server Error', error.message, 500);
+        }
+    }
+
+    /**
      * Get messages for a chat
      */
     async getChatMessages(req, res) {

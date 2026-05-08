@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/finder_colors.dart';
 
 class SupportScreen extends StatefulWidget {
@@ -39,6 +40,7 @@ class _SupportScreenState extends State<SupportScreen> {
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(() => setState(() {}));
     _fetchMyRequests();
   }
 
@@ -193,7 +195,33 @@ class _SupportScreenState extends State<SupportScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              ..._faqs.map((faq) => _buildFaqItem(faq['question']!, faq['answer']!)),
+              // Filtered FAQ items
+              ...() {
+                final q = _searchController.text.toLowerCase();
+                final filtered = q.isEmpty
+                    ? _faqs
+                    : _faqs
+                        .where((faq) =>
+                            faq['question']!.toLowerCase().contains(q) ||
+                            faq['answer']!.toLowerCase().contains(q))
+                        .toList();
+                if (filtered.isEmpty) {
+                  return [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Center(
+                        child: Text(
+                          'No results for "${_searchController.text}"',
+                          style: TextStyle(color: Colors.grey[500]),
+                        ),
+                      ),
+                    ),
+                  ];
+                }
+                return filtered
+                    .map((faq) => _buildFaqItem(faq['question']!, faq['answer']!))
+                    .toList();
+              }(),
 
               const SizedBox(height: 32),
 
@@ -247,14 +275,21 @@ class _SupportScreenState extends State<SupportScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Live Chat coming soon!')),
-                              );
+                            onPressed: () async {
+                              final uri = Uri(scheme: 'tel', path: '+1234567890');
+                              if (await canLaunchUrl(uri)) {
+                                await launchUrl(uri);
+                              } else {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Cannot open phone dialer')),
+                                  );
+                                }
+                              }
                             },
-                            icon: const Icon(Icons.chat_outlined, color: FinderColors.primaryBlue, size: 20),
+                            icon: const Icon(Icons.phone_outlined, color: FinderColors.primaryBlue, size: 20),
                             label: const Text(
-                              'Live Chat',
+                              'Call',
                               style: TextStyle(color: FinderColors.primaryBlue, fontWeight: FontWeight.w600),
                             ),
                             style: OutlinedButton.styleFrom(

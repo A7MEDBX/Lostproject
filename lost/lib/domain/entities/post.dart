@@ -13,6 +13,8 @@ class Post {
   final double? latitude;
   final double? longitude;
   final String? location;
+  final String? ownerName; // Added ownerName
+  final String status; // 'active', 'matched', 'resolved', 'closed'
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -30,6 +32,8 @@ class Post {
     this.latitude,
     this.longitude,
     this.location,
+    this.ownerName,
+    this.status = 'active',
     required this.createdAt,
     this.updatedAt,
   });
@@ -48,6 +52,8 @@ class Post {
     double? latitude,
     double? longitude,
     String? location,
+    String? ownerName,
+    String? status,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -65,6 +71,8 @@ class Post {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       location: location ?? this.location,
+      ownerName: ownerName ?? this.ownerName,
+      status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

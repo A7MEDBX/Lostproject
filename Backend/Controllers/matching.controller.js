@@ -40,7 +40,10 @@ class MatchingController {
                 return response.ErrorResponse(res, result.message, null, 400);
             }
             
-            return response.Success(res, result.message, result.data, 200, result.metadata);
+            return response.Success(res, result.message, {
+                matches: result.data,
+                uploaded_image_url: image_url
+            }, 200, result.metadata);
 
         } catch (error) {
             console.error('Error finding matches:', error);

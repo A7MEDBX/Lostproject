@@ -54,7 +54,7 @@ const verfyFirebaseToken = async (req, res, next) => {
 
         next();
     } catch (error) {
-        console.error('Token verification error:', error);
+        console.error('Token verification error :', error);
         return response.ErrorResponse(res, 'Invalid or expired token', error.message, 401);
     }
 };

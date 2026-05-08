@@ -21,7 +21,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _addressController = TextEditingController();
 
   String _selectedCountry = 'United States';
-  String _selectedGender = 'Female';
+  String _selectedGender = 'Male';
   bool _isLoading = false;
 
   @override
@@ -375,7 +375,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       Icons.keyboard_arrow_down,
                                       color: Colors.grey,
                                     ),
-                                    items: ['Female', 'Male', 'Other'].map((
+                                    items: ['Male', 'Female'].map((
                                       String value,
                                     ) {
                                       return DropdownMenuItem<String>(
@@ -446,7 +446,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   );
 
                                   // Update backend profile
-                                  await apiClient.patch(
+                                  await apiClient.put(
                                     ApiConstants.userProfileEndpoint,
                                     body: {
                                       'name': _nameController.text.trim(),

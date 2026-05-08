@@ -186,8 +186,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         print('   Type: ${_selectedType.toLowerCase()}');
         print('   Category: $_selectedCategory');
 
-        // Call backend API
-        final result = await _dataSource.createPostWithMatching(
+        // Call backend API to find matches FIRST
+        final result = await _dataSource.findMatches(
           image: _selectedImage!,
           title: _titleController.text,
           description: _descriptionController.text,
@@ -201,8 +201,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         print('✅ Backend response received: $result');
         setState(() => _isLoading = false);
 
-        final postData = result['data'] as Map<String, dynamic>?;
         final matches = (result['matches'] as List<dynamic>?) ?? const [];
+        final uploadedImageUrl = result['uploaded_image_url'] as String?;
 
         // Navigate to AI matching results with real data from backend
         if (mounted) {
@@ -210,18 +210,18 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             context,
             '/ai-matching-results',
             arguments: {
-              'postId': postData?['id'],
               'matchesCount': matches.length,
               'matches': matches,
               'success': result['success'] ?? true,
-              // Include user's post data for preview
+              'uploadedImageUrl': uploadedImageUrl,
+              // Include user's post data for preview and final creation
               'title': _titleController.text,
               'description': _descriptionController.text,
               'category': _selectedCategory,
               'country': _countryController.text,
               'state': _stateController.text,
               'city': _cityController.text,
-              'postType': _selectedType,
+              'postType': _selectedType.toLowerCase(),
               'imageUrl': _selectedImage?.path ?? '',
             },
           );

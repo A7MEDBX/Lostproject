@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../../core/constants/finder_colors.dart';
+import '../../core/network/api_client.dart';
+import '../../data/datasources/ai_matching_remote_data_source.dart';
+import 'package:lost/core/services/auth_service.dart';
 
 enum MatchingState { loading, results, empty }
 
 class MatchResult {
   final String id;
+  final String userId;
   final String title;
   final String description;
   final String imageUrl;
@@ -19,6 +23,7 @@ class MatchResult {
 
   MatchResult({
     required this.id,
+    required this.userId,
     required this.title,
     required this.description,
     required this.imageUrl,
@@ -52,6 +57,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
   final List<MatchResult> _mockResults = [
     MatchResult(
       id: '1',
+      userId: 'mock-user-1',
       title: 'Black Leather Wallet',
       description:
           'Found near the park bench. Has a small scratch on the front corner.',
@@ -67,6 +73,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
     ),
     MatchResult(
       id: '2',
+      userId: 'mock-user-2',
       title: 'Leather Card Holder',
       description: 'Small black card holder found on subway.',
       imageUrl:
@@ -81,6 +88,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
     ),
     MatchResult(
       id: '3',
+      userId: 'mock-user-3',
       title: 'Black Pouch',
       description: 'Found keys in a black pouch.',
       imageUrl:
@@ -107,6 +115,61 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
     _processResults();
   }
 
+  bool _isCreatingPost = false;
+
+  Future<void> _createPost() async {
+    if (widget.postData == null || widget.postData!['uploadedImageUrl'] == null) return;
+
+    setState(() => _isCreatingPost = true);
+
+    try {
+      final apiClient = ApiClient(tokenProvider: AuthService.instance.getIdToken);
+      final dataSource = AIMatchingRemoteDataSource(
+        client: apiClient.client,
+        tokenProvider: AuthService.instance.getIdToken,
+      );
+
+      final result = await dataSource.createPostWithUrl(
+        imageUrl: widget.postData!['uploadedImageUrl'],
+        title: widget.postData!['title'],
+        description: widget.postData!['description'],
+        category: widget.postData!['category'],
+        country: widget.postData!['country'],
+        state: widget.postData!['state'],
+        city: widget.postData!['city'],
+        postType: widget.postData!['postType'],
+      );
+
+      if (mounted) {
+        setState(() => _isCreatingPost = false);
+        // Replace current screen with post detail
+        final postData = result['data'] as Map<String, dynamic>?;
+        Navigator.pushReplacementNamed(
+          context,
+          '/post-detail',
+          arguments: {
+            'postId': postData?['id'],
+            'title': widget.postData!['title'],
+            'description': widget.postData!['description'],
+            'category': widget.postData!['category'],
+            'country': widget.postData!['country'],
+            'city': widget.postData!['city'],
+            'postType': widget.postData!['postType'],
+            'imageUrl': widget.postData!['uploadedImageUrl'],
+            'status': 'active',
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isCreatingPost = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to create post: $e')),
+        );
+      }
+    }
+  }
+
   void _processResults() {
     // Simulate AI processing for 2 seconds
     Timer(const Duration(seconds: 2), () {
@@ -119,6 +182,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
             _results = matchesData.map((match) {
               return MatchResult(
                 id: match['id'] ?? '',
+                userId: match['user_id'] ?? '',
                 title: match['title'] ?? 'Unknown Item',
                 description: match['description'] ?? '',
                 imageUrl: match['image_url'] ?? '',
@@ -429,7 +493,54 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                     }
                   },
                 ),
-                const SizedBox(height: 80),
+                const SizedBox(height: 30),
+                
+                // Create Post Action
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'None of these look like your item?',
+                        style: TextStyle(
+                          color: Colors.black87,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: _isCreatingPost ? null : _createPost,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0A3D91),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: _isCreatingPost
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                )
+                              : const Text(
+                                  'Create Post Anyway',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 40),
               ],
             ),
           ),
@@ -608,30 +719,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(
-                            context,
-                            '/post-detail',
-                            arguments: {
-                              'userId': result.id, // Add userId
-                              'title': result.title,
-                              'category': 'Accessories',
-                              'timeAgo': result.timeAgo,
-                              'posterName': result.finderName,
-                              'isVerified': result.isVerified,
-                              'dateLost': 'Oct 24, 2023',
-                              'refId': '#8293-LM',
-                              'description': result.description,
-                              'location': result.location,
-                              'distance': result.distance,
-                              'imageUrl': result.imageUrl,
-                              'status': result.status,
-                              'matchPercentage': result.matchPercentage,
-                              'latitude': 40.7829,
-                              'longitude': -73.9654,
-                            },
-                          );
-                        },
+                        onPressed: () => _navigateToPostDetail(result),
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(color: FinderColors.lightBrown),
                           shape: RoundedRectangleBorder(
@@ -837,7 +925,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () {},
+                        onPressed: () => _navigateToPostDetail(result),
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Color(0xFF0A3D91)),
                           shape: RoundedRectangleBorder(
@@ -1006,7 +1094,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () => _navigateToPostDetail(result),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0A3D91),
                       shape: RoundedRectangleBorder(
@@ -1164,14 +1252,14 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
-                            Icons.check,
+                            Icons.info_outline,
                             color: Colors.white,
                             size: 24,
                           ),
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'Your post has been published',
+                          'Ready to create your post?',
                           style: TextStyle(
                             color: Colors.grey[800],
                             fontSize: 14,
@@ -1180,7 +1268,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'We will notify you immediately if a match is found.',
+                          'Since no matches were found, you can now publish your post. We will notify you immediately if a match is found later.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.grey[600],
@@ -1193,18 +1281,12 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                   ),
                   const SizedBox(height: 40),
 
-                  // View My Post button
+                  // Create Post button
                   SizedBox(
                     width: 200,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(
-                          context,
-                          '/post-detail',
-                          arguments: widget.postData ?? {},
-                        );
-                      },
+                      onPressed: _isCreatingPost ? null : _createPost,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF0A3D91),
                         shape: RoundedRectangleBorder(
@@ -1212,14 +1294,20 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                         ),
                         elevation: 0,
                       ),
-                      child: const Text(
-                        'View my post',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
+                      child: _isCreatingPost
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            )
+                          : const Text(
+                              'Create Post',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
                     ),
                   ),
                 ],
@@ -1228,6 +1316,28 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
           ),
         ),
       ],
+    );
+  }
+
+  void _navigateToPostDetail(MatchResult result) {
+    Navigator.pushNamed(
+      context,
+      '/post-detail',
+      arguments: {
+        'postId': result.id,
+        'userId': result.userId,
+        'title': result.title,
+        'category': 'Unknown',
+        'timeAgo': result.timeAgo,
+        'posterName': result.finderName,
+        'isVerified': result.isVerified,
+        'description': result.description,
+        'location': result.location,
+        'distance': result.distance,
+        'imageUrl': result.imageUrl,
+        'status': result.status,
+        'matchPercentage': result.matchPercentage,
+      },
     );
   }
 

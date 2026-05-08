@@ -58,6 +58,17 @@ Router.post('/:chatId/send',
     chatController.sendMessage);
 
 /**
+ * @route   POST /api/v1/chat/upload-image
+ * @desc    Upload an image for chat
+ * @access  Private (requires verified identity)
+ */
+const { uploadMiddleware, uploadToCloudinary } = require('../Middlewares/multer.middleware');
+Router.post('/upload-image',
+    uploadMiddleware,
+    uploadToCloudinary,
+    chatController.uploadImage);
+
+/**
  * @route   GET /api/v1/chat/with/:otherUserId
  * @desc    Get chat between current user and another user
  * @access  Private (requires verified identity)

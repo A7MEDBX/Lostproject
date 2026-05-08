@@ -35,6 +35,11 @@ class ApiConstants {
   static const String createReportEndpoint = '/report/create';
   static const String reportsEndpoint = '/report';
 
+  // Notifications
+  static const String notificationsEndpoint = '/notification';
+  static const String notificationReadAllEndpoint = '/notification/read-all';
+  static const String notificationUnreadCountEndpoint = '/notification/unread-count';
+
   // Health
   static const String healthEndpoint = '/health';
 

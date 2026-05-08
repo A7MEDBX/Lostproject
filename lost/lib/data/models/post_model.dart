@@ -18,6 +18,8 @@ class PostModel extends Post {
     super.latitude,
     super.longitude,
     super.location,
+    super.ownerName,
+    super.status = 'active',
     required super.createdAt,
     super.updatedAt,
   });
@@ -37,7 +39,12 @@ class PostModel extends Post {
       city: json['city'] as String?,
       latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
       longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
-      location: json['location'] as String?,
+      location: json['location'] as String? ?? 
+          [json['city'], json['state'], json['country']]
+              .where((e) => e != null && e.toString().isNotEmpty)
+              .join(', '),
+      ownerName: (json['owner'] as Map<String, dynamic>?)?['name'] as String? ?? 'Unknown User',
+      status: json['status'] as String? ?? 'active',
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
@@ -69,6 +76,8 @@ class PostModel extends Post {
       'latitude': latitude,
       'longitude': longitude,
       'location': location,
+      'ownerName': ownerName,
+      'status': status,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };
@@ -90,6 +99,8 @@ class PostModel extends Post {
       latitude: post.latitude,
       longitude: post.longitude,
       location: post.location,
+      ownerName: post.ownerName,
+      status: post.status,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
     );

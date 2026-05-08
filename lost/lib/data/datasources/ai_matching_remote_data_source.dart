@@ -35,8 +35,8 @@ class AIMatchingRemoteDataSource {
     }
   }
 
-  /// Create post with AI matching
-  Future<Map<String, dynamic>> createPostWithMatching({
+  /// Find matches before creating post
+  Future<Map<String, dynamic>> findMatches({
     required File image,
     required String title,
     required String description,
@@ -50,7 +50,7 @@ class AIMatchingRemoteDataSource {
   }) async {
     try {
         final url =
-          '${ApiConstants.baseUrl}${ApiConstants.createPostEndpoint}';
+          '${ApiConstants.baseUrl}${ApiConstants.searchEndpoint}';
       print('🌐 API URL: $url');
 
       // Create multipart request
@@ -67,13 +67,15 @@ class AIMatchingRemoteDataSource {
       request.files.add(imageFile);
 
       // Add form fields
-      request.fields['title'] = title;
-      request.fields['description'] = description;
+      request.fields['type'] = postType;
+      // Note: backend matching controller uses 'type' instead of 'post_type'
+      if (title.isNotEmpty) request.fields['title'] = title;
+      if (description.isNotEmpty) request.fields['description'] = description;
       request.fields['category'] = category;
       request.fields['country'] = country;
       request.fields['state'] = state;
       request.fields['city'] = city;
-      request.fields['post_type'] = postType;
+      request.fields['type'] = postType;
 
       if (latitude != null) {
         request.fields['latitude'] = latitude.toString();
@@ -92,7 +94,63 @@ class AIMatchingRemoteDataSource {
       // Get response
       final response = await http.Response.fromStream(streamedResponse);
 
-      if (response.statusCode == 201) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('✅ Success! Response body: ${response.body}');
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        print('❌ Error response: ${response.body}');
+        final error = json.decode(response.body) as Map<String, dynamic>;
+        throw Exception(error['message'] ?? error['error'] ?? 'Failed to find matches');
+      }
+    } on SocketException {
+      throw Exception('No internet connection. Please check your network.');
+    } on TimeoutException {
+      throw Exception('Request timeout. Please try again.');
+    } catch (e) {
+      throw Exception('Error: ${e.toString()}');
+    }
+  }
+
+  /// Create post using an already uploaded image URL
+  Future<Map<String, dynamic>> createPostWithUrl({
+    required String imageUrl,
+    required String title,
+    required String description,
+    required String category,
+    required String country,
+    required String state,
+    required String city,
+    required String postType,
+    double? latitude,
+    double? longitude,
+  }) async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.createPostEndpoint}');
+      
+      final headers = await _buildAuthHeaders();
+      headers['Content-Type'] = 'application/json';
+
+      final body = <String, dynamic>{
+        'image_url': imageUrl,
+        'title': title,
+        'country': country,
+        'city': city,
+        'post_type': postType,
+      };
+      if (description.isNotEmpty) body['description'] = description;
+      if (category.isNotEmpty) body['category'] = category;
+      if (state.isNotEmpty) body['state'] = state;
+      if (latitude != null) body['latitude'] = latitude;
+      if (longitude != null) body['longitude'] = longitude;
+
+      print('📤 Sending request to backend (Create Post)...');
+      final response = await client.post(
+        url,
+        headers: headers,
+        body: json.encode(body),
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
         print('✅ Success! Response body: ${response.body}');
         return json.decode(response.body) as Map<String, dynamic>;
       } else {

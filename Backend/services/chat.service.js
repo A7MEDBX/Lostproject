@@ -53,16 +53,34 @@ class ChatService {
     }
 
     /**
-     * Get all chats for a user
+     * Get all chats for a user — returns flat objects with other_user_name resolved
      */
     async getUserChats(userId, limit = 10, offset = 0) {
         try {
             const result = await ChatRepo.getUserChats(userId, limit, offset);
-            
+
+            // Map each chat: determine which user is "the other one"
+            const mapped = result.rows.map(chat => {
+                const raw = chat.toJSON ? chat.toJSON() : chat;
+                const isUser1 = raw.user_1 === userId;
+                const otherUser = isUser1 ? raw.secondUser : raw.firstUser;
+
+                return {
+                    id: raw.id,
+                    other_user_id: otherUser?.id || null,
+                    other_user_name: otherUser?.name || 'Unknown',
+                    other_user_email: otherUser?.email || null,
+                    last_message: raw.last_message || null,
+                    updated_at: raw.updated_at || raw.created_at,
+                    unread_count: raw.unread_count || 0,
+                    is_online: false, // real-time status handled by socket.io
+                };
+            });
+
             return {
                 success: true,
                 message: 'Chats retrieved successfully',
-                data: result.rows,
+                data: mapped,
                 pagination: {
                     total: result.count,
                     limit,

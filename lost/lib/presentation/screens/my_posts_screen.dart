@@ -19,10 +19,19 @@ class _MyPostsScreenState extends State<MyPostsScreen>
   List<Post> _allUserPosts = [];
   bool _isLoading = true;
 
+  late final PostRemoteDataSourceImpl _dataSource;
+  String _searchQuery = '';
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _dataSource = PostRemoteDataSourceImpl(
+      apiClient: ApiClient(tokenProvider: AuthService.instance.getIdToken),
+    );
+    _searchController.addListener(() {
+      setState(() => _searchQuery = _searchController.text.toLowerCase());
+    });
     _loadUserPosts();
   }
 
@@ -31,9 +40,8 @@ class _MyPostsScreenState extends State<MyPostsScreen>
       final apiClient = ApiClient(
         tokenProvider: AuthService.instance.getIdToken,
       );
-      final dataSource = PostRemoteDataSourceImpl(apiClient: apiClient);
-      // /post/my-posts identifies the user via the Firebase bearer token.
-      final posts = await dataSource.getUserPosts('');
+      _dataSource = PostRemoteDataSourceImpl(apiClient: apiClient);
+      final posts = await _dataSource.getUserPosts('');
       if (mounted) {
         setState(() {
           _allUserPosts = posts;
@@ -55,6 +63,32 @@ class _MyPostsScreenState extends State<MyPostsScreen>
     _tabController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _markResolved(String postId) async {
+    try {
+      await _dataSource.updatePostStatus(postId, 'resolved');
+      if (mounted) {
+        setState(() {
+          final idx = _allUserPosts.indexWhere((p) => p.id == postId);
+          if (idx != -1) {
+            _allUserPosts[idx] = _allUserPosts[idx].copyWith(status: 'resolved');
+          }
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Post marked as resolved ✓'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update post: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   @override
@@ -95,14 +129,7 @@ class _MyPostsScreenState extends State<MyPostsScreen>
                       textAlign: TextAlign.center,
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.more_vert,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                    onPressed: () {},
-                  ),
+                  const SizedBox(width: 48), // balance the back button
                 ],
               ),
             ),
@@ -189,7 +216,11 @@ class _MyPostsScreenState extends State<MyPostsScreen>
 
   Widget _buildPostsList(String type) {
     if (_isLoading) return const Center(child: CircularProgressIndicator(color: Color(0xFF0A3D91)));
-    final posts = _allUserPosts.where((p) => p.postType == type).toList();
+    final posts = _allUserPosts
+        .where((p) => p.postType == type)
+        .where((p) => _searchQuery.isEmpty ||
+            p.title.toLowerCase().contains(_searchQuery))
+        .toList();
     if (posts.isEmpty) {
       return Center(
         child: Column(
@@ -197,7 +228,12 @@ class _MyPostsScreenState extends State<MyPostsScreen>
           children: [
             Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
-            Text('No ${type == 'lost' ? 'lost' : 'found'} posts yet', style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+            Text(
+              _searchQuery.isEmpty
+                  ? 'No ${type == 'lost' ? 'lost' : 'found'} posts yet'
+                  : 'No results for "$_searchQuery"',
+              style: TextStyle(color: Colors.grey[600], fontSize: 16),
+            ),
           ],
         ),
       );
@@ -213,8 +249,7 @@ class _MyPostsScreenState extends State<MyPostsScreen>
   }
 
   Widget _buildPostCardFromEntity(Post post) {
-    final bool isResolved = post.updatedAt != null &&
-        post.updatedAt!.isBefore(DateTime.now().subtract(const Duration(days: 10)));
+    final bool isResolved = post.status == 'resolved' || post.status == 'closed';
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
@@ -283,14 +318,22 @@ class _MyPostsScreenState extends State<MyPostsScreen>
             ])
           else
             Row(children: [
-              OutlinedButton.icon(onPressed: () {},
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/create-post',
+                    arguments: {'editPost': post},
+                  );
+                },
                 icon: const Icon(Icons.edit_outlined, size: 18),
                 label: const Text('Edit'),
                 style: OutlinedButton.styleFrom(foregroundColor: Colors.grey[700],
                   side: BorderSide(color: Colors.grey[400]!), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10))),
               const SizedBox(width: 8),
-              Expanded(child: ElevatedButton.icon(onPressed: () {},
+              Expanded(child: ElevatedButton.icon(
+                onPressed: () => _markResolved(post.id),
                 icon: const Icon(Icons.check_circle_outline, size: 18),
                 label: const Text('Mark Resolved'),
                 style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0A3D91),

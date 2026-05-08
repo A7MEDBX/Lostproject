@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import '../../core/network/api_client.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/constants/api_constants.dart';
 import '../../data/datasources/chat_remote_data_source.dart';
 import '../../domain/entities/chat_message.dart';
 
@@ -164,7 +166,7 @@ class _ChatScreenState extends State<ChatScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Failed to send message. Please try again.'),
+            content: Text('Failed to send message: $e'),
             backgroundColor: Colors.red.shade700,
             action: SnackBarAction(
               label: 'Retry',
@@ -176,6 +178,57 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         );
       }
+    }
+  }
+
+  /// Pick an image from gallery and send it as a message (URL after upload)
+  Future<void> _pickAndSendImage() async {
+    if (widget.chatId == null) return;
+    final picker = ImagePicker();
+    final file = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 85,
+    );
+    if (file == null) return;
+
+    setState(() => _isSending = true);
+    try {
+      final token = await AuthService.instance.getIdToken();
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${ApiConstants.baseUrl}/chat/upload-image'),
+      );
+      request.headers['Authorization'] = 'Bearer $token';
+      request.files.add(await http.MultipartFile.fromPath('image', file.path));
+      final streamed = await request.send();
+      final resp = await http.Response.fromStream(streamed);
+
+      if (resp.statusCode == 200 || resp.statusCode == 201) {
+        final urlMatch = RegExp(r'"url"\s*:\s*"([^"]+)"').firstMatch(resp.body);
+        final imageUrl = urlMatch?.group(1) ?? '';
+        if (imageUrl.isNotEmpty) {
+          await _dataSource.sendMessage(
+            chatId: widget.chatId!,
+            senderId: _currentUserId,
+            message: imageUrl,
+          );
+          await _pollMessages();
+        }
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to upload image.'), backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSending = false);
     }
   }
 
@@ -359,7 +412,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             itemCount: _messages.length,
                             itemBuilder: (context, index) {
                               final msg = _messages[index];
-                              final isMine = msg.senderId == _currentUserId;
+                              final isMine = msg.senderId == _currentUserId || (widget.userId != null && msg.senderId != widget.userId);
                               return _buildMessageBubble(msg, isMine);
                             },
                           ),
@@ -406,7 +459,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 const SizedBox(width: 8),
                 GestureDetector(
-                  onTap: _hasText && !_isSending ? _sendMessage : null,
+                  onTap: _isSending
+                      ? null
+                      : (_hasText ? _sendMessage : _pickAndSendImage),
                   child: Container(
                     width: 50,
                     height: 50,
@@ -460,7 +515,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: isMine ? const Color(0xFF0A3D91) : Colors.grey[200],
                     borderRadius: BorderRadius.only(
@@ -470,18 +525,45 @@ class _ChatScreenState extends State<ChatScreen> {
                       bottomRight: Radius.circular(isMine ? 4 : 16),
                     ),
                   ),
-                  child: Text(
-                    message.message,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isMine ? Colors.white : Colors.black87,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      if (message.message.startsWith('http') && message.message.contains('res.cloudinary.com'))
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            message.message,
+                            width: 200,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return const SizedBox(
+                                height: 150,
+                                width: 200,
+                                child: Center(child: CircularProgressIndicator()),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 50),
+                          ),
+                        )
+                      else
+                        Text(
+                          message.message,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isMine ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _formatTime(message.timestamp),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: isMine ? Colors.white70 : Colors.grey[600],
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _formatTime(message.timestamp),
-                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                 ),
               ],
             ),

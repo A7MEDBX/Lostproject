@@ -13,14 +13,15 @@ class PostProvider with ChangeNotifier {
   List<Post> _posts = [];
   bool _isLoading = false;
   String? _errorMessage;
-
   bool _hasActiveFilters = false;
+  Map<String, String>? _activeFilters; // persists filter selections across refreshes
 
   // Getters
   List<Post> get posts => _posts;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get hasActiveFilters => _hasActiveFilters;
+  Map<String, String>? get activeFilters => _activeFilters;
 
   // Load all posts
   Future<void> loadPosts({
@@ -60,8 +61,37 @@ class PostProvider with ChangeNotifier {
       },
     );
   }
+  // Apply filters from the filter screen — persists the raw selections
+  Future<void> applyFilters({
+    required Map<String, String> filters,
+    String? category,
+    String? country,
+    String? state,
+    String? city,
+  }) async {
+    _activeFilters = filters;
+    await loadPosts(
+      category: category,
+      country: country,
+      city: city,
+    );
+  }
 
-  // Map failure to user-friendly message
+  // Re-apply last used filters (called on pull-to-refresh)
+  Future<void> refresh() async {
+    if (_activeFilters != null) {
+      final f = _activeFilters!;
+      await loadPosts(
+        category: f['category'] == 'All' ? null : f['category'],
+        country: f['country'],
+        city: f['city'],
+      );
+    } else {
+      await loadPosts();
+    }
+  }
+
+
   String _mapFailureToMessage(Failure failure) {
     if (failure is ServerFailure) {
       return 'Server error. Please try again later.';
