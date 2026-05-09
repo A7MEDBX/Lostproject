@@ -1,6 +1,6 @@
 /// API Configuration Constants
 class ApiConstants {
-  // Base URL - 10.0.2.2 is used for Android Emulator, 192.168.1.3 for physical device on local network
+  // Base URL - 10.0.2.2 is used for Android Emulator
   static const String baseUrl = 'http://192.168.1.3:3500/api/v1';
 
   // Auth/User Endpoints

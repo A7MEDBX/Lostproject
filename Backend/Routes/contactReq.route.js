@@ -10,6 +10,7 @@ const validate = require('../Middlewares/validation');
 router.use(verfyFirebaseToken);
 router.use(requireVerification);
 
+
 /**
  * @route   POST /api/v1/contact-request/send
  * @desc    Send a contact request to a post owner

@@ -42,10 +42,15 @@ class userdb {
     }
 
 
-        async edituser(userId, name){
+        async edituser(userId, data){
             try{
+                const updateFields = {};
+                if (data.name) updateFields.name = data.name;
+                if (data.phone) updateFields.phone_number = data.phone;
+                if (data.phone_number) updateFields.phone_number = data.phone_number;
+                
                 return await User.update(
-                    { name: name },
+                    updateFields,
                     { where: { id: userId } }
                 );
             } catch (error) {

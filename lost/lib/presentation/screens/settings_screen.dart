@@ -235,16 +235,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
 
 
-                // Support
-                _buildMenuItem(
-                  icon: Icons.help_outline,
-                  iconColor: FinderColors.primaryBlue,
-                  title: 'Support & Help',
-                  subtitle: 'Get assistance and view FAQs',
-                  onTap: () {
-                    Navigator.pushNamed(context, '/support');
-                  },
-                ),
+            
+              
 
                 const SizedBox(height: 16),
 

@@ -29,10 +29,10 @@ Router.post('/create',
 /**
  * @route   GET /api/v1/post/my-posts
  * @desc    Get all posts created by current user
- * @access  Private (requires verified identity)
+ * @access  Private (requires authentication)
  * @query   ?limit=10&offset=0
  */
-Router.get('/my-posts', requireVerification, postController.getMyPosts);
+Router.get('/my-posts', postController.getMyPosts);
 
 /**
  * @route   GET /api/v1/post

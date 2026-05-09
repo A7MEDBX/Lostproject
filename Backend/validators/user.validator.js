@@ -13,3 +13,15 @@ exports.createUserValidator = [
         .isEmail().withMessage('Invalid email format')
         .normalizeEmail()
 ];
+
+exports.updateUserValidator = [
+    body('name')
+        .notEmpty().withMessage('Name is required')
+        .trim()
+        .isLength({ min: 2, max: 100 }).withMessage('Name must be between 2 and 100 characters')
+        .matches(/^[a-zA-Z\s]+$/).withMessage('Name can only contain letters and spaces'),
+    
+    body('phone')
+        .optional()
+        .trim()
+];

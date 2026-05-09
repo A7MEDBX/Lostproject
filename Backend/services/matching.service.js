@@ -2,6 +2,8 @@ const postRepo = require('../Repository/post.repo');
 const AIService = require('../config/ai.config');
 const pineconeIndex = require('../config/pinecone.config');
 
+const MAX_DISTANCE_KM = 40; // 40km radius for local matching
+
 class MatchingService {
 
     /**
@@ -38,24 +40,10 @@ class MatchingService {
                 };
             }
 
-            if (!country) {
-                return {
-                    success: false,
-                    message: 'Country is required for location-based matching'
-                };
-            }
-
-            if (!city) {
-                return {
-                    success: false,
-                    message: 'City is required for location-based matching'
-                };
-            }
-
             const oppositeType = type === 'lost' ? 'found' : 'lost';
 
             // ==========================================
-            // STEP 1: Fetch Candidate Posts (Single Query - No Wasted Count)
+            // STEP 1: Fetch Candidate Posts
             // ==========================================
             console.log('Step 1: Fetching candidate posts in location...');
             
@@ -64,10 +52,10 @@ class MatchingService {
             const candidatePosts = await postRepo.getFilteredPosts({
                 type: oppositeType,
                 status: 'active',
-                country: country,
-                state: state,
-                city: city,
-                category: category,
+                country: country || null,
+                state: state || null,
+                city: city || null,
+                category: category || null,
                 limit: 500,
                 offset: 0
             });

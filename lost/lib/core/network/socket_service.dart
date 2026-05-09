@@ -105,6 +105,10 @@ class SocketService {
     _socket?.on('user_status', callback);
   }
 
+  void onNewNotification(Function(dynamic) callback) {
+    _socket?.on('new_notification', callback);
+  }
+
   void onError(Function(dynamic) callback) {
     _socket?.on('error', callback);
   }
@@ -116,6 +120,7 @@ class SocketService {
     _socket?.off('user_stopped_typing');
     _socket?.off('message_read');
     _socket?.off('user_status');
+    _socket?.off('new_notification');
     _socket?.off('error');
   }
 }

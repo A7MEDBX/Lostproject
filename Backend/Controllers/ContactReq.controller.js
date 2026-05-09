@@ -1,5 +1,6 @@
 const contactReqService = require('../services/contact_req.service');
 const response = require('../utils/response.util');
+const NotificationService = require('../services/notification.service');
 
 class ContactReqController {
     async sendContactRequest(req, res) {
@@ -15,6 +16,12 @@ class ContactReqController {
             
             if (!result.success) {
                 return response.ErrorResponse(res, result.message, result.data, 409);
+            }
+
+            // Send Notification
+            const io = req.app.get('io');
+            if (io) {
+                NotificationService.sendNotification(receiver_id, 'contact_request', result.data.id, io);
             }
 
             return response.Success(res, result.message, result.data, 201);
@@ -76,6 +83,24 @@ class ContactReqController {
             
             if (!result.success) {
                 return response.ErrorResponse(res, result.message, null, 400);
+            }
+
+            // Send Notification
+            const io = req.app.get('io');
+            if (io && result.data && result.data.id) {
+                // Determine original sender from the contact request object if possible, 
+                // but since respondToRequest currently doesn't return the full object easily, 
+                // we'll fetch it or the service could be modified. 
+                // The service response currently returns {id, status}.
+                // A better approach is to send notification inside service or fetch req here.
+                const reqData = await contactReqService.getRequestById(requestId);
+                if (reqData.success && reqData.data) {
+                    const senderId = reqData.data.sender_id;
+                    const type = status === 'accepted' ? 'contact_accepted' : null;
+                    if (type) {
+                        NotificationService.sendNotification(senderId, type, requestId, io);
+                    }
+                }
             }
             
             return response.Success(res, result.message, result.data, 200);

@@ -32,7 +32,7 @@ const corsOptions = {
 
 const io = new Server(server, {
     cors: {
-        origin: allowAllOrigins ? '*' : allowedOrigins,
+        origin: allowAllOrigins ? true : allowedOrigins,
         credentials: true
     }
 });

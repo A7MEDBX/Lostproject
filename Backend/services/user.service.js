@@ -70,9 +70,9 @@ class UserService {
     /**
      * Update user profile
      */
-    async updateUserProfile(userId, name) {
+    async updateUserProfile(userId, data) {
         try {
-            const result = await UserRepo.edituser(userId, name);
+            const result = await UserRepo.edituser(userId, data);
             
             if (result[0] === 0) {
                 return {

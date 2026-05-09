@@ -7,7 +7,8 @@ class PostRepository {
         try {
             return await Post.findAll({
                 where: { user_id: userId },
-                order: [['created_at', 'DESC']]
+                order: [['created_at', 'DESC']],
+                include: { model: User, as: 'owner', attributes: ['id', 'name', 'email'] }
             });
         } catch (error) {
             throw error;

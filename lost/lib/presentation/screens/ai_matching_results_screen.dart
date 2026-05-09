@@ -3,6 +3,7 @@ import 'dart:async';
 import '../../core/constants/finder_colors.dart';
 import '../../core/network/api_client.dart';
 import '../../data/datasources/ai_matching_remote_data_source.dart';
+import '../../data/datasources/chat_remote_data_source.dart';
 import 'package:lost/core/services/auth_service.dart';
 
 enum MatchingState { loading, results, empty }
@@ -20,6 +21,8 @@ class MatchResult {
   final String finderName;
   final bool isVerified;
   final String status; // 'Lost' or 'Found'
+  final double? latitude;
+  final double? longitude;
 
   MatchResult({
     required this.id,
@@ -34,6 +37,8 @@ class MatchResult {
     required this.finderName,
     this.isVerified = false,
     required this.status,
+    this.latitude,
+    this.longitude,
   });
 }
 
@@ -118,12 +123,15 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
   bool _isCreatingPost = false;
 
   Future<void> _createPost() async {
-    if (widget.postData == null || widget.postData!['uploadedImageUrl'] == null) return;
+    if (widget.postData == null || widget.postData!['uploadedImageUrl'] == null)
+      return;
 
     setState(() => _isCreatingPost = true);
 
     try {
-      final apiClient = ApiClient(tokenProvider: AuthService.instance.getIdToken);
+      final apiClient = ApiClient(
+        tokenProvider: AuthService.instance.getIdToken,
+      );
       final dataSource = AIMatchingRemoteDataSource(
         client: apiClient.client,
         tokenProvider: AuthService.instance.getIdToken,
@@ -163,9 +171,9 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
     } catch (e) {
       if (mounted) {
         setState(() => _isCreatingPost = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to create post: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to create post: $e')));
       }
     }
   }
@@ -179,20 +187,33 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
           if (widget.postData != null && widget.postData!['matches'] != null) {
             // Use real backend matches
             final matchesData = widget.postData!['matches'] as List;
-            _results = matchesData.map((match) {
+            _results = matchesData.map<MatchResult>((match) {
+              final owner = match['owner'] ?? {};
               return MatchResult(
                 id: match['id'] ?? '',
                 userId: match['user_id'] ?? '',
                 title: match['title'] ?? 'Unknown Item',
-                description: match['description'] ?? '',
+                description: match['description'] ?? 'No description provided.',
                 imageUrl: match['image_url'] ?? '',
-                location: match['location'] ?? '',
-                distance: match['distance'] ?? '0km away',
-                timeAgo: match['time_ago'] ?? 'Just now',
+                location:
+                    match['location'] ?? match['city'] ?? 'Unknown Location',
+                distance: match['distance_km'] != null
+                    ? '${(match['distance_km'] as num).toStringAsFixed(1)}km away'
+                    : '0km away',
+                timeAgo: match['created_at'] != null
+                    ? 'Recently'
+                    : 'Just now', // Could be formatted properly if date_formatter exists
                 matchPercentage: (match['match_percentage'] ?? 0).round(),
-                finderName: match['finder_name'] ?? 'User',
-                isVerified: match['is_verified'] ?? false,
+                finderName:
+                    owner['name'] ?? match['finder_name'] ?? 'Unknown User',
+                isVerified: owner['verified'] ?? match['is_verified'] ?? false,
                 status: match['post_type'] ?? 'found',
+                latitude: match['latitude'] != null
+                    ? (match['latitude'] as num).toDouble()
+                    : null,
+                longitude: match['longitude'] != null
+                    ? (match['longitude'] as num).toDouble()
+                    : null,
               );
             }).toList();
           } else {
@@ -494,7 +515,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                   },
                 ),
                 const SizedBox(height: 30),
-                
+
                 // Create Post Action
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -524,7 +545,10 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                               ? const SizedBox(
                                   width: 24,
                                   height: 24,
-                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
                                 )
                               : const Text(
                                   'Create Post Anyway',
@@ -539,7 +563,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 40),
               ],
             ),
@@ -739,9 +763,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/chat');
-                        },
+                        onPressed: () => _startChat(result),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: FinderColors.primaryBrown,
                           shape: RoundedRectangleBorder(
@@ -945,7 +967,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () => Navigator.pushNamed(context, '/chat'),
+                        onPressed: () => _startChat(result),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0A3D91),
                           shape: RoundedRectangleBorder(
@@ -1298,7 +1320,10 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                           ? const SizedBox(
                               width: 24,
                               height: 24,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
                             )
                           : const Text(
                               'Create Post',
@@ -1337,8 +1362,40 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
         'imageUrl': result.imageUrl,
         'status': result.status,
         'matchPercentage': result.matchPercentage,
+        'latitude': result.latitude,
+        'longitude': result.longitude,
       },
     );
+  }
+
+  Future<void> _startChat(MatchResult result) async {
+    try {
+      final apiClient = ApiClient(
+        tokenProvider: AuthService.instance.getIdToken,
+      );
+      final ds = ChatRemoteDataSourceImpl(apiClient: apiClient);
+
+      // Start or get chat from backend
+      final chatId = await ds.startChat(otherUserId: result.userId);
+
+      if (!mounted) return;
+
+      Navigator.pushNamed(
+        context,
+        '/chat',
+        arguments: {
+          'chatId': chatId,
+          'userName': result.finderName,
+          'userId': result.userId,
+          'isOnline': false,
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to start chat: $e')));
+    }
   }
 
   // ==================== SHARED WIDGETS ====================

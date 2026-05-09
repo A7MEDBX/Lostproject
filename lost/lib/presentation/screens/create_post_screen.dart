@@ -201,8 +201,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         print('✅ Backend response received: $result');
         setState(() => _isLoading = false);
 
-        final matches = (result['matches'] as List<dynamic>?) ?? const [];
-        final uploadedImageUrl = result['uploaded_image_url'] as String?;
+        final matches = (result['matches'] as List<dynamic>?) ??
+            ((result['data'] as Map<String, dynamic>?)?['matches'] as List<dynamic>?) ??
+            const [];
+        final uploadedImageUrl = (result['uploaded_image_url'] as String?) ??
+            ((result['data'] as Map<String, dynamic>?)?['uploaded_image_url'] as String?);
 
         // Navigate to AI matching results with real data from backend
         if (mounted) {

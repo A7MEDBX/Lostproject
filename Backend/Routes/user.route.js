@@ -2,7 +2,7 @@ const authController = require('../Controllers/auth.controller');
 const UserController = require('../Controllers/User.controller');
 const { verfyFirebaseToken, verfyFirebaseTokenLite } = require('../Middlewares/auth.middleware');
 const { requireAuthentication } = require('../Middlewares/isVerfied.middleware');
-const { createUserValidator } = require('../validators/user.validator');
+const { createUserValidator, updateUserValidator } = require('../validators/user.validator');
 const { submitVerificationValidator } = require('../validators/verification.validator');
 const { uploadKycMiddleware, uploadVerificationToCloudinary } = require('../Middlewares/multer.middleware');
 const validate = require('../Middlewares/validation');
@@ -36,10 +36,10 @@ Router.get('/me',
  * @route   PUT /api/v1/user/me
  * @desc    Update current user profile
  * @access  Private (requires authentication)
- * @body    { name }
+ * @body    { name, phone }
  */
 Router.put('/me',
-       createUserValidator,
+       updateUserValidator,
        validate,
        UserController.editprofile);
 

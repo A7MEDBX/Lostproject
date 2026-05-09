@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import '../../core/network/api_client.dart';
+import '../../core/network/socket_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/constants/api_constants.dart';
 import '../../data/datasources/chat_remote_data_source.dart';
 import '../../domain/entities/chat_message.dart';
+import '../../data/models/chat_message_model.dart';
 
-/// Individual Chat Screen — wired to real backend API.
-/// Accepts route arguments: chatId, userName, userId, isOnline.
+/// Individual Chat Screen — wired to real backend API and Socket.io.
 class ChatScreen extends StatefulWidget {
   final String? chatId;
   final String? userName;
@@ -39,10 +40,10 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isSending = false;
   String? _error;
 
-  // Data source
+  // Data source & Socket
   late final ChatRemoteDataSource _dataSource;
+  late final SocketService _socketService;
   late final String _currentUserId;
-  Timer? _pollTimer;
 
   @override
   void initState() {
@@ -51,6 +52,7 @@ class _ChatScreenState extends State<ChatScreen> {
       tokenProvider: AuthService.instance.getIdToken,
     );
     _dataSource = ChatRemoteDataSourceImpl(apiClient: apiClient);
+    _socketService = SocketService();
     _currentUserId = AuthService.instance.currentUser?.uid ?? '';
 
     _messageController.addListener(() {
@@ -61,9 +63,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     if (widget.chatId != null) {
       _loadMessages();
-      _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-        _pollMessages();
-      });
+      _initSocket();
     } else {
       setState(() {
         _isLoadingMessages = false;
@@ -72,30 +72,41 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> _initSocket() async {
+    final token = await AuthService.instance.getIdToken();
+    if (token != null) {
+      _socketService.setAuthToken(token);
+      _socketService.connect();
+      
+      _socketService.joinChat(widget.chatId!);
+
+      _socketService.onNewMessage((data) {
+        if (mounted) {
+          setState(() {
+            // Remove optimistic message if present (matched by exact text or temp id)
+            _messages.removeWhere((m) => m.id.startsWith('temp-') && m.message == data['content']);
+            
+            // Ensure we don't add duplicates
+            if (!_messages.any((m) => m.id == data['id'])) {
+              _messages.add(ChatMessageModel.fromJson(data));
+              _scrollToBottom();
+            }
+          });
+        }
+      });
+    }
+  }
+
   @override
   void dispose() {
-    _pollTimer?.cancel();
+    if (widget.chatId != null) {
+      _socketService.leaveChat(widget.chatId!);
+    }
+    _socketService.removeListeners();
+    _socketService.disconnect();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pollMessages() async {
-    if (widget.chatId == null) return;
-    try {
-      final messages = await _dataSource.getChatMessages(widget.chatId!);
-      if (mounted) {
-        setState(() {
-          // Only update if there's actually a new message to avoid unnecessary rebuilds
-          if (_messages.length != messages.length) {
-             _messages = messages;
-             _scrollToBottom();
-          }
-        });
-      }
-    } catch (e) {
-      // Ignore polling errors silently
-    }
   }
 
   Future<void> _loadMessages() async {
@@ -126,8 +137,8 @@ class _ChatScreenState extends State<ChatScreen> {
     final text = _messageController.text.trim();
     if (text.isEmpty || widget.chatId == null || _isSending) return;
 
-    // Optimistic update — add message locally immediately
-    final optimistic = ChatMessage(
+    // Optimistic update
+    final optimistic = ChatMessageModel(
       id: 'temp-${DateTime.now().millisecondsSinceEpoch}',
       chatId: widget.chatId!,
       senderId: _currentUserId,
@@ -143,22 +154,25 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
 
     try {
+      // Send via REST API, which triggers backend to emit 'new_message' via socket
       final sent = await _dataSource.sendMessage(
         chatId: widget.chatId!,
         senderId: _currentUserId,
         message: text,
       );
 
-      // Replace optimistic message with confirmed one
       if (mounted) {
         setState(() {
           final idx = _messages.indexWhere((m) => m.id == optimistic.id);
-          if (idx != -1) _messages[idx] = sent;
+          if (idx != -1) {
+            _messages[idx] = sent;
+          } else if (!_messages.any((m) => m.id == sent.id)) {
+            _messages.add(sent);
+          }
           _isSending = false;
         });
       }
     } catch (e) {
-      // Remove the optimistic message on failure
       if (mounted) {
         setState(() {
           _messages.removeWhere((m) => m.id == optimistic.id);
@@ -168,20 +182,12 @@ class _ChatScreenState extends State<ChatScreen> {
           SnackBar(
             content: Text('Failed to send message: $e'),
             backgroundColor: Colors.red.shade700,
-            action: SnackBarAction(
-              label: 'Retry',
-              textColor: Colors.white,
-              onPressed: () {
-                _messageController.text = text;
-              },
-            ),
           ),
         );
       }
     }
   }
 
-  /// Pick an image from gallery and send it as a message (URL after upload)
   Future<void> _pickAndSendImage() async {
     if (widget.chatId == null) return;
     final picker = ImagePicker();
@@ -214,7 +220,6 @@ class _ChatScreenState extends State<ChatScreen> {
             senderId: _currentUserId,
             message: imageUrl,
           );
-          await _pollMessages();
         }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -412,6 +417,8 @@ class _ChatScreenState extends State<ChatScreen> {
                             itemCount: _messages.length,
                             itemBuilder: (context, index) {
                               final msg = _messages[index];
+                              // Assume matching Firebase UID or database UserID logic here.
+                              // Temporarily marking as mine if it doesn't belong to the 'other user'.
                               final isMine = msg.senderId == _currentUserId || (widget.userId != null && msg.senderId != widget.userId);
                               return _buildMessageBubble(msg, isMine);
                             },

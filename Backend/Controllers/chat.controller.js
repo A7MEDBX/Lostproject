@@ -105,7 +105,8 @@ class ChatController {
             // Emit socket event
             const io = req.app.get('io');
             if (io) {
-                io.to(`chat:${chatId}`).emit('new_message', result.data);
+                const messageData = result.data.toJSON ? result.data.toJSON() : result.data;
+                io.to(`chat:${chatId}`).emit('new_message', messageData);
             }
             
             return response.Success(res, result.message, result.data, 201);

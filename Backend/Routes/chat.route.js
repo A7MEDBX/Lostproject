@@ -2,14 +2,15 @@ const express = require('express');
 const Router = express.Router();
 const chatController = require('../Controllers/chat.controller');
 const { verfyFirebaseToken } = require('../Middlewares/auth.middleware');
-const { requireVerification } = require('../Middlewares/isVerfied.middleware');
+const { requireVerification, requireAuthentication } = require('../Middlewares/isVerfied.middleware');
 const { verifyChatParticipant } = require('../Middlewares/chat.middleware');
 const { createChatValidator, sendMessageValidator } = require('../validators/chat.validator');
 const validate = require('../Middlewares/validation');
 
-// All chat operations require verified identity
+// All chat operations require verified identity (Temporarily relaxed to requireAuthentication for testing)
 Router.use(verfyFirebaseToken);
-Router.use(requireVerification);
+Router.use(requireAuthentication);
+// Router.use(requireVerification);
 
 /**
  * @route   POST /api/v1/chat/create

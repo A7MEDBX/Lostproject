@@ -204,6 +204,15 @@ class _MessagesScreenState extends State<MessagesScreen> {
     final unreadCount = (chat['unread_count'] as num?)?.toInt() ?? 0;
     final isOnline = (chat['is_online'] as bool?) ?? false;
 
+    // Helper to format time strings (if it's a full ISO date, we want just the time or simple date)
+    String displayTime = time;
+    try {
+      if (time.length > 10) {
+        final dt = DateTime.parse(time).toLocal();
+        displayTime = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      }
+    } catch (_) {}
+
     return InkWell(
       onTap: () {
         Navigator.pushNamed(
@@ -218,53 +227,54 @@ class _MessagesScreenState extends State<MessagesScreen> {
         );
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: Colors.grey[200]!, width: 1)),
         ),
-        child: Row(
+        child: Stack(
           children: [
-            Stack(
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(color: Colors.grey[300], shape: BoxShape.circle),
-                  child: Icon(Icons.person, size: 28, color: Colors.grey[700]),
-                ),
-                if (isOnline)
-                  Positioned(
-                    bottom: 2,
-                    right: 2,
-                    child: Container(
-                      width: 14,
-                      height: 14,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF4CAF50),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
+                Stack(
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(color: Colors.grey[300], shape: BoxShape.circle),
+                      child: Icon(Icons.person, size: 28, color: Colors.grey[700]),
                     ),
-                  ),
-              ],
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(otherUserName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                      Text(time, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
+                    if (isOnline)
+                      Positioned(
+                        bottom: 2,
+                        right: 2,
+                        child: Container(
+                          width: 14,
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4CAF50),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 60.0), // space for time and unread
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          otherUserName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
                           lastMessage,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -274,25 +284,38 @@ class _MessagesScreenState extends State<MessagesScreen> {
                             fontWeight: unreadCount > 0 ? FontWeight.w500 : FontWeight.normal,
                           ),
                         ),
-                      ),
-                      if (unreadCount > 0) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: const BoxDecoration(color: Color(0xFF0A3D91), shape: BoxShape.circle),
-                          child: Text('$unreadCount', style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold)),
-                        ),
                       ],
-                    ],
+                    ),
                   ),
-                ],
+                ),
+              ],
+            ),
+            Positioned(
+              right: 0,
+              top: 0,
+              child: unreadCount > 0
+                  ? Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(color: Color(0xFF0A3D91), shape: BoxShape.circle),
+                      child: Text(
+                        '$unreadCount',
+                        style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Text(
+                displayTime,
+                style: TextStyle(fontSize: 11, color: Colors.grey[500]),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
+    );  }
 
   Widget _buildNavButton(IconData icon, bool isActive, VoidCallback onTap) {
     return GestureDetector(
