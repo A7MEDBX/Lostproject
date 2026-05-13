@@ -266,7 +266,7 @@ class PostService {
             }
 
             const result = await PostRepo.updatePost(userId, postId, updateData);
-            
+
             if (result[0] === 0) {
                 return {
                     success: false,
@@ -274,11 +274,18 @@ class PostService {
                 };
             }
 
+            // Update Pinecone if image or important text changed
+            if (updateData.image_url || updateData.description || updateData.title) {
+                const updatedPost = await PostRepo.getPostById(postId);
+                this.processEmbedding(updatedPost).catch(error => {
+                    console.error(`Failed to update embedding for post ${postId}:`, error.message);
+                });
+            }
+
             return {
                 success: true,
                 message: 'Post updated successfully'
-            };
-        } catch (err) {
+            };        } catch (err) {
             throw err;
         }
     }
@@ -336,7 +343,7 @@ class PostService {
     /**
      * Update post status
      */
-    async updatePostStatus(postId, status) {
+    async updatePostStatus(userId, postId, status) {
         try {
             // Validate status
             if (!['active', 'matched', 'closed', 'resolved'].includes(status)) {
@@ -354,7 +361,14 @@ class PostService {
                 };
             }
 
-            const result = await PostRepo.updatePostStatus(postId, status);
+            if (post.user_id !== userId) {
+                return {
+                    success: false,
+                    message: 'Unauthorized: You can only update your own posts'
+                };
+            }
+
+            const result = await PostRepo.updatePostStatus(postId, userId, status);
             
             if (result[0] === 0) {
                 return {

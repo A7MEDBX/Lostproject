@@ -6,6 +6,7 @@ import '../../core/network/api_client.dart';
 import '../../core/network/socket_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/utils/app_messenger.dart';
 import '../../data/datasources/chat_remote_data_source.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../data/models/chat_message_model.dart';
@@ -178,12 +179,7 @@ class _ChatScreenState extends State<ChatScreen> {
           _messages.removeWhere((m) => m.id == optimistic.id);
           _isSending = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to send message: $e'),
-            backgroundColor: Colors.red.shade700,
-          ),
-        );
+        AppMessenger.showError('Failed to send message. Please try again.');
       }
     }
   }
@@ -222,15 +218,11 @@ class _ChatScreenState extends State<ChatScreen> {
           );
         }
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to upload image.'), backgroundColor: Colors.red),
-        );
+        AppMessenger.showError('Failed to upload image. Please try again.');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
+        AppMessenger.showError('Failed to upload image. Please try again.');
       }
     } finally {
       if (mounted) setState(() => _isSending = false);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/finder_colors.dart';
+import '../../core/utils/app_messenger.dart';
 
 /// Privacy Policy & Terms of Use Screen
 class PrivacyPolicyScreen extends StatefulWidget {
@@ -320,12 +321,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                                   '/kyc-verification',
                                 );
                               } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Preferences saved.'),
-                                    backgroundColor: FinderColors.primaryBlue,
-                                  ),
-                                );
+                                AppMessenger.showSuccess('Preferences saved.');
                                 Navigator.pop(context);
                               }
                             }

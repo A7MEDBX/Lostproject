@@ -3,12 +3,18 @@ import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import '../../core/constants/api_constants.dart';
 import '../../core/constants/finder_colors.dart';
 import '../widgets/map_location_picker.dart';
 import '../../data/datasources/ai_matching_remote_data_source.dart';
 import '../../core/utils/location_data.dart';
 import '../widgets/location_autocomplete_field.dart';
 import '../../core/services/auth_service.dart';
+import '../../domain/entities/post.dart';
+import '../../data/models/post_model.dart';
+import '../../data/datasources/post_remote_data_source.dart';
+import '../../core/network/api_client.dart';
+import '../../core/utils/app_messenger.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -47,6 +53,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   final List<String> _types = ['Lost', 'Found'];
 
+  Post? _editPost;
+  bool _isInit = false;
+
   @override
   void initState() {
     super.initState();
@@ -54,6 +63,33 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       client: http.Client(),
       tokenProvider: AuthService.instance.getIdToken,
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInit) {
+      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      if (args != null && args['editPost'] != null) {
+        _editPost = args['editPost'] as Post;
+        _titleController.text = _editPost!.title;
+        _descriptionController.text = _editPost!.description ?? '';
+        _countryController.text = _editPost!.country;
+        _stateController.text = _editPost!.state ?? '';
+        _cityController.text = _editPost!.city ?? '';
+        
+        final cat = _editPost!.category ?? 'Other';
+        final matchedCat = _categories.firstWhere(
+          (c) => c.toLowerCase() == cat.toLowerCase(), 
+          orElse: () => 'Other'
+        );
+        _selectedCategory = matchedCat;
+        
+        final pType = _editPost!.postType.toLowerCase() == 'lost' ? 'Lost' : 'Found';
+        _selectedType = pType;
+      }
+      _isInit = true;
+    }
   }
 
   @override
@@ -168,66 +204,112 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   Future<void> _submitPost() async {
     if (_formKey.currentState!.validate()) {
-      if (_selectedImage == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please add an image of the item'),
-            backgroundColor: Colors.red,
-          ),
-        );
+      if (_selectedImage == null && _editPost == null) {
+        AppMessenger.showError('Please add an image of the item');
         return;
       }
 
       setState(() => _isLoading = true);
 
       try {
-        print('📤 Submitting post to backend...');
-        print('   Title: ${_titleController.text}');
-        print('   Type: ${_selectedType.toLowerCase()}');
-        print('   Category: $_selectedCategory');
+        if (_editPost != null) {
+          print('📤 Updating post...');
 
-        // Call backend API to find matches FIRST
-        final result = await _dataSource.findMatches(
-          image: _selectedImage!,
-          title: _titleController.text,
-          description: _descriptionController.text,
-          category: _selectedCategory,
-          country: _countryController.text,
-          state: _stateController.text,
-          city: _cityController.text,
-          postType: _selectedType.toLowerCase(),
-        );
+          final apiClient = ApiClient(tokenProvider: AuthService.instance.getIdToken);
+          final postDs = PostRemoteDataSourceImpl(apiClient: apiClient);
 
-        print('✅ Backend response received: $result');
-        setState(() => _isLoading = false);
+          String newImageUrl = _editPost!.imageUrl;
 
-        final matches = (result['matches'] as List<dynamic>?) ??
-            ((result['data'] as Map<String, dynamic>?)?['matches'] as List<dynamic>?) ??
-            const [];
-        final uploadedImageUrl = (result['uploaded_image_url'] as String?) ??
-            ((result['data'] as Map<String, dynamic>?)?['uploaded_image_url'] as String?);
+          if (_selectedImage != null) {
+            print('Uploading new image...');
+            final token = await AuthService.instance.getIdToken();
+            final request = http.MultipartRequest(
+              'POST',
+              Uri.parse('${ApiConstants.baseUrl}/chat/upload-image'),
+            );
+            request.headers['Authorization'] = 'Bearer $token';
+            request.files.add(await http.MultipartFile.fromPath('image', _selectedImage!.path));
+            final streamed = await request.send();
+            final resp = await http.Response.fromStream(streamed);
 
-        // Navigate to AI matching results with real data from backend
-        if (mounted) {
-          Navigator.pushReplacementNamed(
-            context,
-            '/ai-matching-results',
-            arguments: {
-              'matchesCount': matches.length,
-              'matches': matches,
-              'success': result['success'] ?? true,
-              'uploadedImageUrl': uploadedImageUrl,
-              // Include user's post data for preview and final creation
-              'title': _titleController.text,
-              'description': _descriptionController.text,
-              'category': _selectedCategory,
-              'country': _countryController.text,
-              'state': _stateController.text,
-              'city': _cityController.text,
-              'postType': _selectedType.toLowerCase(),
-              'imageUrl': _selectedImage?.path ?? '',
-            },
+            if (resp.statusCode == 200 || resp.statusCode == 201) {
+              final urlMatch = RegExp(r'"url"\s*:\s*"([^"]+)"').firstMatch(resp.body);
+              if (urlMatch != null) {
+                newImageUrl = urlMatch.group(1)!;
+              }
+            } else {
+              throw Exception('Failed to upload new image.');
+            }
+          }
+
+          final updatedEntity = _editPost!.copyWith(
+            title: _titleController.text,
+            description: _descriptionController.text,
+            category: _selectedCategory,
+            country: _countryController.text,
+            state: _stateController.text.isEmpty ? null : _stateController.text,
+            city: _cityController.text,
+            postType: _selectedType.toLowerCase(),
+            imageUrl: newImageUrl,
           );
+
+          final updatedPostModel = PostModel.fromEntity(updatedEntity);
+          await postDs.updatePost(updatedPostModel);
+
+          setState(() => _isLoading = false);          
+          if (mounted) {
+            AppMessenger.showSuccess('Post updated successfully!');
+            Navigator.pop(context);
+          }
+        } else {
+          print('📤 Submitting post to backend...');
+          print('   Title: ${_titleController.text}');
+          print('   Type: ${_selectedType.toLowerCase()}');
+          print('   Category: $_selectedCategory');
+
+          // Call backend API to find matches FIRST
+          final result = await _dataSource.findMatches(
+            image: _selectedImage!,
+            title: _titleController.text,
+            description: _descriptionController.text,
+            category: _selectedCategory,
+            country: _countryController.text,
+            state: _stateController.text,
+            city: _cityController.text,
+            postType: _selectedType.toLowerCase(),
+          );
+
+          print('✅ Backend response received: $result');
+          setState(() => _isLoading = false);
+
+          final matches = (result['matches'] as List<dynamic>?) ??
+              ((result['data'] as Map<String, dynamic>?)?['matches'] as List<dynamic>?) ??
+              const [];
+          final uploadedImageUrl = (result['uploaded_image_url'] as String?) ??
+              ((result['data'] as Map<String, dynamic>?)?['uploaded_image_url'] as String?);
+
+          // Navigate to AI matching results with real data from backend
+          if (mounted) {
+            Navigator.pushReplacementNamed(
+              context,
+              '/ai-matching-results',
+              arguments: {
+                'matchesCount': matches.length,
+                'matches': matches,
+                'success': result['success'] ?? true,
+                'uploadedImageUrl': uploadedImageUrl,
+                // Include user's post data for preview and final creation
+                'title': _titleController.text,
+                'description': _descriptionController.text,
+                'category': _selectedCategory,
+                'country': _countryController.text,
+                'state': _stateController.text,
+                'city': _cityController.text,
+                'postType': _selectedType.toLowerCase(),
+                'imageUrl': _selectedImage?.path ?? '',
+              },
+            );
+          }
         }
       } catch (e) {
         print('❌ Error submitting post: $e');
@@ -235,9 +317,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
         // Show error message
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          AppMessenger.showSnackBar(
             SnackBar(
-              content: Text('Error: ${e.toString()}'),
+              content: const Text('Failed to submit post. Please try again.'),
               backgroundColor: Colors.red,
               duration: const Duration(seconds: 5),
               action: SnackBarAction(
@@ -630,9 +712,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                _selectedType == 'Lost'
-                                    ? 'Find Matches with AI'
-                                    : 'Post & Find Owner',
+                                _editPost != null
+                                    ? 'Update Post'
+                                    : (_selectedType == 'Lost'
+                                        ? 'Find Matches with AI'
+                                        : 'Post & Find Owner'),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,

@@ -3,32 +3,94 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/network/api_client.dart';
 import '../../core/services/auth_service.dart';
 import '../../data/datasources/chat_remote_data_source.dart';
+import '../../data/datasources/post_remote_data_source.dart';
+import '../../data/models/post_model.dart';
+import '../../core/utils/app_messenger.dart';
 
-
-class PostDetailScreen extends StatelessWidget {
+class PostDetailScreen extends StatefulWidget {
   final Map<String, dynamic> postData;
 
   const PostDetailScreen({super.key, required this.postData});
 
   @override
+  State<PostDetailScreen> createState() => _PostDetailScreenState();
+}
+
+class _PostDetailScreenState extends State<PostDetailScreen> {
+  PostModel? _livePost;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLivePost();
+  }
+
+  Future<void> _fetchLivePost() async {
+    final postId = widget.postData['postId'];
+    if (postId == null || postId.toString().isEmpty) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final apiClient = ApiClient(tokenProvider: AuthService.instance.getIdToken);
+      final ds = PostRemoteDataSourceImpl(apiClient: apiClient);
+      final post = await ds.getPostById(postId);
+      
+      if (mounted) {
+        setState(() {
+          _livePost = post;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final String title = postData['title'] ?? 'Unknown Item';
-    final String category = postData['category'] ?? 'Other';
-    final String timeAgo = postData['timeAgo'] ?? 'Recently';
-    final String posterName = postData['posterName'] ?? 'Unknown User';
-    final bool isVerified = postData['isVerified'] ?? false;
-    final String dateLost = postData['dateLost'] ?? 'Unknown';
-    final String refId = postData['refId'] ?? 'N/A';
-    final String description =
-        postData['description'] ?? 'No description available';
-    final String location = postData['location'] ?? 'Location Unknown';
-    final String distance = postData['distance'] ?? '';
-    final String imageUrl = postData['imageUrl'] ?? '';
-    final String status = postData['status'] ?? 'Lost';
-    final int matchPercentage = postData['matchPercentage'] ?? 0;
-    final double? latitude = postData['latitude'];
-    final double? longitude = postData['longitude'];
-    final String userId = postData['userId'] ?? '';
+    // Merge live data with fallback arguments
+    final String title = _livePost?.title ?? widget.postData['title'] ?? 'Unknown Item';
+    final String category = _livePost?.category ?? widget.postData['category'] ?? 'Other';
+    
+    // Time formatter helper
+    String timeAgo = widget.postData['timeAgo'] ?? 'Recently';
+    if (_livePost?.createdAt != null) {
+      final diff = DateTime.now().difference(_livePost!.createdAt);
+      if (diff.inDays > 0) timeAgo = '${diff.inDays} days ago';
+      else if (diff.inHours > 0) timeAgo = '${diff.inHours} hours ago';
+      else if (diff.inMinutes > 0) timeAgo = '${diff.inMinutes} mins ago';
+      else timeAgo = 'Just now';
+    }
+
+    final String posterName = _livePost?.ownerName ?? widget.postData['posterName'] ?? 'Unknown User';
+    final bool isVerified = widget.postData['isVerified'] ?? false; // Fallback if backend doesn't provide owner verified status easily
+    
+    String dateLost = widget.postData['dateLost'] ?? 'Unknown';
+    if (_livePost?.createdAt != null) {
+      final dt = _livePost!.createdAt.toLocal();
+      dateLost = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+    }
+
+    String refId = _livePost?.id ?? widget.postData['refId'] ?? 'N/A';
+    if (refId.length > 8 && !refId.startsWith('#')) {
+      refId = '#${refId.substring(0, 8).toUpperCase()}';
+    } else if (!refId.startsWith('#')) {
+      refId = '#$refId';
+    }
+
+    final String description = _livePost?.description ?? widget.postData['description'] ?? 'No description available';
+    final String location = _livePost?.location ?? widget.postData['location'] ?? 'Location Unknown';
+    final String distance = widget.postData['distance'] ?? '';
+    final String imageUrl = _livePost?.imageUrl ?? widget.postData['imageUrl'] ?? '';
+    final String status = _livePost?.status ?? widget.postData['status'] ?? 'Lost';
+    final int matchPercentage = widget.postData['matchPercentage'] ?? 0;
+    final double? latitude = _livePost?.latitude ?? widget.postData['latitude'];
+    final double? longitude = _livePost?.longitude ?? widget.postData['longitude'];
+    final String userId = _livePost?.userId ?? widget.postData['userId'] ?? '';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -516,9 +578,7 @@ class PostDetailScreen extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () async {
                     if (userId.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Cannot message this user.')),
-                      );
+                      AppMessenger.showError('Cannot message this user.');
                       return;
                     }
 
@@ -550,9 +610,7 @@ class PostDetailScreen extends StatelessWidget {
                     } catch (e) {
                       if (!context.mounted) return;
                       Navigator.pop(context); // close dialog
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Failed to start chat: $e')),
-                      );
+                      AppMessenger.showError('Failed to start chat. Please try again.');
                     }
                   },
                   style: ElevatedButton.styleFrom(

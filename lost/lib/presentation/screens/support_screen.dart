@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/finder_colors.dart';
+import '../../core/utils/app_messenger.dart';
 
 class SupportScreen extends StatefulWidget {
   const SupportScreen({super.key});
@@ -255,9 +256,7 @@ class _SupportScreenState extends State<SupportScreen> {
                         Expanded(
                           child: ElevatedButton.icon(
                             onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Email support coming soon!')),
-                              );
+                              AppMessenger.showInfo('Email support coming soon!');
                             },
                             icon: const Icon(Icons.email_outlined, color: Colors.white, size: 20),
                             label: const Text(
@@ -281,9 +280,7 @@ class _SupportScreenState extends State<SupportScreen> {
                                 await launchUrl(uri);
                               } else {
                                 if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Cannot open phone dialer')),
-                                  );
+                                  AppMessenger.showError('Cannot open phone dialer');
                                 }
                               }
                             },

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/constants/finder_colors.dart';
+import '../../core/utils/app_messenger.dart';
 
 /// Verification Screen - Step 2: Enter Verification Code
 class VerificationScreen extends StatefulWidget {
@@ -114,11 +115,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                             // TODO: Verify code
                             Navigator.pushNamed(context, '/login');
                           } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Please enter complete code'),
-                              ),
-                            );
+                            AppMessenger.showError('Please enter complete code');
                           }
                         },
                         style: ElevatedButton.styleFrom(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/constants/finder_colors.dart';
+import '../../core/utils/app_messenger.dart';
 import '../../core/services/auth_service.dart';
 
 /// Change Password Screen
@@ -387,11 +388,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
                             final currentUser = AuthService.instance.currentUser;
                             if (currentUser == null || currentUser.email == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('No authenticated user found. Please log in again.'),
-                                  backgroundColor: Colors.red,
-                                ),
+                              AppMessenger.showError(
+                                'No authenticated user found. Please log in again.',
                               );
                               return;
                             }
@@ -411,12 +409,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
                               if (!context.mounted) return;
                               setState(() => _isLoading = false);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Password updated successfully!'),
-                                  backgroundColor: Color(0xFF0A3D91),
-                                ),
-                              );
+                              AppMessenger.showSuccess('Password updated successfully!');
                               Navigator.pop(context);
                             } on FirebaseAuthException catch (e) {
                               setState(() => _isLoading = false);
@@ -435,21 +428,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                   message = e.message ?? 'Failed to update password.';
                               }
                               if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(message),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
+                              AppMessenger.showError(message);
                             } catch (e) {
                               setState(() => _isLoading = false);
                               if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Unexpected error: $e'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
+                              AppMessenger.showError('Failed to update password. Please try again.');
                             }
                           },
                     style: ElevatedButton.styleFrom(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/network/api_client.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/utils/app_messenger.dart';
 import '../../data/datasources/post_remote_data_source.dart';
 import '../../domain/entities/post.dart';
 
@@ -35,12 +36,10 @@ class _MyPostsScreenState extends State<MyPostsScreen>
     _loadUserPosts();
   }
 
+  String? _error;
+
   Future<void> _loadUserPosts() async {
     try {
-      final apiClient = ApiClient(
-        tokenProvider: AuthService.instance.getIdToken,
-      );
-      _dataSource = PostRemoteDataSourceImpl(apiClient: apiClient);
       final posts = await _dataSource.getUserPosts('');
       if (mounted) {
         setState(() {
@@ -51,9 +50,11 @@ class _MyPostsScreenState extends State<MyPostsScreen>
     } catch (e) {
       if (mounted) {
         setState(() {
+          _error = 'Unable to load posts right now.';
           _allUserPosts = [];
           _isLoading = false;
         });
+        AppMessenger.showError('Unable to load posts. Please try again.');
       }
     }
   }
@@ -65,29 +66,34 @@ class _MyPostsScreenState extends State<MyPostsScreen>
     super.dispose();
   }
 
-  Future<void> _markResolved(String postId) async {
+  Future<void> _toggleResolved(String postId, String currentStatus) async {
+    final isResolved = currentStatus == 'resolved' || currentStatus == 'closed';
+    final newStatus = isResolved ? 'active' : 'resolved';
+    final idx = _allUserPosts.indexWhere((p) => p.id == postId);
+    if (idx == -1) return;
+
+    final previousPost = _allUserPosts[idx];
+
+    if (mounted) {
+      setState(() {
+        _allUserPosts[idx] = previousPost.copyWith(status: newStatus);
+      });
+    }
+
     try {
-      await _dataSource.updatePostStatus(postId, 'resolved');
-      if (mounted) {
-        setState(() {
-          final idx = _allUserPosts.indexWhere((p) => p.id == postId);
-          if (idx != -1) {
-            _allUserPosts[idx] = _allUserPosts[idx].copyWith(status: 'resolved');
-          }
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Post marked as resolved ✓'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
+      await _dataSource.updatePostStatus(postId, newStatus);
+      AppMessenger.showSuccess(
+        newStatus == 'resolved'
+            ? 'Post marked as resolved'
+            : 'Post restored to active',
+      );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update post: $e'), backgroundColor: Colors.red),
-        );
+        setState(() {
+          _allUserPosts[idx] = previousPost;
+        });
       }
+      AppMessenger.showError('Could not update post status. Please try again.');
     }
   }
 
@@ -215,12 +221,33 @@ class _MyPostsScreenState extends State<MyPostsScreen>
   }
 
   Widget _buildPostsList(String type) {
-    if (_isLoading) return const Center(child: CircularProgressIndicator(color: Color(0xFF0A3D91)));
+    if (_isLoading)
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFF0A3D91)),
+      );
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            'Error: $_error',
+            style: const TextStyle(color: Colors.red),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
     final posts = _allUserPosts
         .where((p) => p.postType == type)
-        .where((p) => _searchQuery.isEmpty ||
-            p.title.toLowerCase().contains(_searchQuery))
+        .where(
+          (p) =>
+              _searchQuery.isEmpty ||
+              p.title.toLowerCase().contains(_searchQuery),
+        )
         .toList();
+        
+    final totalOtherPosts = _allUserPosts.where((p) => p.postType != type).length;
+    
     if (posts.isEmpty) {
       return Center(
         child: Column(
@@ -234,6 +261,14 @@ class _MyPostsScreenState extends State<MyPostsScreen>
                   : 'No results for "$_searchQuery"',
               style: TextStyle(color: Colors.grey[600], fontSize: 16),
             ),
+            if (_searchQuery.isEmpty && totalOtherPosts > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  '(You have $totalOtherPosts ${type == 'lost' ? 'found' : 'lost'} post(s) on the other tab)',
+                  style: const TextStyle(color: Color(0xFF0A3D91), fontSize: 14, fontWeight: FontWeight.w500),
+                ),
+              ),
           ],
         ),
       );
@@ -249,7 +284,8 @@ class _MyPostsScreenState extends State<MyPostsScreen>
   }
 
   Widget _buildPostCardFromEntity(Post post) {
-    final bool isResolved = post.status == 'resolved' || post.status == 'closed';
+    final bool isResolved =
+        post.status == 'resolved' || post.status == 'closed';
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
@@ -257,7 +293,13 @@ class _MyPostsScreenState extends State<MyPostsScreen>
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey[200]!, width: 1),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -268,9 +310,16 @@ class _MyPostsScreenState extends State<MyPostsScreen>
                 borderRadius: BorderRadius.circular(12),
                 child: Image.network(
                   post.imageUrl,
-                  width: 70, height: 70, fit: BoxFit.cover,
-                  errorBuilder: (c, e, s) => Container(width: 70, height: 70,
-                    decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(12)),
+                  width: 70,
+                  height: 70,
+                  fit: BoxFit.cover,
+                  errorBuilder: (c, e, s) => Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: const Icon(Icons.image, color: Colors.grey),
                   ),
                 ),
@@ -281,24 +330,55 @@ class _MyPostsScreenState extends State<MyPostsScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: isResolved ? Colors.grey[300] : const Color(0xFF0A3D91).withOpacity(0.1),
+                        color: isResolved
+                            ? Colors.grey[300]
+                            : const Color(0xFF0A3D91).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Text(isResolved ? 'RESOLVED' : 'ACTIVE',
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold,
-                          color: isResolved ? Colors.grey[700] : const Color(0xFF0A3D91), letterSpacing: 0.5)),
+                      child: Text(
+                        isResolved ? 'RESOLVED' : 'ACTIVE',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: isResolved
+                              ? Colors.grey[700]
+                              : const Color(0xFF0A3D91),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 6),
-                    Text(post.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(
+                      post.title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.location_on, size: 14, color: Colors.grey[600]),
+                        Icon(
+                          Icons.location_on,
+                          size: 14,
+                          color: Colors.grey[600],
+                        ),
                         const SizedBox(width: 4),
-                        Expanded(child: Text('${post.city ?? ''}, ${post.country}',
-                          style: TextStyle(fontSize: 12, color: Colors.grey[600]), overflow: TextOverflow.ellipsis)),
+                        Expanded(
+                          child: Text(
+                            '${post.city ?? ''}, ${post.country}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -308,45 +388,73 @@ class _MyPostsScreenState extends State<MyPostsScreen>
           ),
           const SizedBox(height: 12),
           if (isResolved)
-            Row(children: [
-              Expanded(child: OutlinedButton.icon(onPressed: () {},
-                icon: const Icon(Icons.remove_red_eye_outlined, size: 18),
-                label: const Text('View Summary'),
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.grey[700],
-                  side: BorderSide(color: Colors.grey[400]!), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(vertical: 10)))),
-            ])
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _toggleResolved(post.id, post.status),
+                    icon: const Icon(Icons.undo, size: 18),
+                    label: const Text('Undo Resolved'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.grey[700],
+                      side: BorderSide(color: Colors.grey[400]!),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                  ),
+                ),
+              ],
+            )
           else
-            Row(children: [
-              OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.pushNamed(
-                    context,
-                    '/create-post',
-                    arguments: {'editPost': post},
-                  );
-                },
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                label: const Text('Edit'),
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.grey[700],
-                  side: BorderSide(color: Colors.grey[400]!), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10))),
-              const SizedBox(width: 8),
-              Expanded(child: ElevatedButton.icon(
-                onPressed: () => _markResolved(post.id),
-                icon: const Icon(Icons.check_circle_outline, size: 18),
-                label: const Text('Mark Resolved'),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0A3D91),
-                  foregroundColor: Colors.white, elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(vertical: 10)))),
-            ]),
+            Row(
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pushNamed(
+                      context,
+                      '/create-post',
+                      arguments: {'editPost': post},
+                    );
+                  },
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  label: const Text('Edit'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.grey[700],
+                    side: BorderSide(color: Colors.grey[400]!),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _toggleResolved(post.id, post.status),
+                    icon: const Icon(Icons.check_circle_outline, size: 18),
+                    label: const Text('Mark Resolved'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0A3D91),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
   }
-
-
 
   Widget _buildBottomNavigation() {
     return Stack(

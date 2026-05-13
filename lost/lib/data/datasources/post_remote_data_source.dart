@@ -1,6 +1,7 @@
 import '../../core/network/api_client.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/errors/exceptions.dart';
+import '../../domain/entities/post.dart';
 import '../models/post_model.dart';
 import '../models/search_result_model.dart';
 
@@ -38,7 +39,7 @@ abstract class PostRemoteDataSource {
     double? latitude,
     double? longitude,
   });
-  Future<PostModel> updatePost(PostModel post);
+  Future<PostModel> updatePost(Post post);
   Future<void> deletePost(String postId);
   Future<void> updatePostStatus(String postId, String status);
 }
@@ -180,15 +181,16 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
   }
 
   @override
-  Future<PostModel> updatePost(PostModel post) async {
+  Future<PostModel> updatePost(Post post) async {
     try {
+      final postModel = post is PostModel ? post : PostModel.fromEntity(post);
       final response = await apiClient.put(
-        '${ApiConstants.postDetailEndpoint}/${post.id}',
-        body: post.toJson(),
+        '${ApiConstants.postDetailEndpoint}/${postModel.id}',
+        body: postModel.toJson(),
       );
       final data = response['data'];
       if (data == null) {
-        return post;
+        return postModel;
       }
       return PostModel.fromJson(data as Map<String, dynamic>);
     } catch (e) {

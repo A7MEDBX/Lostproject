@@ -139,8 +139,8 @@ class _FilterScreenState extends State<FilterScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildCategoryItem('All', Icons.apps, 'All'),
-                _buildCategoryItem('Tech', Icons.devices, 'Tech'),
-                _buildCategoryItem('Pets', Icons.pets, 'Pets'),
+                _buildCategoryItem('Wallet', Icons.account_balance_wallet_outlined, 'Wallet'),
+                _buildCategoryItem('Phone', Icons.phone_android, 'Phone'),
               ],
             ),
             const SizedBox(height: 16),
@@ -151,10 +151,20 @@ class _FilterScreenState extends State<FilterScreen> {
               children: [
                 _buildCategoryItem('Keys', Icons.key, 'Keys'),
                 _buildCategoryItem('Bag', Icons.work_outline, 'Bag'),
+                _buildCategoryItem('Electronics', Icons.devices, 'Electronics'),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Category Icons Row 3
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildCategoryItem('Documents', Icons.description_outlined, 'Documents'),
+                _buildCategoryItem('Jewelry', Icons.watch_outlined, 'Jewelry'),
                 _buildCategoryItem('Other', Icons.more_horiz, 'Other'),
               ],
             ),
-
             const SizedBox(height: 32),
 
             // Time Range Section

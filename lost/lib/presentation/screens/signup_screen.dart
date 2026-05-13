@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../widgets/custom_rounded_button.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_divider.dart';
+import '../../core/utils/app_messenger.dart';
 import '../../core/constants/finder_colors.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/network/api_client.dart';
@@ -141,11 +142,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 CustomRoundedButton(
                   text: 'Sign up with Google',
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Google sign up is not enabled yet.'),
-                      ),
-                    );
+                    AppMessenger.showInfo('Google sign up is not enabled yet.');
                   },
                   backgroundColor: FinderColors.primaryBlue,
                   height: 50,

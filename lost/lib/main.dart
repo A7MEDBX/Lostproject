@@ -7,6 +7,7 @@ import 'core/theme/app_theme.dart';
 import 'core/constants/app_strings.dart';
 import 'core/network/api_client.dart';
 import 'core/services/auth_service.dart';
+import 'core/utils/app_messenger.dart';
 import 'data/datasources/post_remote_data_source.dart';
 import 'data/datasources/user_remote_data_source.dart';
 import 'data/repositories/post_repository_impl.dart';
@@ -65,6 +66,7 @@ class MyApp extends StatelessWidget {
         title: AppStrings.appName,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
+        scaffoldMessengerKey: AppMessenger.messengerKey,
         initialRoute: AppRoutes.welcome,
         onGenerateRoute: AppRoutes.onGenerateRoute,
       ),

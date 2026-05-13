@@ -6,6 +6,7 @@ import '../widgets/custom_rounded_button.dart';
 import '../widgets/custom_text_field.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/utils/app_messenger.dart';
 
 /// KYC Verification Screen
 class KycVerificationScreen extends StatefulWidget {
@@ -57,12 +58,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_idImage == null || _selfieImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please upload both ID photo and Selfie photo.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppMessenger.showError('Please upload both ID photo and Selfie photo.');
       return;
     }
 
@@ -99,31 +95,18 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
         await Future.delayed(const Duration(seconds: 2));
         if (mounted) {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Verification submitted! We will review your documents.'),
-              backgroundColor: Color(0xFF0A3D91),
-            ),
+          AppMessenger.showSuccess(
+            'Verification submitted! We will review your documents.',
           );
         }
       } else {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Submission failed (${response.statusCode}). Please try again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppMessenger.showError('Submission failed. Please try again.');
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppMessenger.showError('Submission failed. Please try again.');
       }
     }
   }

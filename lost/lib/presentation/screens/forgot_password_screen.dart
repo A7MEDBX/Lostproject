@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/constants/finder_colors.dart';
+import '../../core/utils/app_messenger.dart';
 import '../widgets/success_message_screen.dart';
 import '../../core/services/auth_service.dart';
 
@@ -62,11 +63,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to send reset email: $e'),
-        ),
-      );
+      AppMessenger.showError('Failed to send reset email. Please try again.');
     }
   }
 

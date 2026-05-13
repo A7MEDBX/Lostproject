@@ -5,6 +5,7 @@ import '../../core/network/api_client.dart';
 import '../../data/datasources/ai_matching_remote_data_source.dart';
 import '../../data/datasources/chat_remote_data_source.dart';
 import 'package:lost/core/services/auth_service.dart';
+import '../../core/utils/app_messenger.dart';
 
 enum MatchingState { loading, results, empty }
 
@@ -171,9 +172,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
     } catch (e) {
       if (mounted) {
         setState(() => _isCreatingPost = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to create post: $e')));
+        AppMessenger.showError('Failed to create post. Please try again.');
       }
     }
   }
@@ -1113,27 +1112,52 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                   ],
                 ),
                 const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => _navigateToPostDetail(result),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0A3D91),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => _navigateToPostDetail(result),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0A3D91),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'View Details',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      elevation: 0,
                     ),
-                    child: const Text(
-                      'View Details',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => _startChat(result),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: FinderColors.primaryBrown,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Start Chat',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),
@@ -1392,9 +1416,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to start chat: $e')));
+      AppMessenger.showError('Failed to start chat. Please try again.');
     }
   }
 

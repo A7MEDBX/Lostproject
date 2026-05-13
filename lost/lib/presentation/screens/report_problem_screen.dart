@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/network/api_client.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/utils/app_messenger.dart';
 
 
 /// Report a Problem Screen
@@ -60,31 +61,16 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
             _titleController.clear();
             _descriptionController.clear();
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Report submitted successfully!'),
-              backgroundColor: Color(0xFF0A3D91),
-            ),
-          );
+          AppMessenger.showSuccess('Report submitted successfully!');
         }
       } catch (e) {
         if (mounted) {
           setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to submit report: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          AppMessenger.showError('Failed to submit report. Please try again.');
         }
       }
     } else if (_selectedOption == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select an option'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppMessenger.showError('Please select an option');
     }
   }
 

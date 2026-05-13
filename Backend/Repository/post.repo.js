@@ -104,20 +104,21 @@ class PostRepository {
     async updatePost(userid, postid, data) {
         try {
             const allowedUpdates = {};
-            
+
             if (data.title) allowedUpdates.title = data.title;
-            if (data.description !== undefined) allowedUpdates.description = data.description; 
+            if (data.description !== undefined) allowedUpdates.description = data.description;
             if (data.category) allowedUpdates.category = data.category;
             if (data.country) allowedUpdates.country = data.country;
             if (data.state) allowedUpdates.state = data.state;
             if (data.city) allowedUpdates.city = data.city;
             if (data.latitude) allowedUpdates.latitude = data.latitude;
             if (data.longitude) allowedUpdates.longitude = data.longitude;
+            if (data.image_url) allowedUpdates.image_url = data.image_url;
+            if (data.post_type) allowedUpdates.post_type = data.post_type;
 
             return await Post.update(
                 allowedUpdates,
-                { 
-                    where: { 
+                {                    where: { 
                         id: postid,
                         user_id:userid
                     } 
@@ -174,11 +175,11 @@ class PostRepository {
         throw error;
     }
 }
-    async updatePostStatus(postId, newStatus) {
+    async updatePostStatus(postId, userId, newStatus) {
         try {
             return await Post.update(
                 { status: newStatus },
-                { where: { id: postId } }
+                { where: { id: postId, user_id: userId } }
             );
         } catch (error) {
             throw error;

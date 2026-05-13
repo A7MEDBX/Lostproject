@@ -158,10 +158,11 @@ class PostController {
     // Update post status
     async updatePostStatus(req, res) {
         try {
+            const userId = req.user.id; // Database UUID
             const { id: postId } = req.params;
             const { status } = req.body;
 
-            const result = await PostService.updatePostStatus(postId, status);
+            const result = await PostService.updatePostStatus(userId, postId, status);
             
             if (!result.success) {
                 return response.ErrorResponse(res, result.message, null, 400);

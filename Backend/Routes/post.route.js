@@ -1,6 +1,6 @@
 const { verfyFirebaseToken } = require('../Middlewares/auth.middleware');
 const { requireAuthentication, requireVerification } = require('../Middlewares/isVerfied.middleware');
-const { createPostValidator } = require('../validators/post.validator');
+const { createPostValidator, updatePostValidator } = require('../validators/post.validator');
 const validate = require('../Middlewares/validation');
 const postController = require('../Controllers/post.controller');
 const {uploadToCloudinary,uploadMiddleware} = require('../Middlewares/multer.middleware');
@@ -56,8 +56,7 @@ Router.get('/:id', postController.getPostById);
  * @body    Post update data
  */
 Router.put('/:id',
-    requireVerification,
-    createPostValidator,
+    updatePostValidator,
     validate,
     postController.updatePost
 );
@@ -75,6 +74,6 @@ Router.delete('/:id', requireVerification, postController.deletePost);
  * @access  Private (requires verified identity, post owner only)
  * @body    { status: string }
  */
-Router.patch('/:id/status', requireVerification, postController.updatePostStatus);
+Router.patch('/:id/status', postController.updatePostStatus);
 
 module.exports = Router;

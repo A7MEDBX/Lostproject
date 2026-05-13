@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/network/api_client.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/utils/app_messenger.dart';
 import '../providers/user_provider.dart';
 
 /// Edit Profile Screen
@@ -465,23 +466,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                                   if (mounted) {
                                     setState(() => _isLoading = false);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Profile updated successfully!'),
-                                        backgroundColor: Color(0xFF0A3D91),
-                                      ),
-                                    );
+                                    AppMessenger.showSuccess('Profile updated successfully!');
                                     Navigator.pop(context);
                                   }
                                 } catch (e) {
                                   if (mounted) {
                                     setState(() => _isLoading = false);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Failed to save: $e'),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
+                                    AppMessenger.showError('Failed to save changes. Please try again.');
                                   }
                                 }
                               },

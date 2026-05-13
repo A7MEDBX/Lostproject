@@ -64,7 +64,10 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const SearchScreen());
 
       case createPost:
-        return MaterialPageRoute(builder: (_) => const CreatePostScreen());
+        return MaterialPageRoute(
+          builder: (_) => const CreatePostScreen(),
+          settings: settings,
+        );
 
       case postDetail:
         final args = settings.arguments as Map<String, dynamic>?;
