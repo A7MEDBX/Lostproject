@@ -74,6 +74,6 @@ Router.delete('/:id', requireVerification, postController.deletePost);
  * @access  Private (requires verified identity, post owner only)
  * @body    { status: string }
  */
-Router.patch('/:id/status', postController.updatePostStatus);
+Router.patch('/:id/status', requireVerification, postController.updatePostStatus);
 
 module.exports = Router;

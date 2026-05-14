@@ -15,6 +15,22 @@ class ChatController {
                 return response.ErrorResponse(res, 'other_user_id is required', null, 400);
             }
 
+            const ContactRequest = require('../models/ContactRequest.model');
+            const { Op } = require('sequelize');
+            const hasAcceptedRequest = await ContactRequest.findOne({
+                where: {
+                    status: 'accepted',
+                    [Op.or]: [
+                        { sender_id: currentUserId, receiver_id: other_user_id },
+                        { sender_id: other_user_id, receiver_id: currentUserId }
+                    ]
+                }
+            });
+
+            if (!hasAcceptedRequest) {
+                return response.ErrorResponse(res, 'Access denied: You must have an accepted contact request to start a chat', null, 403);
+            }
+
             const result = await ChatService.createOrGetChat(currentUserId, other_user_id);
             
             if (!result.success) {
@@ -48,7 +64,21 @@ class ChatController {
                 return response.ErrorResponse(res, result.message, null, 404);
             }
             
-            return response.Success(res, result.message, result.data, 200);
+            const raw = result.data.toJSON ? result.data.toJSON() : result.data;
+            const isUser1 = raw.user_1 === currentUserId;
+            const otherUser = isUser1 ? raw.secondUser : raw.firstUser;
+            
+            const shaped = {
+                id: raw.id,
+                user_1: raw.user_1,
+                user_2: raw.user_2,
+                other_user_id: otherUser?.id || null,
+                other_user_name: otherUser?.name || null,
+                created_at: raw.created_at,
+                updated_at: raw.updated_at,
+            };
+            
+            return response.Success(res, result.message, shaped, 200);
         } catch (error) {
             console.error('Error in getChatById:', error);
             return response.ErrorResponse(res, 'Server Error', error.message, 500);
@@ -107,6 +137,16 @@ class ChatController {
             if (io) {
                 const messageData = result.data.toJSON ? result.data.toJSON() : result.data;
                 io.to(`chat:${chatId}`).emit('new_message', messageData);
+
+                // Send notification to the receiver
+                const chatData = await ChatService.getChatById(chatId);
+                if (chatData.success && chatData.data) {
+                    const chat = chatData.data.toJSON ? chatData.data.toJSON() : chatData.data;
+                    const receiverId = chat.user_1 === currentUserId ? chat.user_2 : chat.user_1;
+                    
+                    const NotificationService = require('../services/notification.service');
+                    NotificationService.sendNotification(receiverId, 'new_message', chatId, io);
+                }
             }
             
             return response.Success(res, result.message, result.data, 201);

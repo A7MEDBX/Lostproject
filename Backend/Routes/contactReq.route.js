@@ -59,6 +59,13 @@ router.put('/:requestId/respond',
 router.delete('/:requestId/cancel',
      ContactReqController.cancelRequest);   
      
+/**
+ * @route   GET /api/v1/contact-request/:requestId
+ * @desc    Get contact request details by ID
+ * @access  Private
+ */
+router.get('/:requestId',
+     ContactReqController.getRequestById);
 
 /**
  * @route   GET /api/v1/contact-request/check/:postId

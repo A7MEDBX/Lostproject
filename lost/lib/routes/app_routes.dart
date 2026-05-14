@@ -171,7 +171,13 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const FilterScreen());
 
       case reportProblem:
-        return MaterialPageRoute(builder: (_) => const ReportProblemScreen());
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => ReportProblemScreen(
+            reportedUserId: args?['reportedUserId'],
+            reportedUserName: args?['reportedUserName'],
+          ),
+        );
 
       default:
         return MaterialPageRoute(

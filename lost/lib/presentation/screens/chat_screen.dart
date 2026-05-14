@@ -2,14 +2,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import '../../core/network/api_client.dart';
 import '../../core/network/socket_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/utils/app_messenger.dart';
 import '../../data/datasources/chat_remote_data_source.dart';
+import '../../data/datasources/user_remote_data_source.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../data/models/chat_message_model.dart';
+import '../providers/user_provider.dart';
 
 /// Individual Chat Screen — wired to real backend API and Socket.io.
 class ChatScreen extends StatefulWidget {
@@ -43,8 +46,14 @@ class _ChatScreenState extends State<ChatScreen> {
 
   // Data source & Socket
   late final ChatRemoteDataSource _dataSource;
-  late final SocketService _socketService;
-  late final String _currentUserId;
+  final SocketService _socketService = SocketService();
+  // Postgres UUID of the current user — resolved async to avoid
+  // initState race against UserProvider.loadUser().
+  String _currentUserId = '';
+  late bool _isUserOnline;
+
+  late final dynamic Function(dynamic) _messageHandler;
+  late final dynamic Function(dynamic) _statusHandler;
 
   @override
   void initState() {
@@ -53,8 +62,12 @@ class _ChatScreenState extends State<ChatScreen> {
       tokenProvider: AuthService.instance.getIdToken,
     );
     _dataSource = ChatRemoteDataSourceImpl(apiClient: apiClient);
-    _socketService = SocketService();
-    _currentUserId = AuthService.instance.currentUser?.uid ?? '';
+    _isUserOnline = widget.isOnline ?? false;
+
+    // Resolve the backend Postgres UUID asynchronously.
+    // Do NOT rely on initState-time provider read — UserProvider may not
+    // have completed loadUser() yet when navigating directly to ChatScreen.
+    _resolveCurrentUserId();
 
     _messageController.addListener(() {
       setState(() {
@@ -73,6 +86,29 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> _resolveCurrentUserId() async {
+    // 1. Try to get it from the provider (fast path)
+    final providerUser = context.read<UserProvider>().backendUser;
+    if (providerUser != null) {
+      if (mounted) setState(() => _currentUserId = providerUser.id);
+      return;
+    }
+
+    // 2. Not loaded yet? Fetch it directly to ensure we have the Postgres UUID
+    try {
+      final apiClient = ApiClient(tokenProvider: AuthService.instance.getIdToken);
+      final userDataSource = UserRemoteDataSourceImpl(apiClient: apiClient);
+      final user = await userDataSource.fetchMe();
+      if (mounted) setState(() => _currentUserId = user.id);
+    } catch (e) {
+      debugPrint('[ChatScreen] Error resolving current user ID: $e');
+      // Fallback to Firebase UID if REST fails, though this will likely cause isMine to fail
+      if (mounted) {
+        setState(() => _currentUserId = AuthService.instance.currentUser?.uid ?? '');
+      }
+    }
+  }
+
   Future<void> _initSocket() async {
     final token = await AuthService.instance.getIdToken();
     if (token != null) {
@@ -81,20 +117,32 @@ class _ChatScreenState extends State<ChatScreen> {
       
       _socketService.joinChat(widget.chatId!);
 
-      _socketService.onNewMessage((data) {
+      _messageHandler = (data) {
         if (mounted) {
           setState(() {
-            // Remove optimistic message if present (matched by exact text or temp id)
             _messages.removeWhere((m) => m.id.startsWith('temp-') && m.message == data['content']);
-            
-            // Ensure we don't add duplicates
             if (!_messages.any((m) => m.id == data['id'])) {
               _messages.add(ChatMessageModel.fromJson(data));
               _scrollToBottom();
             }
           });
         }
-      });
+      };
+
+      _statusHandler = (data) {
+        if (mounted && widget.userId != null && data['userId'] == widget.userId) {
+          setState(() {
+            _isUserOnline = data['status'] == 'online';
+          });
+        }
+      };
+
+      _socketService.on('new_message', _messageHandler);
+      _socketService.on('user_status', _statusHandler);
+
+      if (widget.userId != null) {
+        _socketService.checkUserStatus(widget.userId!);
+      }
     }
   }
 
@@ -103,8 +151,9 @@ class _ChatScreenState extends State<ChatScreen> {
     if (widget.chatId != null) {
       _socketService.leaveChat(widget.chatId!);
     }
-    _socketService.removeListeners();
-    _socketService.disconnect();
+    _socketService.off('new_message', _messageHandler);
+    _socketService.off('user_status', _statusHandler);
+    // Do NOT disconnect singleton, allow other screens to use it
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -288,7 +337,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                       child: Icon(Icons.person, size: 24, color: Colors.grey[700]),
                     ),
-                    if (widget.isOnline ?? false)
+                    if (_isUserOnline)
                       Positioned(
                         bottom: 2,
                         right: 2,
@@ -319,7 +368,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       ),
                       Text(
-                        (widget.isOnline ?? false) ? 'Online' : 'Offline',
+                        _isUserOnline ? 'Online' : 'Offline',
                         style: const TextStyle(fontSize: 13, color: Colors.white70),
                       ),
                     ],
@@ -327,13 +376,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ],
             ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.refresh, color: Colors.white70, size: 22),
-                onPressed: _loadMessages,
-                tooltip: 'Refresh messages',
-              ),
-            ],
+           
           ),
         ),
       ),
@@ -409,9 +452,9 @@ class _ChatScreenState extends State<ChatScreen> {
                             itemCount: _messages.length,
                             itemBuilder: (context, index) {
                               final msg = _messages[index];
-                              // Assume matching Firebase UID or database UserID logic here.
-                              // Temporarily marking as mine if it doesn't belong to the 'other user'.
-                              final isMine = msg.senderId == _currentUserId || (widget.userId != null && msg.senderId != widget.userId);
+                              // isMine: sender_id (Postgres UUID) must exactly match
+                              // current user's backend UUID — no fallback OR clause.
+                              final isMine = msg.senderId == _currentUserId;
                               return _buildMessageBubble(msg, isMine);
                             },
                           ),

@@ -9,8 +9,8 @@ class ReportController {
             const report = await reportService.createReport(reporter_id, reported_user_id, reason);
             return response.Success(res, 'Report submitted successfully', report, 201);
         } catch (error) {
-            if (error.message === 'You cannot report yourself' || 
-                error.message === 'Reported user not found' || 
+            if (error.message === 'You cannot report yourself' ||
+                error.message === 'Reported user not found' ||
                 error.message === 'You have already reported this user and it is pending review') {
                 return response.ErrorResponse(res, error.message, null, 400);
             }

@@ -21,6 +21,13 @@ abstract class ChatRemoteDataSource {
 
   /// GET /chat/my-chats — returns a list of chat maps from the backend.
   Future<List<Map<String, dynamic>>> getMyChats();
+
+  Future<Map<String, dynamic>> checkRequestStatus(String postId);
+  Future<void> sendContactRequest(String receiverId, String postId, String introMessage);
+  Future<String?> getChatWithUser(String userId);
+
+  /// GET /chat/:chatId — returns raw chat map with participant data.
+  Future<Map<String, dynamic>?> getChatMetadata(String chatId);
 }
 
 /// Implementation of ChatRemoteDataSource
@@ -102,6 +109,69 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           .toList();
     } catch (e) {
       throw ServerException('Failed to fetch chats: $e');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> checkRequestStatus(String postId) async {
+    try {
+      final response = await apiClient.get('${ApiConstants.checkContactRequestEndpoint}/$postId');
+      if (response['success'] == true) {
+        if (response['data'] != null) {
+          return response['data'] as Map<String, dynamic>;
+        }
+      }
+      return {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  @override
+  Future<void> sendContactRequest(String receiverId, String postId, String introMessage) async {
+    try {
+      final body = {
+        'receiver_id': receiverId,
+        'post_id': postId,
+      };
+      
+      if (introMessage.trim().isNotEmpty) {
+        body['intro_message'] = introMessage.trim();
+      }
+
+      await apiClient.post(
+        ApiConstants.sendContactRequestEndpoint,
+        body: body,
+      );
+    } catch (e) {
+      if (e is ServerException) rethrow;
+      throw ServerException('Failed to send request: $e');
+    }
+  }
+
+  @override
+  Future<String?> getChatWithUser(String userId) async {
+    try {
+      final response = await apiClient.get('${ApiConstants.chatEndpoint}/with/$userId');
+      if (response['success'] == true && response['data'] != null) {
+        return response['data']['id'] as String?;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getChatMetadata(String chatId) async {
+    try {
+      final response = await apiClient.get('${ApiConstants.chatEndpoint}/$chatId');
+      if (response['success'] == true && response['data'] != null) {
+        return response['data'] as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      return null;
     }
   }
 }

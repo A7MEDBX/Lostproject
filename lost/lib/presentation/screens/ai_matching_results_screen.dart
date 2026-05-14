@@ -59,53 +59,55 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
   List<MatchResult> _results = [];
   late AnimationController _pulseController;
 
-  // Mock results for demonstration
+  // Valid UUIDs for mock data to prevent backend validation crashes
   final List<MatchResult> _mockResults = [
     MatchResult(
-      id: '1',
-      userId: 'mock-user-1',
-      title: 'Black Leather Wallet',
-      description:
-          'Found near the park bench. Has a small scratch on the front corner.',
-      imageUrl:
-          'https://images.unsplash.com/photo-1627123424574-724758594e93?w=400',
+      id: '00000000-0000-0000-0000-000000000001',
+      userId: '11111111-1111-1111-1111-111111111111',
+      title: 'Golden Retriever',
+      description: 'Found a friendly golden retriever near the park.',
+      imageUrl: 'https://images.unsplash.com/photo-1552053831-71594a27632d',
       location: 'Central Park, NY',
-      distance: '200m away',
+      distance: '0.8km away',
       timeAgo: '2 hours ago',
-      matchPercentage: 98,
-      finderName: 'Jane D.',
+      matchPercentage: 95,
+      finderName: 'Sarah Smith',
       isVerified: true,
-      status: 'Found',
+      status: 'found',
+      latitude: 40.7812,
+      longitude: -73.9665,
     ),
     MatchResult(
-      id: '2',
-      userId: 'mock-user-2',
-      title: 'Leather Card Holder',
-      description: 'Small black card holder found on subway.',
-      imageUrl:
-          'https://images.unsplash.com/photo-1606503825008-909a67e63c3d?w=400',
-      location: 'Brooklyn, NY',
-      distance: '2km away',
+      id: '00000000-0000-0000-0000-000000000002',
+      userId: '22222222-2222-2222-2222-222222222222',
+      title: 'Yellow Lab Mix',
+      description: 'Yellow lab seen wandering around downtown.',
+      imageUrl: 'https://images.unsplash.com/photo-1544568100-847a948585b9',
+      location: 'Downtown, NY',
+      distance: '2.5km away',
       timeAgo: '5 hours ago',
-      matchPercentage: 84,
-      finderName: 'Mike R.',
+      matchPercentage: 78,
+      finderName: 'Mike Johnson',
       isVerified: false,
-      status: 'Found',
+      status: 'found',
+      latitude: 40.7128,
+      longitude: -74.0060,
     ),
     MatchResult(
-      id: '3',
-      userId: 'mock-user-3',
-      title: 'Black Pouch',
-      description: 'Found keys in a black pouch.',
-      imageUrl:
-          'https://images.unsplash.com/photo-1594223274512-ad4803739b7c?w=400',
-      location: 'Queens, NY',
-      distance: '5km away',
+      id: '00000000-0000-0000-0000-000000000003',
+      userId: '33333333-3333-3333-3333-333333333333',
+      title: 'Light Brown Dog',
+      description: 'Dog found without collar.',
+      imageUrl: 'https://images.unsplash.com/photo-1537151608804-ea6f11cc3389',
+      location: 'Brooklyn, NY',
+      distance: '5.2km away',
       timeAgo: '1 day ago',
-      matchPercentage: 65,
-      finderName: 'Sarah K.',
+      matchPercentage: 45,
+      finderName: 'Anonymous',
       isVerified: false,
-      status: 'Found',
+      status: 'found',
+      latitude: 40.6782,
+      longitude: -73.9442,
     ),
   ];
 
@@ -762,7 +764,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () => _startChat(result),
+                        onPressed: () => _sendContactRequest(result),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: FinderColors.primaryBrown,
                           shape: RoundedRectangleBorder(
@@ -775,13 +777,13 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              Icons.chat_bubble,
+                              Icons.person_add,
                               size: 18,
                               color: Colors.white,
                             ),
                             SizedBox(width: 8),
                             Text(
-                              'Start Chat',
+                              'Request',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -966,7 +968,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () => _startChat(result),
+                        onPressed: () => _sendContactRequest(result),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0A3D91),
                           shape: RoundedRectangleBorder(
@@ -979,13 +981,13 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              Icons.chat_bubble,
+                              Icons.person_add,
                               size: 18,
                               color: Colors.white,
                             ),
                             SizedBox(width: 8),
                             Text(
-                              'Chat',
+                              'Request',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -1138,7 +1140,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                     const SizedBox(width: 8),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () => _startChat(result),
+                        onPressed: () => _sendContactRequest(result),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: FinderColors.primaryBrown,
                           shape: RoundedRectangleBorder(
@@ -1148,7 +1150,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                           elevation: 0,
                         ),
                         child: const Text(
-                          'Start Chat',
+                          'Request',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -1392,74 +1394,68 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
     );
   }
 
-  Future<void> _startChat(MatchResult result) async {
-    try {
-      final apiClient = ApiClient(
-        tokenProvider: AuthService.instance.getIdToken,
-      );
-      final ds = ChatRemoteDataSourceImpl(apiClient: apiClient);
+  Future<void> _sendContactRequest(MatchResult result) async {
+    final introController = TextEditingController();
 
-      // Start or get chat from backend
-      final chatId = await ds.startChat(otherUserId: result.userId);
-
-      if (!mounted) return;
-
-      Navigator.pushNamed(
-        context,
-        '/chat',
-        arguments: {
-          'chatId': chatId,
-          'userName': result.finderName,
-          'userId': result.userId,
-          'isOnline': false,
-        },
-      );
-    } catch (e) {
-      if (!mounted) return;
-      AppMessenger.showError('Failed to start chat. Please try again.');
-    }
-  }
-
-  // ==================== SHARED WIDGETS ====================
-  Widget _buildHeader(String title, {bool showFilter = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: BoxDecoration(
-        color: FinderColors.primaryBrown,
-        border: const Border(
-          bottom: BorderSide(color: FinderColors.darkBrown, width: 0.5),
-        ),
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: FinderColors.textPrimary),
-            onPressed: () => Navigator.pop(context),
-          ),
-          Expanded(
-            child: Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Request Contact'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Send a request to the owner to start messaging.'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: introController,
+              maxLength: 255,
+              decoration: const InputDecoration(
+                hintText: 'Add an optional intro message...',
+                border: OutlineInputBorder(),
               ),
             ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
-          showFilter
-              ? IconButton(
-                  icon: const Icon(
-                    Icons.filter_list,
-                    color: FinderColors.textSecondary,
-                  ),
-                  onPressed: () {
-                    // Show filter options
-                  },
-                )
-              : const SizedBox(width: 48),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close intro dialog
+
+              // Show loading spinner
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (c) => const Center(child: CircularProgressIndicator()),
+              );
+
+              try {
+                final apiClient =
+                    ApiClient(tokenProvider: AuthService.instance.getIdToken);
+                final ds = ChatRemoteDataSourceImpl(apiClient: apiClient);
+
+                await ds.sendContactRequest(
+                    result.userId, result.id, introController.text.trim());
+
+                if (!mounted) return;
+                Navigator.pop(context); // close loading
+
+                AppMessenger.showSuccess('Contact request sent successfully!');
+              } catch (e) {
+                if (!mounted) return;
+                Navigator.pop(context); // close loading
+                AppMessenger.showError(
+                    'Failed to send request. Please try again.');
+              }
+            },
+            child: const Text('Send Request'),
+          ),
         ],
       ),
     );
   }
+
 }

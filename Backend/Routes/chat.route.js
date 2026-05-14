@@ -7,10 +7,10 @@ const { verifyChatParticipant } = require('../Middlewares/chat.middleware');
 const { createChatValidator, sendMessageValidator } = require('../validators/chat.validator');
 const validate = require('../Middlewares/validation');
 
-// All chat operations require verified identity (Temporarily relaxed to requireAuthentication for testing)
+// All chat operations require verified identity
 Router.use(verfyFirebaseToken);
 Router.use(requireAuthentication);
-// Router.use(requireVerification);
+Router.use(requireVerification);
 
 /**
  * @route   POST /api/v1/chat/create

@@ -20,6 +20,7 @@ class SearchResultCard extends StatelessWidget {
       child: InkWell(
         onTap: () {
           Navigator.pushNamed(context, '/post-detail', arguments: {
+            'postId': post.id,
             'userId': post.userId,
             'title': post.title,
             'category': post.category,

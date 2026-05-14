@@ -18,7 +18,7 @@ const Notification = sequelize.define('notifications', {
         onDelete: 'CASCADE'
     },
     type: {
-        type: DataTypes.ENUM('match_found', 'contact_request', 'contact_accepted', 'post_resolved'),
+        type: DataTypes.ENUM('match_found', 'contact_request', 'contact_accepted', 'contact_rejected', 'post_resolved', 'new_message'),
         allowNull: false
     },
     reference_id: {

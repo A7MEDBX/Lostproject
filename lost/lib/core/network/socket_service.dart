@@ -2,6 +2,10 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../constants/api_endpoints.dart';
 
 class SocketService {
+  static final SocketService _instance = SocketService._internal();
+  factory SocketService() => _instance;
+  SocketService._internal();
+
   IO.Socket? _socket;
   String? _authToken;
 
@@ -16,111 +20,80 @@ class SocketService {
       return;
     }
 
-    _socket = IO.io(
-      ApiEndpoints.baseUrl.replaceAll('/api/v1', ''), // Socket connects to root, not api/v1
-      IO.OptionBuilder()
-          .setTransports(['websocket'])
-          .disableAutoConnect()
-          .setAuth({'token': _authToken}) // Pass token to backend socket middleware
-          .build(),
-    );
+    if (_socket != null && _socket!.connected) return;
 
-    _socket!.connect();
+    if (_socket == null) {
+      _socket = IO.io(
+        ApiEndpoints.baseUrl.replaceAll('/api/v1', ''), // Socket connects to root, not api/v1
+        IO.OptionBuilder()
+            .setTransports(['websocket'])
+            .disableAutoConnect()
+            .setAuth({'token': _authToken}) // Pass token to backend socket middleware
+            .build(),
+      );
 
-    _socket!.onConnect((_) {
-      print('Connected to Socket.io Server');
-    });
+      _socket!.onConnect((_) {
+        print('Connected to Socket.io Server');
+      });
 
-    _socket!.onDisconnect((_) {
-      print('Disconnected from Socket.io Server');
-    });
+      _socket!.onDisconnect((_) {
+        print('Disconnected from Socket.io Server');
+      });
 
-    _socket!.onError((data) {
-      print('Socket Error: $data');
-    });
+      _socket!.onError((data) {
+        print('Socket Error: $data');
+      });
+    }
+
+    if (!_socket!.connected) {
+      _socket!.connect();
+    }
   }
 
   void disconnect() {
     if (_socket != null) {
       _socket!.disconnect();
-      _socket!.dispose();
-      _socket = null;
+      // DO NOT set to null so listeners aren't lost on reconnect
     }
   }
 
-  void joinChat(String chatId) {
-    if (_socket != null && _socket!.connected) {
-      _socket!.emit('join_chat', {'chatId': chatId});
+  void _emitWhenConnected(String event, dynamic data) {
+    if (_socket == null) return;
+    if (_socket!.connected) {
+      _socket!.emit(event, data);
+    } else {
+      _socket!.once('connect', (_) {
+        _socket!.emit(event, data);
+      });
     }
   }
 
-  void leaveChat(String chatId) {
-    if (_socket != null && _socket!.connected) {
-      _socket!.emit('leave_chat', {'chatId': chatId});
-    }
+  void joinChat(String chatId) => _emitWhenConnected('join_chat', {'chatId': chatId});
+  void leaveChat(String chatId) => _emitWhenConnected('leave_chat', {'chatId': chatId});
+  void sendMessage(String chatId, String content) => _emitWhenConnected('send_message', {'chatId': chatId, 'content': content});
+  void sendTypingStart(String chatId) => _emitWhenConnected('typing_start', {'chatId': chatId});
+  void sendTypingStop(String chatId) => _emitWhenConnected('typing_stop', {'chatId': chatId});
+  void markMessageRead(String chatId, String messageId) => _emitWhenConnected('message_read', {'chatId': chatId, 'messageId': messageId});
+  void checkUserStatus(String userId) => _emitWhenConnected('check_user_status', {'userId': userId});
+
+  // Listeners management
+  void on(String event, dynamic Function(dynamic) callback) {
+    _socket?.on(event, callback);
   }
 
-  void sendMessage(String chatId, String content) {
-    if (_socket != null && _socket!.connected) {
-      _socket!.emit('send_message', {'chatId': chatId, 'content': content});
-    }
+  void off(String event, [dynamic Function(dynamic)? callback]) {
+    _socket?.off(event, callback);
   }
 
-  void sendTypingStart(String chatId) {
-    if (_socket != null && _socket!.connected) {
-      _socket!.emit('typing_start', {'chatId': chatId});
-    }
-  }
-
-  void sendTypingStop(String chatId) {
-    if (_socket != null && _socket!.connected) {
-      _socket!.emit('typing_stop', {'chatId': chatId});
-    }
-  }
-
-  void markMessageRead(String chatId, String messageId) {
-    if (_socket != null && _socket!.connected) {
-      _socket!.emit('message_read', {'chatId': chatId, 'messageId': messageId});
-    }
-  }
-
-  // Listeners
-  void onNewMessage(Function(dynamic) callback) {
-    _socket?.on('new_message', callback);
-  }
-
-  void onUserTyping(Function(dynamic) callback) {
-    _socket?.on('user_typing', callback);
-  }
-
-  void onUserStoppedTyping(Function(dynamic) callback) {
-    _socket?.on('user_stopped_typing', callback);
-  }
-
-  void onMessageRead(Function(dynamic) callback) {
-    _socket?.on('message_read', callback);
-  }
-
-  void onUserStatus(Function(dynamic) callback) {
-    _socket?.on('user_status', callback);
-  }
-
-  void onNewNotification(Function(dynamic) callback) {
-    _socket?.on('new_notification', callback);
-  }
-
-  void onError(Function(dynamic) callback) {
-    _socket?.on('error', callback);
-  }
-
-  // Dispose listeners
+  // Backwards compatibility
+  void onNewMessage(dynamic Function(dynamic) callback) => on('new_message', callback);
+  void offNewMessage(dynamic Function(dynamic) callback) => off('new_message', callback);
+  
+  void onUserStatus(dynamic Function(dynamic) callback) => on('user_status', callback);
+  void offUserStatus(dynamic Function(dynamic) callback) => off('user_status', callback);
+  
+  // Dispose all (use carefully)
   void removeListeners() {
-    _socket?.off('new_message');
-    _socket?.off('user_typing');
-    _socket?.off('user_stopped_typing');
-    _socket?.off('message_read');
-    _socket?.off('user_status');
-    _socket?.off('new_notification');
-    _socket?.off('error');
+    _socket?.clearListeners();
   }
 }

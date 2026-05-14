@@ -6,6 +6,7 @@ import '../../data/datasources/chat_remote_data_source.dart';
 import '../../data/datasources/post_remote_data_source.dart';
 import '../../data/models/post_model.dart';
 import '../../core/utils/app_messenger.dart';
+import '../../core/errors/exceptions.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final Map<String, dynamic> postData;
@@ -19,6 +20,7 @@ class PostDetailScreen extends StatefulWidget {
 class _PostDetailScreenState extends State<PostDetailScreen> {
   PostModel? _livePost;
   bool _isLoading = false;
+  String _requestStatus = 'none'; // 'none', 'pending', 'accepted', 'rejected'
 
   @override
   void initState() {
@@ -28,7 +30,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   Future<void> _fetchLivePost() async {
     final postId = widget.postData['postId'];
-    if (postId == null || postId.toString().isEmpty) return;
+    debugPrint('PostDetailScreen: Fetching live post for ID: $postId');
+    if (postId == null || postId.toString().isEmpty) {
+      debugPrint('PostDetailScreen Error: postId is missing in widget.postData!');
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -37,10 +43,16 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       final ds = PostRemoteDataSourceImpl(apiClient: apiClient);
       final post = await ds.getPostById(postId);
       
+      final chatDs = ChatRemoteDataSourceImpl(apiClient: apiClient);
+      final requestStatusData = await chatDs.checkRequestStatus(postId);
+      
       if (mounted) {
         setState(() {
           _livePost = post;
           _isLoading = false;
+          if (requestStatusData.isNotEmpty) {
+            _requestStatus = requestStatusData['status'] ?? 'none';
+          }
         });
       }
     } catch (e) {
@@ -91,6 +103,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final double? latitude = _livePost?.latitude ?? widget.postData['latitude'];
     final double? longitude = _livePost?.longitude ?? widget.postData['longitude'];
     final String userId = _livePost?.userId ?? widget.postData['userId'] ?? '';
+    final String currentPostId = _livePost?.id ?? widget.postData['postId'] ?? '';
+    
+    // Debug logging for ID sources
+    if (currentPostId.isEmpty) {
+      debugPrint('PostDetailScreen Warning: currentPostId is empty in build()');
+      debugPrint('widget.postData keys: ${widget.postData.keys.toList()}');
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -312,23 +331,60 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
-                                        posterName,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black87,
+                                      Row(
+                                        children: [
+                                          Text(
+                                            posterName,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                          if (isVerified) ...[
+                                            const SizedBox(width: 6),
+                                            const Icon(
+                                              Icons.verified,
+                                              size: 18,
+                                              color: Color(0xFF0A3D91),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                      TextButton.icon(
+                                        onPressed: () {
+                                          if (userId.isEmpty) {
+                                            AppMessenger.showError('User ID not found');
+                                            return;
+                                          }
+                                          Navigator.pushNamed(
+                                            context,
+                                            '/report-problem',
+                                            arguments: {
+                                              'reportedUserId': userId,
+                                              'reportedUserName': posterName,
+                                            },
+                                          );
+                                        },
+                                        icon: const Icon(Icons.report_outlined,
+                                            size: 16, color: Colors.red),
+                                        label: const Text(
+                                          'Report',
+                                          style: TextStyle(
+                                              color: Colors.red,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                        style: TextButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8),
+                                          minimumSize: Size.zero,
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
                                         ),
                                       ),
-                                      if (isVerified) ...[
-                                        const SizedBox(width: 6),
-                                        const Icon(
-                                          Icons.verified,
-                                          size: 18,
-                                          color: Color(0xFF0A3D91),
-                                        ),
-                                      ],
                                     ],
                                   ),
                                   const SizedBox(height: 2),
@@ -578,43 +634,142 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 child: ElevatedButton(
                   onPressed: () async {
                     if (userId.isEmpty) {
-                      AppMessenger.showError('Cannot message this user.');
+                      AppMessenger.showError('Cannot interact with this user.');
                       return;
                     }
 
-                    // Show loading
+                    if (_requestStatus == 'pending') {
+                      AppMessenger.showError('Your contact request is still pending.');
+                      return;
+                    }
+
+                    if (_requestStatus == 'accepted') {
+                      // Show loading
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) => const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+
+                      try {
+                        final apiClient = ApiClient(tokenProvider: AuthService.instance.getIdToken);
+                        final ds = ChatRemoteDataSourceImpl(apiClient: apiClient);
+                        // Do not create chat, just get the existing one since they accepted
+                        final chatId = await ds.getChatWithUser(userId);
+
+                        if (!context.mounted) return;
+                        Navigator.pop(context); // close dialog
+
+                        if (chatId != null) {
+                          Navigator.pushNamed(context, '/chat', arguments: {
+                            'chatId': chatId,
+                            'userName': posterName,
+                            'userId': userId,
+                            'isOnline': false,
+                          });
+                        } else {
+                          AppMessenger.showError('Chat not found even though request was accepted.');
+                        }
+                      } catch (e) {
+                        if (!context.mounted) return;
+                        Navigator.pop(context);
+                        AppMessenger.showError('Failed to open chat. Please try again.');
+                      }
+                      return;
+                    }
+
+                    // For 'none' or 'rejected'
+                    final introController = TextEditingController();
                     showDialog(
                       context: context,
-                      barrierDismissible: false,
-                      builder: (context) => const Center(
-                        child: CircularProgressIndicator(),
+                      builder: (context) => AlertDialog(
+                        title: const Text('Request Contact'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('Send a request to the owner to start messaging.'),
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: introController,
+                              maxLength: 255,
+                              decoration: const InputDecoration(
+                                hintText: 'Add an optional intro message...',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Cancel'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () async {
+                              Navigator.pop(context); // Close intro dialog
+
+                              // Show loading spinner
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (c) => const Center(child: CircularProgressIndicator()),
+                              );
+
+                              final safePostId = _livePost?.id ?? widget.postData['postId'];
+                              final introMessage = introController.text.trim();
+
+                              debugPrint('--- CONTACT REQUEST PAYLOAD TRACE ---');
+                              debugPrint('Receiver ID: $userId');
+                              debugPrint('Post ID (Final): $safePostId');
+                              debugPrint('Intro Message: "$introMessage"');
+
+                              Exception? error;
+                              bool success = false;
+
+                              try {
+                                if (safePostId == null || (safePostId as String).isEmpty) {
+                                  throw ServerException('Post ID is missing. Request aborted.');
+                                }
+                                if (userId.isEmpty) {
+                                  throw ServerException('Receiver User ID is missing.');
+                                }
+                                final apiClient = ApiClient(tokenProvider: AuthService.instance.getIdToken);
+                                final ds = ChatRemoteDataSourceImpl(apiClient: apiClient);
+                                await ds.sendContactRequest(userId, safePostId, introMessage);
+                                success = true;
+                              } on ServerException catch (e) {
+                                error = e;
+                              } catch (e) {
+                                error = ServerException('Failed to send request: $e');
+                              } finally {
+                                // Always pop loading — no mounted check needed here
+                                // because Navigator.pop is safe to call even if widget rebuilt.
+                                if (context.mounted) Navigator.pop(context);
+                              }
+
+                              if (!context.mounted) return;
+
+                              if (success) {
+                                AppMessenger.showSuccess('Contact request sent successfully!');
+                                setState(() => _requestStatus = 'pending');
+                              } else {
+                                AppMessenger.showError(
+                                  error is ServerException ? (error as ServerException).message : error.toString(),
+                                );
+                              }
+                            },
+                            child: const Text('Send Request'),
+                          ),
+                        ],
                       ),
                     );
-
-                    try {
-                      final apiClient = ApiClient(
-                        tokenProvider: AuthService.instance.getIdToken,
-                      );
-                      final ds = ChatRemoteDataSourceImpl(apiClient: apiClient);
-                      final chatId = await ds.startChat(otherUserId: userId);
-
-                      if (!context.mounted) return;
-                      Navigator.pop(context); // close dialog
-
-                      Navigator.pushNamed(context, '/chat', arguments: {
-                        'chatId': chatId,
-                        'userName': posterName,
-                        'userId': userId,
-                        'isOnline': false,
-                      });
-                    } catch (e) {
-                      if (!context.mounted) return;
-                      Navigator.pop(context); // close dialog
-                      AppMessenger.showError('Failed to start chat. Please try again.');
-                    }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0A3D91),
+                    backgroundColor: _requestStatus == 'pending' 
+                        ? Colors.grey 
+                        : const Color(0xFF0A3D91),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -625,10 +780,17 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.message, size: 20),
+                      Icon(
+                        _requestStatus == 'accepted' ? Icons.message : 
+                        _requestStatus == 'pending' ? Icons.hourglass_empty : 
+                        Icons.person_add, 
+                        size: 20
+                      ),
                       const SizedBox(width: 8),
                       Text(
-                        'Message $posterName',
+                        _requestStatus == 'accepted' ? 'Message $posterName' :
+                        _requestStatus == 'pending' ? 'Request Pending' :
+                        'Request Contact',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,

@@ -7,7 +7,14 @@ import '../../core/utils/app_messenger.dart';
 
 /// Report a Problem Screen
 class ReportProblemScreen extends StatefulWidget {
-  const ReportProblemScreen({super.key});
+  final String? reportedUserId;
+  final String? reportedUserName;
+
+  const ReportProblemScreen({
+    super.key,
+    this.reportedUserId,
+    this.reportedUserName,
+  });
 
   @override
   State<ReportProblemScreen> createState() => _ReportProblemScreenState();
@@ -38,6 +45,11 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
 
   Future<void> _submitReport() async {
     if (_formKey.currentState!.validate() && _selectedOption != null) {
+      if (widget.reportedUserId == null) {
+        AppMessenger.showError('Reporting requires a specific user. Please report from their profile or post.');
+        return;
+      }
+
       setState(() => _isLoading = true);
 
       try {
@@ -45,12 +57,15 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
           tokenProvider: AuthService.instance.getIdToken,
         );
 
+        // Map frontend fields to backend DTO
+        // Backend expects: reported_user_id (UUID), reason (String 10-1000)
+        final reason = '$_selectedOption: ${_titleController.text.trim()} - ${_descriptionController.text.trim()}';
+
         await apiClient.post(
           ApiConstants.createReportEndpoint,
           body: {
-            'type': _selectedOption,
-            'title': _titleController.text.trim(),
-            'description': _descriptionController.text.trim(),
+            'reported_user_id': widget.reportedUserId,
+            'reason': reason,
           },
         );
 
@@ -115,6 +130,33 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
+              
+              if (widget.reportedUserName != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.red.withOpacity(0.1)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.report_gmailerrorred, color: Colors.red),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Reporting User: ${widget.reportedUserName}',
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
 
               // I would like to dropdown
               const Text(

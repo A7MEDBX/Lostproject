@@ -10,9 +10,10 @@ class Contact_req {
      * @param {string} sender_id - UUID of the user sending the request
      * @param {string} receiver_id - UUID of the user receiving the request
      * @param {string} post_id - UUID of the post
+     * @param {string} [intro_message] - Optional introduction message
      * @returns {Promise<[ContactRequest, boolean]>} - [instance, created]
      */
-    async createContactReq(sender_id, receiver_id, post_id) {
+    async createContactReq(sender_id, receiver_id, post_id, intro_message) {
         try {
             return await ContactRequest.findOrCreate({
                 where: {
@@ -21,7 +22,8 @@ class Contact_req {
                     post_id: post_id,
                 },
                 defaults: {
-                    status: 'pending'
+                    status: 'pending',
+                    intro_message: intro_message || null
                 }
             });
         } catch (err) {

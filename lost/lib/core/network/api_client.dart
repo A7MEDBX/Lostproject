@@ -152,23 +152,21 @@ class ApiClient {
         return {};
       }
       return jsonDecode(response.body) as Map<String, dynamic>;
-    } else if (response.statusCode == 400) {
-      throw ServerException(
-        'Bad Request: ${response.body}',
-        statusCode: response.statusCode,
-      );
-    } else if (response.statusCode == 401) {
-      throw ServerException('Unauthorized', statusCode: response.statusCode);
-    } else if (response.statusCode == 404) {
-      throw ServerException('Not Found', statusCode: response.statusCode);
-    } else if (response.statusCode == 500) {
-      throw ServerException(
-        'Internal Server Error',
-        statusCode: response.statusCode,
-      );
     } else {
+      String errorMessage = 'Unexpected error';
+      try {
+        final body = jsonDecode(response.body);
+        if (body['message'] != null) {
+          errorMessage = body['message'];
+        } else if (body['error'] != null) {
+          errorMessage = body['error'];
+        }
+      } catch (_) {
+        errorMessage = response.body.isNotEmpty ? response.body : 'Error ${response.statusCode}';
+      }
+      
       throw ServerException(
-        'Unexpected error: ${response.statusCode}',
+        errorMessage,
         statusCode: response.statusCode,
       );
     }

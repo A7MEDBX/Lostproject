@@ -39,6 +39,10 @@ const ContactRequest = sequelize.define('contact_requests', {
         type: DataTypes.ENUM('pending', 'accepted', 'rejected'),
         defaultValue: 'pending',
         allowNull: false
+    },
+    intro_message: {
+        type: DataTypes.STRING(255),
+        allowNull: true
     }
 }, {
     tableName: 'contact_requests',

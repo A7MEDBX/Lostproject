@@ -22,6 +22,7 @@ class _MyPostsScreenState extends State<MyPostsScreen>
 
   late final PostRemoteDataSourceImpl _dataSource;
   String _searchQuery = '';
+  final Set<String> _updatingPosts = {};
 
   @override
   void initState() {
@@ -43,7 +44,8 @@ class _MyPostsScreenState extends State<MyPostsScreen>
       final posts = await _dataSource.getUserPosts('');
       if (mounted) {
         setState(() {
-          _allUserPosts = posts;
+          // Enforce domain boundary: convert List<PostModel> to List<Post>
+          _allUserPosts = List<Post>.from(posts);
           _isLoading = false;
         });
       }
@@ -67,6 +69,8 @@ class _MyPostsScreenState extends State<MyPostsScreen>
   }
 
   Future<void> _toggleResolved(String postId, String currentStatus) async {
+    if (_updatingPosts.contains(postId)) return;
+
     final isResolved = currentStatus == 'resolved' || currentStatus == 'closed';
     final newStatus = isResolved ? 'active' : 'resolved';
     final idx = _allUserPosts.indexWhere((p) => p.id == postId);
@@ -76,7 +80,10 @@ class _MyPostsScreenState extends State<MyPostsScreen>
 
     if (mounted) {
       setState(() {
-        _allUserPosts[idx] = previousPost.copyWith(status: newStatus);
+        _updatingPosts.add(postId);
+        final newList = List<Post>.from(_allUserPosts);
+        newList[idx] = previousPost.copyWith(status: newStatus);
+        _allUserPosts = newList;
       });
     }
 
@@ -90,10 +97,21 @@ class _MyPostsScreenState extends State<MyPostsScreen>
     } catch (e) {
       if (mounted) {
         setState(() {
-          _allUserPosts[idx] = previousPost;
+          final rollbackList = List<Post>.from(_allUserPosts);
+          final rollbackIdx = rollbackList.indexWhere((p) => p.id == postId);
+          if (rollbackIdx != -1) {
+            rollbackList[rollbackIdx] = previousPost;
+            _allUserPosts = rollbackList;
+          }
         });
       }
       AppMessenger.showError('Could not update post status. Please try again.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _updatingPosts.remove(postId);
+        });
+      }
     }
   }
 
@@ -286,7 +304,10 @@ class _MyPostsScreenState extends State<MyPostsScreen>
   Widget _buildPostCardFromEntity(Post post) {
     final bool isResolved =
         post.status == 'resolved' || post.status == 'closed';
+    final bool isUpdating = _updatingPosts.contains(post.id);
+
     return Container(
+      key: ValueKey('${post.id}_${post.status}'),
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -392,8 +413,10 @@ class _MyPostsScreenState extends State<MyPostsScreen>
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => _toggleResolved(post.id, post.status),
-                    icon: const Icon(Icons.undo, size: 18),
+                    onPressed: isUpdating ? null : () => _toggleResolved(post.id, post.status),
+                    icon: isUpdating 
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.undo, size: 18),
                     label: const Text('Undo Resolved'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.grey[700],
@@ -435,8 +458,10 @@ class _MyPostsScreenState extends State<MyPostsScreen>
                 const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () => _toggleResolved(post.id, post.status),
-                    icon: const Icon(Icons.check_circle_outline, size: 18),
+                    onPressed: isUpdating ? null : () => _toggleResolved(post.id, post.status),
+                    icon: isUpdating 
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.check_circle_outline, size: 18),
                     label: const Text('Mark Resolved'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0A3D91),

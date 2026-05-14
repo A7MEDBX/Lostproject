@@ -377,6 +377,19 @@ class PostService {
                 };
             }
 
+            // Sync with Pinecone so AI matching reflects status change
+            try {
+                if (post.vector_id) {
+                    await pineconeIndex.update({
+                        id: post.vector_id,
+                        metadata: { status: status }
+                    });
+                    console.log(`Updated Pinecone metadata status for vector ${post.vector_id} to ${status}`);
+                }
+            } catch (error) {
+                console.error(`Failed to update Pinecone status for post ${postId}:`, error);
+            }
+
             return {
                 success: true,
                 message: 'Status updated successfully',

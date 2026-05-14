@@ -16,6 +16,7 @@ import 'domain/usecases/search_by_image.dart';
 import 'presentation/providers/post_provider.dart';
 import 'presentation/providers/search_provider.dart';
 import 'presentation/providers/user_provider.dart';
+import 'presentation/providers/notification_provider.dart';
 import 'routes/app_routes.dart';
 
 Future<void> main() async {
@@ -61,11 +62,16 @@ class MyApp extends StatelessWidget {
             searchByImageUseCase: SearchByImageUseCase(postRepository),
           ),
         ),
+        // Notification Provider
+        ChangeNotifierProvider(
+          create: (_) => NotificationProvider()..init(),
+        ),
       ],
       child: MaterialApp(
         title: AppStrings.appName,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
+        navigatorKey: AppMessenger.navigatorKey,
         scaffoldMessengerKey: AppMessenger.messengerKey,
         initialRoute: AppRoutes.welcome,
         onGenerateRoute: AppRoutes.onGenerateRoute,

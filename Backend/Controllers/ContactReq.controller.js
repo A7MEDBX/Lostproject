@@ -6,13 +6,13 @@ class ContactReqController {
     async sendContactRequest(req, res) {
         try {
             const sender_id = req.user.id; // Database UUID, not firebase_uid
-            const { receiver_id, post_id } = req.body;
+            const { receiver_id, post_id, intro_message } = req.body;
 
             if (!receiver_id || !post_id) {
                 return response.ErrorResponse(res, 'receiver_id and post_id are required', null, 400);
             }
 
-            const result = await contactReqService.sendRequest(sender_id, receiver_id, post_id);
+            const result = await contactReqService.sendRequest(sender_id, receiver_id, post_id, intro_message);
             
             if (!result.success) {
                 return response.ErrorResponse(res, result.message, result.data, 409);
@@ -96,9 +96,10 @@ class ContactReqController {
                 const reqData = await contactReqService.getRequestById(requestId);
                 if (reqData.success && reqData.data) {
                     const senderId = reqData.data.sender_id;
-                    const type = status === 'accepted' ? 'contact_accepted' : null;
+                    const type = status === 'accepted' ? 'contact_accepted' : 'contact_rejected';
                     if (type) {
-                        NotificationService.sendNotification(senderId, type, requestId, io);
+                        const notifRef = status === 'accepted' ? result.data.chat_id : requestId;
+                        NotificationService.sendNotification(senderId, type, notifRef, io);
                     }
                 }
             }
@@ -128,6 +129,23 @@ class ContactReqController {
             return response.ErrorResponse(res, 'Internal Server Error', err.message, 500);
         }
     }
+    
+    async getRequestById(req, res) {
+        try {
+            const requestId = req.params.requestId;
+            const result = await contactReqService.getRequestById(requestId);
+            
+            if (!result.success) {
+                return response.ErrorResponse(res, result.message, null, 404);
+            }
+            
+            return response.Success(res, 'Contact request retrieved successfully', result.data, 200);
+        } catch (err) {
+            console.error('Error in getRequestById:', err);
+            return response.ErrorResponse(res, 'Internal Server Error', err.message, 500);
+        }
+    }
+    
     async checkRequestStatus(req, res) {
         try {
             const user_id = req.user.id; // Database UUID

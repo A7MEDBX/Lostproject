@@ -37,9 +37,9 @@ class ReportService {
     async getAllReports(limit, offset, status) {
         const parsedLimit = parseInt(limit) || 10;
         const parsedOffset = parseInt(offset) || 0;
-        
+
         const reports = await reportRepo.getAllReports(parsedLimit, parsedOffset, status);
-        
+
         return {
             total_items: reports.count,
             reports: reports.rows,
@@ -58,7 +58,7 @@ class ReportService {
         if (updatedRows === 0) {
             throw new Error('Failed to update report status');
         }
-        
+
         return updatedReport || { ...report.toJSON(), status };
     }
 }

@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import '../../core/network/api_client.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/network/socket_service.dart';
+import '../../core/utils/app_messenger.dart';
+import '../../data/datasources/chat_remote_data_source.dart';
+import 'package:provider/provider.dart';
+import '../providers/notification_provider.dart';
 
 /// Notifications Screen — wired to real backend API
 class NotificationsScreen extends StatefulWidget {
@@ -14,32 +19,102 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<NotificationsScreen> {
   List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  final int _limit = 15;
+  int _offset = 0;
+
+  // Prevents duplicate accept/reject taps mid-flight
+  final Set<String> _respondingIds = {};
+
   late final ApiClient _apiClient;
+  late final ChatRemoteDataSourceImpl _chatDataSource;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _apiClient = ApiClient(tokenProvider: AuthService.instance.getIdToken);
+    _chatDataSource = ChatRemoteDataSourceImpl(apiClient: _apiClient);
     _loadNotifications();
+
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 &&
+          !_isLoadingMore &&
+          _hasMore) {
+        _loadMoreNotifications();
+      }
+    });
+
+    SocketService().on('new_notification', _handleNewNotificationEvent);
   }
 
-  Future<void> _loadNotifications() async {
+  void _handleNewNotificationEvent(dynamic data) {
+    if (mounted) {
+      _loadNotifications(refresh: true);
+    }
+  }
+  
+  @override
+  void dispose() {
+    SocketService().off('new_notification', _handleNewNotificationEvent);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadNotifications({bool refresh = false}) async {
+    if (refresh) {
+      _offset = 0;
+      _hasMore = true;
+    }
     try {
-      final response = await _apiClient.get(ApiConstants.notificationsEndpoint);
+      final response = await _apiClient.get('${ApiConstants.notificationsEndpoint}?limit=$_limit&offset=$_offset');
       final List<dynamic> raw = response['data'] as List<dynamic>? ?? [];
+      final pagination = response['pagination'] as Map<String, dynamic>?;
+      
       if (mounted) {
         setState(() {
-          _notifications = raw.map((n) => n as Map<String, dynamic>).toList();
+          if (refresh) {
+            _notifications = raw.map((n) => n as Map<String, dynamic>).toList();
+          } else {
+            // merge without duplicates
+            for (var item in raw) {
+              if (!_notifications.any((element) => element['id'] == item['id'])) {
+                _notifications.add(item as Map<String, dynamic>);
+              }
+            }
+          }
+          
+          if (pagination != null) {
+            _hasMore = pagination['hasMore'] ?? false;
+          } else {
+            _hasMore = raw.length == _limit;
+          }
+          
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _notifications = [];
+          if (refresh) _notifications = [];
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _loadMoreNotifications() async {
+    if (_isLoadingMore || !_hasMore) return;
+    setState(() {
+      _isLoadingMore = true;
+      _offset += _limit;
+    });
+    await _loadNotifications();
+    if (mounted) {
+      setState(() {
+        _isLoadingMore = false;
+      });
     }
   }
 
@@ -51,6 +126,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       );
       if (mounted) {
         setState(() => _notifications[index]['is_read'] = true);
+        context.read<NotificationProvider>().markAsRead();
       }
     } catch (_) {}
   }
@@ -67,6 +143,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             n['is_read'] = true;
           }
         });
+        context.read<NotificationProvider>().markAllAsRead();
       }
     } catch (_) {}
   }
@@ -152,14 +229,22 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           ),
                         )
                       : RefreshIndicator(
-                          onRefresh: _loadNotifications,
+                          onRefresh: () => _loadNotifications(refresh: true),
                           color: const Color(0xFF0A3D91),
                           child: ListView.separated(
+                            controller: _scrollController,
                             padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: _notifications.length,
+                            itemCount: _notifications.length + (_isLoadingMore ? 1 : 0),
                             separatorBuilder: (_, _s) => Divider(height: 1, color: Colors.grey[300]),
-                            itemBuilder: (context, index) =>
-                                _buildNotificationItem(_notifications[index], index),
+                            itemBuilder: (context, index) {
+                              if (index == _notifications.length) {
+                                return const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 16),
+                                  child: Center(child: CircularProgressIndicator(color: Color(0xFF0A3D91))),
+                                );
+                              }
+                              return _buildNotificationItem(_notifications[index], index);
+                            },
                           ),
                         ),
             ),
@@ -256,6 +341,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         title = 'Post Resolved';
         message = 'An item you were following was resolved.';
         break;
+      case 'contact_rejected':
+        iconColor = Colors.red;
+        icon = Icons.cancel;
+        title = 'Request Rejected';
+        message = 'Your contact request was rejected.';
+        break;
+      case 'new_message':
+        iconColor = Colors.blue;
+        icon = Icons.message;
+        title = 'New Message';
+        message = 'You have a new message.';
+        break;
       default:
         iconColor = const Color(0xFF8B7355);
         icon = Icons.notifications;
@@ -303,9 +400,178 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ),
         onTap: () {
           if (!isRead) _markAsRead(notification['id'] as String, index);
+          _handleNotificationClick(notification);
         },
       ),
     );
+  }
+
+  Future<void> _handleNotificationClick(Map<String, dynamic> notification) async {
+    final type = notification['type'] as String? ?? '';
+    final refId = notification['reference_id'] as String? ?? '';
+    if (refId.isEmpty) return;
+
+    if (type == 'contact_request') {
+      // Only show dialog if not already responded
+      final status = notification['request_status'] as String?;
+      if (status == 'accepted' || status == 'rejected') return;
+      _showRequestDialog(refId, notification);
+    } else if (type == 'contact_accepted' || type == 'new_message') {
+      _navigateToChat(refId);
+    }
+  }
+
+  Future<void> _navigateToChat(String chatId) async {
+    // Fetch full metadata before pushing so AppBar is hydrated
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (c) => const Center(child: CircularProgressIndicator()),
+    );
+    try {
+      final meta = await _chatDataSource.getChatMetadata(chatId);
+      if (!mounted) return;
+      Navigator.pop(context); // pop loader
+      Navigator.pushNamed(
+        context,
+        '/chat',
+        arguments: {
+          'chatId': chatId,
+          'userId': meta?['other_user_id'] as String?,
+          'userName': meta?['other_user_name'] as String? ?? 'Chat',
+          'isOnline': false,
+        },
+      );
+    } catch (_) {
+      if (mounted) {
+        Navigator.pop(context);
+        Navigator.pushNamed(context, '/chat', arguments: {'chatId': chatId});
+      }
+    }
+  }
+
+  Future<void> _showRequestDialog(String requestId, Map<String, dynamic> notification) async {
+    if (_respondingIds.contains(requestId)) return;
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (c) => const Center(child: CircularProgressIndicator()),
+      );
+      final res = await _apiClient.get('${ApiConstants.respondContactRequestEndpoint}/$requestId');
+      if (!mounted) return;
+      Navigator.pop(context); // pop loading
+
+      if (res['success'] != true || res['data'] == null) {
+        AppMessenger.showError('Request not found.');
+        return;
+      }
+
+      final reqData = res['data'] as Map<String, dynamic>;
+      final currentStatus = reqData['status'] as String? ?? 'pending';
+      if (currentStatus != 'pending') {
+        AppMessenger.showInfo('This request has already been $currentStatus.');
+        return;
+      }
+
+      final senderName = reqData['sender']?['name'] ?? 'Someone';
+      final introMessage = (reqData['intro_message'] as String?)?.isNotEmpty == true
+          ? reqData['intro_message'] as String
+          : 'No message provided.';
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: Text('Request from $senderName'),
+          content: Text(introMessage),
+          actions: [
+            TextButton(
+              onPressed: _respondingIds.contains(requestId)
+                  ? null
+                  : () {
+                      Navigator.pop(ctx);
+                      _respondToRequest(requestId, 'rejected', notification);
+                    },
+              child: const Text('Reject', style: TextStyle(color: Colors.red)),
+            ),
+            ElevatedButton(
+              onPressed: _respondingIds.contains(requestId)
+                  ? null
+                  : () {
+                      Navigator.pop(ctx);
+                      _respondToRequest(requestId, 'accepted', notification);
+                    },
+              child: const Text('Accept'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      AppMessenger.showError('Something went wrong. Please try again.');
+    }
+  }
+
+  Future<void> _respondToRequest(String requestId, String status, Map<String, dynamic> notification) async {
+    if (_respondingIds.contains(requestId)) return; // guard: prevent double tap
+    if (mounted) setState(() => _respondingIds.add(requestId));
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (c) => const Center(child: CircularProgressIndicator()),
+    );
+
+    Map<String, dynamic>? res;
+    try {
+      res = await _apiClient.put(
+        '${ApiConstants.respondContactRequestEndpoint}/$requestId/respond',
+        body: {'status': status},
+      );
+    } catch (e) {
+      res = null;
+    } finally {
+      // ALWAYS pop the loading dialog regardless of outcome
+      if (mounted) Navigator.pop(context);
+      if (mounted) setState(() => _respondingIds.remove(requestId));
+    }
+
+    if (res == null) {
+      AppMessenger.showError('Network error. Please try again.');
+      return;
+    }
+
+    if (res['success'] == true) {
+      // Optimistically update notification in local list so it stops showing action buttons
+      if (mounted) {
+        setState(() {
+          final idx = _notifications.indexOf(notification);
+          if (idx != -1) {
+            _notifications[idx] = Map<String, dynamic>.from(notification)
+              ..['request_status'] = status
+              ..['is_read'] = true;
+          }
+        });
+      }
+
+      if (!mounted) return;
+      if (status == 'accepted') {
+        AppMessenger.showSuccess('Request accepted ✓');
+      } else {
+        AppMessenger.showInfo('Request rejected.');
+      }
+
+      if (status == 'accepted' && res['data']?['chat_id'] != null) {
+        final chatId = res['data']['chat_id'] as String;
+        _navigateToChat(chatId);
+      }
+
+      // Refresh list in background (don't await)
+      _loadNotifications(refresh: true);
+    } else {
+      AppMessenger.showError(res['message'] ?? 'Failed to respond.');
+    }
   }
 
   String _timeAgo(String isoDate) {

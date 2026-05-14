@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/post_card.dart';
 import 'package:provider/provider.dart';
 import '../providers/post_provider.dart';
+import '../providers/notification_provider.dart';
 import 'filter_screen.dart';
 
 /// Home Screen - Suggested Posts
@@ -115,17 +116,27 @@ class _HomeScreenState extends State<HomeScreen> {
                   Navigator.pushNamed(context, '/notifications');
                 },
               ),
-              Positioned(
-                right: 12,
-                top: 12,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                ),
+              Consumer<NotificationProvider>(
+                builder: (context, notificationProvider, child) {
+                  if (notificationProvider.unreadCount == 0) {
+                    return const SizedBox.shrink();
+                  }
+                  return Positioned(
+                    right: 12,
+                    top: 12,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 10,
+                        minHeight: 10,
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),

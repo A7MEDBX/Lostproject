@@ -12,7 +12,12 @@ exports.sendContactRequestValidator = [
 
     body('post_id')
         .notEmpty().withMessage('Post ID is required')
-        .isUUID().withMessage('Post ID must be a valid UUID')
+        .isUUID().withMessage('Post ID must be a valid UUID'),
+
+    body('intro_message')
+        .optional()
+        .isString().withMessage('Intro message must be a string')
+        .isLength({ max: 255 }).withMessage('Intro message cannot exceed 255 characters')
 ];
 
 // Respond to contact request validator

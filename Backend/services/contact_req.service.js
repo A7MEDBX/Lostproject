@@ -8,9 +8,10 @@ class ContactReqService {
      * @param {string} sender_id 
      * @param {string} receiver_id 
      * @param {string} post_id 
+     * @param {string} [intro_message] 
      */
     //DONE
-    async sendRequest(sender_id, receiver_id, post_id) {
+    async sendRequest(sender_id, receiver_id, post_id, intro_message) {
         try {
             // Check if user is trying to contact themselves
             if (sender_id === receiver_id) {
@@ -30,7 +31,7 @@ class ContactReqService {
                 };
             }
 
-            const [contactRequest, created] = await contactReqRepo.createContactReq(sender_id, receiver_id, post_id);
+            const [contactRequest, created] = await contactReqRepo.createContactReq(sender_id, receiver_id, post_id, intro_message);
             
             // TODO: Send notification to receiver (when notification system ready)
             // NotificationService.send(receiver_id, 'contact_request_received', {...})
@@ -95,25 +96,22 @@ class ContactReqService {
                 };
             }
 
+            let chat_id = null;
             // If accepted, create a chat between the two users
             if (status === 'accepted') {
                 try {
-                    await ChatService.createOrGetChat(request.sender_id, request.receiver_id);
-                    // TODO: Send notification to sender about acceptance
-                    // NotificationService.send(request.sender_id, 'request_accepted', {...})
+                    const chatResult = await ChatService.createOrGetChat(request.sender_id, request.receiver_id);
+                    chat_id = chatResult.data ? chatResult.data.id : null;
                 } catch (chatError) {
                     console.error('Failed to create chat after acceptance:', chatError);
                     // Don't fail the request acceptance if chat creation fails
                 }
-            } else if (status === 'rejected') {
-                // TODO: Send notification to sender about rejection
-                // NotificationService.send(request.sender_id, 'request_rejected', {...})
             }
 
             return {
                 success: true,
                 message: `Contact request ${status}`,
-                data: { id: contactReq_id, status }
+                data: { id: contactReq_id, status, chat_id }
             };
         } catch (err) {
             throw err;
