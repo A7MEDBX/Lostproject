@@ -35,11 +35,11 @@ class ReportRepository {
         });
     }
 
-    async checkDuplicateReport(reporter_id, reported_user_id) {
+    async checkDuplicateReport(reporter_id, target) {
         return await Report.findOne({
             where: {
                 reporter_id,
-                reported_user_id,
+                ...target,
                 status: 'pending'
             }
         });

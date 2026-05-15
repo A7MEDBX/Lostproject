@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/utils/app_messenger.dart';
 import '../providers/user_provider.dart';
 
 /// Profile Screen
@@ -12,6 +13,14 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<UserProvider>().loadUser();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final firebaseUser = AuthService.instance.currentUser;
@@ -214,23 +223,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     // Edit Profile removed from here
 
                     // Verify Account (KYC)
-                    _buildMenuItem(
-                      icon: Icons.verified_user_outlined,
-                      iconColor: const Color(0xFF0A3D91),
-                      title: 'Verify Account',
-                      onTap: () async {
-                        await Navigator.pushNamed(
-                          context,
-                          '/privacy-policy',
-                          arguments: {'isFromOnboarding': true},
-                        );
-                        if (context.mounted) {
-                          await context.read<UserProvider>().loadUser();
-                        }
-                      },
-                    ),
-
-                    const SizedBox(height: 12),
+                    if (verificationStatus != 'approved') ...[
+                      _buildMenuItem(
+                        icon: Icons.verified_user_outlined,
+                        iconColor: const Color(0xFF0A3D91),
+                        title: verificationStatus == 'pending' ? 'Verification Pending' : 'Verify Account',
+                        onTap: () async {
+                          if (verificationStatus == 'pending') {
+                            AppMessenger.showInfo('Your verification request is still pending review.');
+                            return;
+                          }
+                          await Navigator.pushNamed(
+                            context,
+                            '/privacy-policy',
+                            arguments: {'isFromOnboarding': true},
+                          );
+                          if (context.mounted) {
+                            await context.read<UserProvider>().loadUser();
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
 
                     // Settings
                     _buildMenuItem(

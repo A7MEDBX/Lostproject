@@ -25,6 +25,10 @@ const Notification = sequelize.define('notifications', {
         type: DataTypes.UUID,
         allowNull: true
     },
+    message: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     is_read: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,

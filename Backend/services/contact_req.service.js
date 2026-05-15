@@ -97,10 +97,10 @@ class ContactReqService {
             }
 
             let chat_id = null;
-            // If accepted, create a chat between the two users
+            // If accepted, create a chat between the two users for this post
             if (status === 'accepted') {
                 try {
-                    const chatResult = await ChatService.createOrGetChat(request.sender_id, request.receiver_id);
+                    const chatResult = await ChatService.createOrGetChat(request.post_id, request.sender_id, request.receiver_id);
                     chat_id = chatResult.data ? chatResult.data.id : null;
                 } catch (chatError) {
                     console.error('Failed to create chat after acceptance:', chatError);

@@ -136,7 +136,7 @@ class ChatController {
             const io = req.app.get('io');
             if (io) {
                 const messageData = result.data.toJSON ? result.data.toJSON() : result.data;
-                io.to(`chat:${chatId}`).emit('new_message', messageData);
+                io.to(`conversation:${chatId}`).emit('new_message', messageData);
 
                 // Send notification to the receiver
                 const chatData = await ChatService.getChatById(chatId);
@@ -144,6 +144,21 @@ class ChatController {
                     const chat = chatData.data.toJSON ? chatData.data.toJSON() : chatData.data;
                     const receiverId = chat.user_1 === currentUserId ? chat.user_2 : chat.user_1;
                     
+                    let previewContent = messageData.content;
+                    if (previewContent.startsWith('http')) {
+                        previewContent = '📷 Image';
+                    }
+
+                    const chatUpdatePayload = {
+                        chat_id: chatId,
+                        last_message: previewContent,
+                        last_message_sender_id: currentUserId,
+                        updated_at: messageData.created_at || new Date().toISOString()
+                    };
+
+                    io.to(`user:${receiverId}`).emit('chat_list_update', chatUpdatePayload);
+                    io.to(`user:${currentUserId}`).emit('chat_list_update', chatUpdatePayload);
+
                     const NotificationService = require('../services/notification.service');
                     NotificationService.sendNotification(receiverId, 'new_message', chatId, io);
                 }
@@ -246,6 +261,37 @@ class ChatController {
             return response.Success(res, result.message, null, 200);
         } catch (error) {
             console.error('Error in deleteChat:', error);
+            return response.ErrorResponse(res, 'Server Error', error.message, 500);
+        }
+    }
+
+    /**
+     * Mark all messages in a chat as read for the current user
+     */
+    async markAsRead(req, res) {
+        try {
+            const { chatId } = req.params;
+            const currentUserId = req.user.id;
+
+            const isParticipant = await ChatService.isUserInChat(chatId, currentUserId);
+            if (!isParticipant) {
+                return response.ErrorResponse(res, 'Access denied', null, 403);
+            }
+
+            await ChatService.markChatRead(chatId, currentUserId);
+
+            // Notify the chat list listener that unread is now 0 for this user
+            const io = req.app.get('io');
+            if (io) {
+                io.to(`user:${currentUserId}`).emit('chat_read', {
+                    chat_id: chatId,
+                    unread_count: 0
+                });
+            }
+
+            return response.Success(res, 'Chat marked as read', null, 200);
+        } catch (error) {
+            console.error('Error in markAsRead:', error);
             return response.ErrorResponse(res, 'Server Error', error.message, 500);
         }
     }

@@ -48,6 +48,10 @@ Post.hasMany(ContactRequest, { foreignKey: 'post_id', as: 'contactRequests', onD
 ContactRequest.belongsTo(Post, { foreignKey: 'post_id', as: 'post' });
 
 // ========== CHAT RELATIONSHIPS ==========
+// One Post has Many Chats
+Post.hasMany(Chat, { foreignKey: 'post_id', as: 'chats', onDelete: 'CASCADE' });
+Chat.belongsTo(Post, { foreignKey: 'post_id', as: 'post' });
+
 // One Chat has Many Messages
 Chat.hasMany(Message, { foreignKey: 'chat_id', as: 'messages', onDelete: 'CASCADE' });
 Message.belongsTo(Chat, { foreignKey: 'chat_id', as: 'chat' });
@@ -63,6 +67,18 @@ User.hasMany(Message, { foreignKey: 'sender_id', as: 'sentMessages', onDelete: '
 Message.belongsTo(User, { foreignKey: 'sender_id', as: 'sender' });
 
 // ========== REPORT-POST RELATIONSHIPS ==========
+// One Post has Many Reports
+Post.hasMany(Report, { foreignKey: 'reported_post_id', as: 'receivedReports', onDelete: 'CASCADE' });
+Report.belongsTo(Post, { foreignKey: 'reported_post_id', as: 'reportedPost' });
+
+// One Message has Many Reports
+Message.hasMany(Report, { foreignKey: 'reported_message_id', as: 'receivedReports', onDelete: 'CASCADE' });
+Report.belongsTo(Message, { foreignKey: 'reported_message_id', as: 'reportedMessage' });
+
+// One Chat has Many Reports
+Chat.hasMany(Report, { foreignKey: 'reported_chat_id', as: 'receivedReports', onDelete: 'CASCADE' });
+Report.belongsTo(Chat, { foreignKey: 'reported_chat_id', as: 'reportedChat' });
+
 // ========== ADMIN RELATIONSHIPS ==========
 AdminAction.belongsTo(User, { foreignKey: 'admin_id', as: 'admin' });
 

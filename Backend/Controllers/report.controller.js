@@ -5,13 +5,12 @@ class ReportController {
     async createReport(req, res) {
         try {
             const reporter_id = req.user.id;
-            const { reported_user_id, reason } = req.body;
-            const report = await reportService.createReport(reporter_id, reported_user_id, reason);
+            const report = await reportService.createReport(reporter_id, req.body);
             return response.Success(res, 'Report submitted successfully', report, 201);
         } catch (error) {
-            if (error.message === 'You cannot report yourself' ||
-                error.message === 'Reported user not found' ||
-                error.message === 'You have already reported this user and it is pending review') {
+            if (error.message.includes('You cannot report yourself') ||
+                error.message.includes('not found') ||
+                error.message.includes('You have already reported')) {
                 return response.ErrorResponse(res, error.message, null, 400);
             }
             return response.ErrorResponse(res, 'Internal server error', [error.message], 500);

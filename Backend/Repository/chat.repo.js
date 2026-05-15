@@ -9,17 +9,19 @@ class ChatRepo {
      * Create or get existing chat between two users
      * Prevents duplicate chats by sorting user IDs
      */
-    async createOrGetChat(userId1, userId2) {
+    async createOrGetChat(postId, userId1, userId2) {
         try {
             // Sort user IDs to ensure consistent chat lookup
             const [user1, user2] = userId1 < userId2 ? [userId1, userId2] : [userId2, userId1];
             
             const [chat, created] = await Chat.findOrCreate({
                 where: {
+                    post_id: postId,
                     user_1: user1,
                     user_2: user2
                 },
                 defaults: {
+                    post_id: postId,
                     user_1: user1,
                     user_2: user2
                 }
@@ -48,6 +50,11 @@ class ChatRepo {
                         model: User,
                         as: 'secondUser',
                         attributes: ['id', 'name', 'email']
+                    },
+                    {
+                        model: require('../models/post.model'),
+                        as: 'post',
+                        attributes: ['id', 'title', 'image_url', 'status']
                     }
                 ]
             });
@@ -98,11 +105,16 @@ class ChatRepo {
                         model: User,
                         as: 'secondUser',
                         attributes: ['id', 'name', 'email']
+                    },
+                    {
+                        model: require('../models/post.model'),
+                        as: 'post',
+                        attributes: ['id', 'title', 'image_url', 'status']
                     }
                 ],
                 limit,
                 offset,
-                order: [['created_at', 'DESC']]
+                order: [['updated_at', 'DESC']]
             });
             
             return result;
@@ -112,15 +124,56 @@ class ChatRepo {
     }
 
     /**
-     * Send a message in a chat
+     * Send a message in a chat — increments receiver's unread count
      */
     async sendMessage(chatId, senderId, content) {
         try {
-            return await Message.create({
+            // Fetch the chat to find who is user_1 and user_2
+            const chat = await Chat.findOne({ where: { id: chatId } });
+            if (!chat) throw new Error('Chat not found');
+
+            const message = await Message.create({
                 chat_id: chatId,
                 sender_id: senderId,
                 content
             });
+
+            // Determine which unread column belongs to the receiver safely
+            const isUser1 = String(chat.user_1).toLowerCase() === String(senderId).toLowerCase();
+            const unreadField = isUser1 ? 'unread_user2' : 'unread_user1';
+
+            // Atomically increment receiver unread + touch updated_at
+            // Parse existing value strictly to prevent string concatenation if column is NUMERIC
+            const currentUnread = parseInt(chat[unreadField] || 0, 10);
+            await Chat.update(
+                {
+                    [unreadField]: currentUnread + 1,
+                    updated_at: new Date()
+                },
+                { where: { id: chatId } }
+            );
+
+            return message;
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    /**
+     * Mark chat as read for a specific user — resets their unread count
+     */
+    async markChatRead(chatId, userId) {
+        try {
+            const chat = await Chat.findOne({ where: { id: chatId } });
+            if (!chat) return;
+
+            const isUser1 = String(chat.user_1).toLowerCase() === String(userId).toLowerCase();
+            const unreadField = isUser1 ? 'unread_user1' : 'unread_user2';
+
+            await Chat.update(
+                { [unreadField]: 0 },
+                { where: { id: chatId } }
+            );
         } catch (err) {
             throw err;
         }
@@ -154,13 +207,14 @@ class ChatRepo {
     /**
      * Get chat between two specific users
      */
-    async getChatBetweenUsers(userId1, userId2) {
+    async getChatBetweenUsers(postId, userId1, userId2) {
         try {
             // Sort user IDs to ensure consistent lookup
             const [user1, user2] = userId1 < userId2 ? [userId1, userId2] : [userId2, userId1];
             
             return await Chat.findOne({
                 where: {
+                    post_id: postId,
                     user_1: user1,
                     user_2: user2
                 },
@@ -174,6 +228,11 @@ class ChatRepo {
                         model: User,
                         as: 'secondUser',
                         attributes: ['id', 'name', 'email']
+                    },
+                    {
+                        model: require('../models/post.model'),
+                        as: 'post',
+                        attributes: ['id', 'title', 'image_url', 'status']
                     }
                 ]
             });

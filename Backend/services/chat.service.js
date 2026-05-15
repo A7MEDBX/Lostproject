@@ -5,7 +5,7 @@ class ChatService {
     /**
      * Create or get existing chat between current user and another user
      */
-    async createOrGetChat(currentUserId, otherUserId) {
+    async createOrGetChat(postId, currentUserId, otherUserId) {
         try {
             // Validate user IDs
             if (!otherUserId || currentUserId === otherUserId) {
@@ -15,7 +15,7 @@ class ChatService {
                 };
             }
 
-            const result = await ChatRepo.createOrGetChat(currentUserId, otherUserId);
+            const result = await ChatRepo.createOrGetChat(postId, currentUserId, otherUserId);
             
             return {
                 success: true,
@@ -60,22 +60,42 @@ class ChatService {
             const result = await ChatRepo.getUserChats(userId, limit, offset);
 
             // Map each chat: determine which user is "the other one"
-            const mapped = result.rows.map(chat => {
+            const mapped = await Promise.all(result.rows.map(async chat => {
                 const raw = chat.toJSON ? chat.toJSON() : chat;
-                const isUser1 = raw.user_1 === userId;
+                const isUser1 = String(raw.user_1).toLowerCase() === String(userId).toLowerCase();
                 const otherUser = isUser1 ? raw.secondUser : raw.firstUser;
+
+                // Fetch real last message
+                const lastMsgQuery = await require('../models/Message.model').findOne({
+                    where: { chat_id: raw.id },
+                    order: [['created_at', 'DESC']]
+                });
+
+                let lastMessageContent = null;
+                if (lastMsgQuery) {
+                    const isYou = String(lastMsgQuery.sender_id).toLowerCase() === String(userId).toLowerCase();
+                    const prefix = isYou ? 'You: ' : `${otherUser?.name.split(' ')[0]}: `;
+                    
+                    if (lastMsgQuery.content.startsWith('http')) {
+                        lastMessageContent = `${prefix}📷 Image`;
+                    } else {
+                        lastMessageContent = `${prefix}${lastMsgQuery.content}`;
+                    }
+                }
 
                 return {
                     id: raw.id,
+                    post: raw.post || null,
                     other_user_id: otherUser?.id || null,
                     other_user_name: otherUser?.name || 'Unknown',
                     other_user_email: otherUser?.email || null,
-                    last_message: raw.last_message || null,
+                    last_message: lastMessageContent,
                     updated_at: raw.updated_at || raw.created_at,
-                    unread_count: raw.unread_count || 0,
-                    is_online: false, // real-time status handled by socket.io
+                    // Per-user unread: resolve correct column for this viewer
+                    unread_count: isUser1 ? (raw.unread_user1 || 0) : (raw.unread_user2 || 0),
+                    is_online: false,
                 };
-            });
+            }));
 
             return {
                 success: true,
@@ -144,9 +164,9 @@ class ChatService {
     /**
      * Get chat between two users
      */
-    async getChatBetweenUsers(userId1, userId2) {
+    async getChatBetweenUsers(postId, userId1, userId2) {
         try {
-            const chat = await ChatRepo.getChatBetweenUsers(userId1, userId2);
+            const chat = await ChatRepo.getChatBetweenUsers(postId, userId1, userId2);
             
             if (!chat) {
                 return {
@@ -194,6 +214,18 @@ class ChatService {
     async isUserInChat(chatId, userId) {
         try {
             return await ChatRepo.isUserInChat(chatId, userId);
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    /**
+     * Mark all messages in a chat as read for a specific user
+     */
+    async markChatRead(chatId, userId) {
+        try {
+            await ChatRepo.markChatRead(chatId, userId);
+            return { success: true };
         } catch (err) {
             throw err;
         }

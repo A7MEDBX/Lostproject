@@ -8,6 +8,7 @@ class SocketService {
 
   IO.Socket? _socket;
   String? _authToken;
+  String? activeChatId; // Tracks the currently open chat screen
 
   // Set the auth token which should be retrieved from Firebase Auth
   void setAuthToken(String token) {

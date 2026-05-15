@@ -83,4 +83,11 @@ Router.get('/with/:otherUserId', chatController.getChatWithUser);
  */
 Router.delete('/:chatId', verifyChatParticipant, chatController.deleteChat);
 
+/**
+ * @route   POST /api/v1/chat/:chatId/read
+ * @desc    Mark chat as read for current user (resets their unread count)
+ * @access  Private (requires verified identity, participant check)
+ */
+Router.post('/:chatId/read', verifyChatParticipant, chatController.markAsRead);
+
 module.exports = Router;

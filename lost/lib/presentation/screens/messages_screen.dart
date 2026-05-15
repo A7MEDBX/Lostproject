@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../core/network/api_client.dart';
+import '../../core/network/socket_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../data/datasources/chat_remote_data_source.dart';
+import '../providers/user_provider.dart';
+import 'package:provider/provider.dart';
 
 /// Messages Screen - Chat List
 class MessagesScreen extends StatefulWidget {
@@ -19,8 +22,13 @@ class _MessagesScreenState extends State<MessagesScreen> {
   // Each map holds: id, otherUserName, lastMessage, time, unreadCount, isOnline
   List<Map<String, dynamic>> _chats = [];
 
+  final SocketService _socketService = SocketService();
+  String _currentUserId = '';
+
   @override
   void dispose() {
+    _socketService.off('chat_list_update');
+    _socketService.off('chat_read');
     _searchController.dispose();
     super.dispose();
   }
@@ -29,6 +37,78 @@ class _MessagesScreenState extends State<MessagesScreen> {
   void initState() {
     super.initState();
     _loadChats();
+    _initSocket();
+  }
+
+  Future<void> _initSocket() async {
+    final token = await AuthService.instance.getIdToken();
+    if (token != null) {
+      _socketService.setAuthToken(token);
+      _socketService.connect();
+
+      final userProvider = context.read<UserProvider>();
+      if (userProvider.backendUser != null) {
+        _currentUserId = userProvider.backendUser!.id;
+      }
+
+      _socketService.on('chat_list_update', (data) {
+        if (mounted) {
+          final currentUser = context.read<UserProvider>().backendUser;
+          if (currentUser != null) {
+            _currentUserId = currentUser.id;
+          }
+          _updateChatList(data);
+        }
+      });
+
+      _socketService.on('chat_read', (data) {
+        if (mounted) {
+          final chatId = data['chat_id'] as String?;
+          if (chatId == null) return;
+          setState(() {
+            final index = _chats.indexWhere((c) => c['id'] == chatId);
+            if (index != -1) {
+              final chat = Map<String, dynamic>.from(_chats[index]);
+              chat['unread_count'] = 0;
+              _chats[index] = chat;
+            }
+          });
+        }
+      });
+    }
+  }
+
+  void _updateChatList(dynamic data) {
+    final chatId = data['chat_id'] as String?;
+    if (chatId == null) return;
+
+    setState(() {
+      final index = _chats.indexWhere((c) => c['id'] == chatId);
+      if (index != -1) {
+        final chat = Map<String, dynamic>.from(_chats[index]);
+        final isYou = data['last_message_sender_id'] == _currentUserId;
+        final senderName = isYou ? 'You: ' : '${(chat['other_user_name'] as String?)?.split(' ').first ?? ''}: ';
+        final preview = '$senderName${data['last_message']}';
+
+        // Update fields
+        chat['last_message'] = preview;
+        chat['updated_at'] = data['updated_at'];
+        
+        // Unread logic: Only increment if someone else sent it AND we are not currently viewing the chat
+        if (!isYou && _socketService.activeChatId != chatId) {
+          chat['unread_count'] = (int.tryParse(chat['unread_count']?.toString() ?? '0') ?? 0) + 1;
+        } else if (_socketService.activeChatId == chatId) {
+          chat['unread_count'] = 0; // Auto-mark read if we are looking at it
+        }
+
+        // Move to top
+        _chats.removeAt(index);
+        _chats.insert(0, chat);
+      } else {
+        // Completely new chat not in list yet, refetch securely
+        _loadChats();
+      }
+    });
   }
 
   Future<void> _loadChats() async {
@@ -201,8 +281,10 @@ class _MessagesScreenState extends State<MessagesScreen> {
     final otherUserName = chat['other_user_name'] as String? ?? 'Unknown';
     final lastMessage = chat['last_message'] as String? ?? '';
     final time = chat['updated_at'] as String? ?? '';
-    final unreadCount = (chat['unread_count'] as num?)?.toInt() ?? 0;
+    final unreadCount = int.tryParse(chat['unread_count']?.toString() ?? '0') ?? 0;
     final isOnline = (chat['is_online'] as bool?) ?? false;
+    final post = chat['post'] as Map<String, dynamic>?;
+    final postTitle = post?['title'] as String? ?? '';
 
     // Helper to format time strings (if it's a full ISO date, we want just the time or simple date)
     String displayTime = time;
@@ -223,6 +305,10 @@ class _MessagesScreenState extends State<MessagesScreen> {
             'userId': otherUserId,
             'userName': otherUserName,
             'isOnline': isOnline,
+            'postTitle': post?['title'],
+            'postImage': post?['image_url'],
+            'postStatus': post?['status'],
+            'postId': post?['id'],
           },
         );
       },
@@ -273,6 +359,13 @@ class _MessagesScreenState extends State<MessagesScreen> {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                         ),
+                        if (postTitle.isNotEmpty)
+                          Text(
+                            'Re: $postTitle',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 12, color: const Color(0xFF0A3D91), fontWeight: FontWeight.w500),
+                          ),
                         const SizedBox(height: 4),
                         Text(
                           lastMessage,

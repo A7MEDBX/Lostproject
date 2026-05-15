@@ -48,7 +48,7 @@ class UserService {
      */
     async getUserById(id) {
         try {
-            const user = await UserRepo.findUserById(id);
+            const user = await UserRepo.getUserById(id);
             
             if (!user) {
                 return {
@@ -173,7 +173,7 @@ class UserService {
             }
 
             // Check current verification status
-            const user = await UserRepo.findUserById(userId);
+            const user = await UserRepo.getUserById(userId);
             if (!user) {
                 return {
                     success: false,
@@ -268,7 +268,7 @@ class UserService {
     async approveVerification(userId, adminNotes = null) {
         try {
             // Check current status
-            const user = await UserRepo.findUserById(userId);
+            const user = await UserRepo.getUserById(userId);
             
             if (!user) {
                 return {
@@ -311,7 +311,7 @@ class UserService {
             }
 
             // Check current status
-            const user = await UserRepo.findUserById(userId);
+            const user = await UserRepo.getUserById(userId);
             
             if (!user) {
                 return {

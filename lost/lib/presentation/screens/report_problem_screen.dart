@@ -7,13 +7,15 @@ import '../../core/utils/app_messenger.dart';
 
 /// Report a Problem Screen
 class ReportProblemScreen extends StatefulWidget {
-  final String? reportedUserId;
-  final String? reportedUserName;
+  final String reportType;
+  final String? targetId;
+  final String? targetName;
 
   const ReportProblemScreen({
     super.key,
-    this.reportedUserId,
-    this.reportedUserName,
+    this.reportType = 'general_support',
+    this.targetId,
+    this.targetName,
   });
 
   @override
@@ -27,14 +29,62 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
   String? _selectedOption;
   bool _isLoading = false;
 
-  final List<String> _options = [
-    'Bug Report',
-    'Feature Request',
-    'Account Issue',
-    'Payment Problem',
-    'Content Issue',
-    'Other',
-  ];
+  List<String> get _options {
+    switch (widget.reportType) {
+      case 'user':
+        return [
+          'Scam or fraudulent behavior',
+          'Fake ownership claim',
+          'Suspicious activity',
+          'Harassment or abusive behavior',
+          'Spam requests/messages',
+          'Attempted theft',
+          'Inappropriate communication',
+          'Impersonation',
+          'Asking for payment suspiciously',
+          'Refusing verification process',
+          'Other',
+        ];
+      case 'post':
+        return [
+          'Fake lost/found item',
+          'Duplicate listing',
+          'Incorrect category',
+          'Misleading information',
+          'Suspicious ownership claim',
+          'Inappropriate images',
+          'Spam post',
+          'Item already returned',
+          'Fraudulent reward claim',
+          'Other',
+        ];
+      case 'message':
+      case 'chat':
+        return [
+          'Harassment',
+          'Spam',
+          'Scam attempt',
+          'Threatening behavior',
+          'Inappropriate content',
+          'Fake ownership negotiation',
+          'Payment scam attempt',
+          'Other',
+        ];
+      case 'general_support':
+      default:
+        return [
+          'App bug',
+          'Notification issue',
+          'Chat issue',
+          'Verification issue',
+          'Report system issue',
+          'Performance issue',
+          'Account issue',
+          'UI problem',
+          'Other',
+        ];
+    }
+  }
 
   @override
   void dispose() {
@@ -45,8 +95,8 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
 
   Future<void> _submitReport() async {
     if (_formKey.currentState!.validate() && _selectedOption != null) {
-      if (widget.reportedUserId == null) {
-        AppMessenger.showError('Reporting requires a specific user. Please report from their profile or post.');
+      if (widget.reportType != 'general_support' && widget.targetId == null) {
+        AppMessenger.showError('Reporting requires a specific target.');
         return;
       }
 
@@ -57,16 +107,27 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
           tokenProvider: AuthService.instance.getIdToken,
         );
 
-        // Map frontend fields to backend DTO
-        // Backend expects: reported_user_id (UUID), reason (String 10-1000)
-        final reason = '$_selectedOption: ${_titleController.text.trim()} - ${_descriptionController.text.trim()}';
+        final note = '${_titleController.text.trim()} - ${_descriptionController.text.trim()}';
+
+        final body = <String, dynamic>{
+          'reportType': widget.reportType,
+          'reason': _selectedOption,
+          'note': note,
+        };
+
+        if (widget.reportType == 'user') {
+          body['reported_user_id'] = widget.targetId;
+        } else if (widget.reportType == 'post') {
+          body['reported_post_id'] = widget.targetId;
+        } else if (widget.reportType == 'message') {
+          body['reported_message_id'] = widget.targetId;
+        } else if (widget.reportType == 'chat') {
+          body['reported_chat_id'] = widget.targetId;
+        }
 
         await apiClient.post(
           ApiConstants.createReportEndpoint,
-          body: {
-            'reported_user_id': widget.reportedUserId,
-            'reason': reason,
-          },
+          body: body,
         );
 
         if (mounted) {
@@ -131,7 +192,7 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
             children: [
               const SizedBox(height: 20),
               
-              if (widget.reportedUserName != null) ...[
+              if (widget.targetName != null) ...[
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -145,7 +206,7 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Reporting User: ${widget.reportedUserName}',
+                          'Reporting: ${widget.targetName}',
                           style: const TextStyle(
                             color: Colors.red,
                             fontWeight: FontWeight.bold,

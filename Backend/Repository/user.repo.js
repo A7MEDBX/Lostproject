@@ -21,7 +21,7 @@ class userdb {
             }
         }
 
-        async findUserById(id) {
+        async getUserById(id) {
             try {
                 return await User.findByPk(id);
             } catch (error) {

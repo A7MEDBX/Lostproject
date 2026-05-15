@@ -7,7 +7,7 @@ module.exports = (io, socket) => {
             if (!isParticipant) {
                 return socket.emit('error', { message: 'Not authorized to join this chat' });
             }
-            socket.join(`chat:${chatId}`);
+            socket.join(`conversation:${chatId}`);
         } catch (error) {
             socket.emit('error', { message: error.message });
         }
@@ -22,7 +22,7 @@ module.exports = (io, socket) => {
 
             const result = await chatService.sendMessage(chatId, socket.user.id, content);
             if (result.success) {
-                io.to(`chat:${chatId}`).emit('new_message', result.data);
+                io.to(`conversation:${chatId}`).emit('new_message', result.data);
             } else {
                 socket.emit('error', { message: result.message });
             }
@@ -32,6 +32,6 @@ module.exports = (io, socket) => {
     });
 
     socket.on('leave_chat', ({ chatId }) => {
-        socket.leave(`chat:${chatId}`);
+        socket.leave(`conversation:${chatId}`);
     });
 };

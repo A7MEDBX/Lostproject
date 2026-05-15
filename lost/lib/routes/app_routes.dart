@@ -114,6 +114,10 @@ class AppRoutes {
             userName: args?['userName'] as String?,
             userId: args?['userId'] as String?,
             isOnline: args?['isOnline'] as bool?,
+            postTitle: args?['postTitle'] as String?,
+            postImage: args?['postImage'] as String?,
+            postStatus: args?['postStatus'] as String?,
+            postId: args?['postId'] as String?,
           ),
         );
 
@@ -174,8 +178,9 @@ class AppRoutes {
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
           builder: (_) => ReportProblemScreen(
-            reportedUserId: args?['reportedUserId'],
-            reportedUserName: args?['reportedUserName'],
+            reportType: args?['reportType'] ?? (args?['reportedUserId'] != null ? 'user' : 'general_support'),
+            targetId: args?['targetId'] ?? args?['reportedUserId'],
+            targetName: args?['targetName'] ?? args?['reportedUserName'],
           ),
         );
 

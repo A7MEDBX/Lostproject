@@ -5,6 +5,9 @@ const statusHandler = require('./handlers/status.handler');
 
 const onConnection = (io, socket) => {
     console.log(`User connected: ${socket.id} (User ID: ${socket.user.id})`);
+    
+    // Join a personal room to receive global notifications and chat updates
+    socket.join(`user:${socket.user.id}`);
 
     // Register all handlers
     chatHandler(io, socket);

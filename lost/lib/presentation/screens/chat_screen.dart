@@ -20,6 +20,10 @@ class ChatScreen extends StatefulWidget {
   final String? userName;
   final String? userId;
   final bool? isOnline;
+  final String? postTitle;
+  final String? postImage;
+  final String? postStatus;
+  final String? postId;
 
   const ChatScreen({
     super.key,
@@ -27,6 +31,10 @@ class ChatScreen extends StatefulWidget {
     this.userName,
     this.userId,
     this.isOnline,
+    this.postTitle,
+    this.postImage,
+    this.postStatus,
+    this.postId,
   });
 
   @override
@@ -76,8 +84,11 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     if (widget.chatId != null) {
+      _socketService.activeChatId = widget.chatId;
       _loadMessages();
       _initSocket();
+      // Mark chat as read immediately so sender's own chat shows no badge
+      _markAsRead();
     } else {
       setState(() {
         _isLoadingMessages = false;
@@ -150,6 +161,9 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     if (widget.chatId != null) {
       _socketService.leaveChat(widget.chatId!);
+      if (_socketService.activeChatId == widget.chatId) {
+        _socketService.activeChatId = null;
+      }
     }
     _socketService.off('new_message', _messageHandler);
     _socketService.off('user_status', _statusHandler);
@@ -172,6 +186,8 @@ class _ChatScreenState extends State<ChatScreen> {
           _isLoadingMessages = false;
         });
         _scrollToBottom();
+        // Mark read after messages are loaded
+        _markAsRead();
       }
     } catch (e) {
       if (mounted) {
@@ -181,6 +197,14 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       }
     }
+  }
+
+  /// Tells the backend to reset unread count for this user in this chat.
+  Future<void> _markAsRead() async {
+    if (widget.chatId == null) return;
+    try {
+      await _dataSource.markAsRead(widget.chatId!, _currentUserId);
+    } catch (_) {}
   }
 
   Future<void> _sendMessage() async {
@@ -213,10 +237,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
       if (mounted) {
         setState(() {
-          final idx = _messages.indexWhere((m) => m.id == optimistic.id);
-          if (idx != -1) {
-            _messages[idx] = sent;
-          } else if (!_messages.any((m) => m.id == sent.id)) {
+          _messages.removeWhere((m) => m.id == optimistic.id);
+          if (!_messages.any((m) => m.id == sent.id)) {
             _messages.add(sent);
           }
           _isSending = false;
@@ -244,7 +266,20 @@ class _ChatScreenState extends State<ChatScreen> {
     );
     if (file == null) return;
 
-    setState(() => _isSending = true);
+    final optimistic = ChatMessageModel(
+      id: 'temp-${DateTime.now().millisecondsSinceEpoch}',
+      chatId: widget.chatId!,
+      senderId: _currentUserId,
+      message: '📷 Uploading image...',
+      timestamp: DateTime.now(),
+    );
+
+    setState(() {
+      _messages.add(optimistic);
+      _isSending = true;
+    });
+    _scrollToBottom();
+
     try {
       final token = await AuthService.instance.getIdToken();
       final request = http.MultipartRequest(
@@ -260,17 +295,28 @@ class _ChatScreenState extends State<ChatScreen> {
         final urlMatch = RegExp(r'"url"\s*:\s*"([^"]+)"').firstMatch(resp.body);
         final imageUrl = urlMatch?.group(1) ?? '';
         if (imageUrl.isNotEmpty) {
-          await _dataSource.sendMessage(
+          final sent = await _dataSource.sendMessage(
             chatId: widget.chatId!,
             senderId: _currentUserId,
             message: imageUrl,
           );
+          if (mounted) {
+            setState(() {
+              _messages.removeWhere((m) => m.id == optimistic.id);
+              if (!_messages.any((m) => m.id == sent.id)) {
+                _messages.add(sent);
+              }
+            });
+            _scrollToBottom();
+          }
         }
       } else if (mounted) {
+        setState(() => _messages.removeWhere((m) => m.id == optimistic.id));
         AppMessenger.showError('Failed to upload image. Please try again.');
       }
     } catch (e) {
       if (mounted) {
+        setState(() => _messages.removeWhere((m) => m.id == optimistic.id));
         AppMessenger.showError('Failed to upload image. Please try again.');
       }
     } finally {
@@ -382,6 +428,91 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
+          if (widget.postTitle != null && widget.postTitle!.isNotEmpty)
+            InkWell(
+              onTap: () {
+                if (widget.postId != null && widget.postId!.isNotEmpty) {
+                  Navigator.pushNamed(
+                    context,
+                    '/post-detail',
+                    arguments: {
+                      'postId': widget.postId,
+                      'title': widget.postTitle,
+                      'status': widget.postStatus,
+                      'imageUrl': widget.postImage,
+                    },
+                  );
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      offset: const Offset(0, 2),
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    if (widget.postImage != null && widget.postImage!.isNotEmpty)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Image.network(
+                          widget.postImage!,
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 40,
+                            height: 40,
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.image, size: 20, color: Colors.grey),
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(Icons.inventory, color: Colors.grey),
+                      ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.postTitle!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                          ),
+                          if (widget.postStatus != null)
+                            Text(
+                              widget.postStatus!.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: widget.postStatus == 'resolved' ? Colors.green : const Color(0xFF0A3D91),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+                  ],
+                ),
+              ),
+            ),
           // Date Badge
           Center(
             child: Container(
