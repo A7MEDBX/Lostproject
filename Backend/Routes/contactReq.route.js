@@ -3,6 +3,7 @@ const router = express.Router();
 const ContactReqController = require('../Controllers/ContactReq.controller');
 const { verfyFirebaseToken } = require('../Middlewares/auth.middleware');
 const { requireVerification } = require('../Middlewares/isVerfied.middleware');
+const { requireActiveUser } = require('../Middlewares/moderation.middleware');
 const { sendContactRequestValidator, respondToRequestValidator } = require('../validators/contactReq.validator');
 const validate = require('../Middlewares/validation');
 
@@ -18,6 +19,7 @@ router.use(requireVerification);
  * @body    { receiver_id, post_id }
  */
 router.post('/send',
+    requireActiveUser,
     sendContactRequestValidator,
     validate,
     ContactReqController.sendContactRequest);

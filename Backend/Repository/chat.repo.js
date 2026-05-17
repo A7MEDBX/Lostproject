@@ -126,17 +126,37 @@ class ChatRepo {
     /**
      * Send a message in a chat — increments receiver's unread count
      */
-    async sendMessage(chatId, senderId, content) {
+    async sendMessage(chatId, senderId, content, clientMsgId = null) {
+        const sequelize = require('../db/Sequelize');
+        const transaction = await sequelize.transaction();
+
         try {
+            // Check for idempotency: if we already received this client_msg_id, just return it
+            if (clientMsgId) {
+                const existingMsg = await Message.findOne({
+                    where: { chat_id: chatId, client_msg_id: clientMsgId },
+                    transaction
+                });
+
+                if (existingMsg) {
+                    await transaction.rollback();
+                    return existingMsg; // Return existing message to gracefully handle duplicates
+                }
+            }
+
             // Fetch the chat to find who is user_1 and user_2
-            const chat = await Chat.findOne({ where: { id: chatId } });
-            if (!chat) throw new Error('Chat not found');
+            const chat = await Chat.findOne({ where: { id: chatId }, transaction });
+            if (!chat) {
+                await transaction.rollback();
+                throw new Error('Chat not found');
+            }
 
             const message = await Message.create({
                 chat_id: chatId,
                 sender_id: senderId,
-                content
-            });
+                content,
+                client_msg_id: clientMsgId
+            }, { transaction });
 
             // Determine which unread column belongs to the receiver safely
             const isUser1 = String(chat.user_1).toLowerCase() === String(senderId).toLowerCase();
@@ -150,11 +170,17 @@ class ChatRepo {
                     [unreadField]: currentUnread + 1,
                     updated_at: new Date()
                 },
-                { where: { id: chatId } }
+                { 
+                    where: { id: chatId },
+                    transaction 
+                }
             );
 
+            await transaction.commit();
+            
             return message;
         } catch (err) {
+            await transaction.rollback();
             throw err;
         }
     }

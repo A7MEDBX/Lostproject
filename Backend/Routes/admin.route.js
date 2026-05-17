@@ -77,4 +77,20 @@ Router.post('/verifications/:userId/reject',
     validate,
     adminController.rejectVerification);
 
+/**
+ * @route   PATCH /api/v1/admin/users/:userId/status
+ * @desc    Update user account status (active/suspended/banned)
+ * @access  Admin only
+ * @body    { status: 'active'|'suspended'|'banned' }
+ */
+Router.patch('/users/:userId/status', adminController.updateUserStatus);
+
+/**
+ * @route   PATCH /api/v1/admin/posts/:postId/moderation
+ * @desc    Update post moderation status (visible/hidden/removed)
+ * @access  Admin only
+ * @body    { moderation_status: 'visible'|'hidden'|'removed' }
+ */
+Router.patch('/posts/:postId/moderation', adminController.updatePostModeration);
+
 module.exports = Router;

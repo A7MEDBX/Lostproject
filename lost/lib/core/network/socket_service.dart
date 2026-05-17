@@ -71,7 +71,7 @@ class SocketService {
 
   void joinChat(String chatId) => _emitWhenConnected('join_chat', {'chatId': chatId});
   void leaveChat(String chatId) => _emitWhenConnected('leave_chat', {'chatId': chatId});
-  void sendMessage(String chatId, String content) => _emitWhenConnected('send_message', {'chatId': chatId, 'content': content});
+  void sendMessage(String chatId, String content) => _emitWhenConnected('send_message', {'chatId': chatId, 'content': content, 'client_msg_id': DateTime.now().millisecondsSinceEpoch.toString()});
   void sendTypingStart(String chatId) => _emitWhenConnected('typing_start', {'chatId': chatId});
   void sendTypingStop(String chatId) => _emitWhenConnected('typing_stop', {'chatId': chatId});
   void markMessageRead(String chatId, String messageId) => _emitWhenConnected('message_read', {'chatId': chatId, 'messageId': messageId});
@@ -86,12 +86,9 @@ class SocketService {
     _socket?.off(event, callback);
   }
 
-  // Backwards compatibility
-  void onNewMessage(dynamic Function(dynamic) callback) => on('new_message', callback);
-  void offNewMessage(dynamic Function(dynamic) callback) => off('new_message', callback);
-  
-  void onUserStatus(dynamic Function(dynamic) callback) => on('user_status', callback);
-  void offUserStatus(dynamic Function(dynamic) callback) => off('user_status', callback);
+  // Generic Event Listener (Replaces onNewMessage etc.)
+  void onEvent(dynamic Function(dynamic) callback) => on('event', callback);
+  void offEvent([dynamic Function(dynamic)? callback]) => off('event', callback);
   
   // Dispose all (use carefully)
   void removeListeners() {

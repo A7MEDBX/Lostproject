@@ -27,6 +27,11 @@ const User =sequelize.define('users',{
         defaultValue:'user',
         allowNull:false
     },
+    status: {
+        type: DataTypes.ENUM('active', 'suspended', 'banned'),
+        defaultValue: 'active',
+        allowNull: false
+    },
     verified:{
         type:DataTypes.BOOLEAN,
         defaultValue:false,

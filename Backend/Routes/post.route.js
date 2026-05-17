@@ -1,5 +1,6 @@
 const { verfyFirebaseToken } = require('../Middlewares/auth.middleware');
 const { requireAuthentication, requireVerification } = require('../Middlewares/isVerfied.middleware');
+const { requireActiveUser } = require('../Middlewares/moderation.middleware');
 const { createPostValidator, updatePostValidator } = require('../validators/post.validator');
 const validate = require('../Middlewares/validation');
 const postController = require('../Controllers/post.controller');
@@ -18,6 +19,7 @@ Router.use(requireAuthentication); // All routes need authentication
  * @body    multipart/form-data - image, type, category, location fields
  */
 Router.post('/create',
+    requireActiveUser,
     requireVerification,
     uploadMiddleware,
     uploadToCloudinary,

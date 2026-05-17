@@ -66,6 +66,11 @@ const Post = sequelize.define('posts', {
         type: DataTypes.ENUM('active', 'matched', 'closed', 'resolved'),
         defaultValue: 'active',
         allowNull: false
+    },
+    moderation_status: {
+        type: DataTypes.ENUM('visible', 'hidden', 'removed'),
+        defaultValue: 'visible',
+        allowNull: false
     }
 }, {
     tableName: 'posts',

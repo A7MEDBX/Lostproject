@@ -24,10 +24,11 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   final SocketService _socketService = SocketService();
   String _currentUserId = '';
+  late final dynamic Function(dynamic) _eventHandler;
 
   @override
   void dispose() {
-    _socketService.off('chat_list_update');
+    _socketService.offEvent(_eventHandler);
     _socketService.off('chat_read');
     _searchController.dispose();
     super.dispose();
@@ -37,6 +38,25 @@ class _MessagesScreenState extends State<MessagesScreen> {
   void initState() {
     super.initState();
     _loadChats();
+    _eventHandler = (payload) {
+      if (mounted) {
+        final eventType = payload['event_type'];
+        if (eventType == 'conversation.updated') {
+          final currentUser = context.read<UserProvider>().backendUser;
+          if (currentUser != null) {
+            _currentUserId = currentUser.id;
+          }
+          final data = payload['data'];
+          final conversation = payload['conversation'];
+          _updateChatList({
+            'chat_id': conversation['id'],
+            'last_message': data['last_message'],
+            'last_message_sender_id': data['last_message_sender_id'],
+            'updated_at': payload['emitted_at']
+          });
+        }
+      }
+    };
     _initSocket();
   }
 
@@ -51,15 +71,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
         _currentUserId = userProvider.backendUser!.id;
       }
 
-      _socketService.on('chat_list_update', (data) {
-        if (mounted) {
-          final currentUser = context.read<UserProvider>().backendUser;
-          if (currentUser != null) {
-            _currentUserId = currentUser.id;
-          }
-          _updateChatList(data);
-        }
-      });
+      _socketService.onEvent(_eventHandler);
 
       _socketService.on('chat_read', (data) {
         if (mounted) {

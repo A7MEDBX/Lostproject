@@ -29,6 +29,10 @@ const Message = sequelize.define('messages', {
     content: {
         type: DataTypes.TEXT,
         allowNull: false
+    },
+    client_msg_id: {
+        type: DataTypes.STRING(255),
+        allowNull: true
     }
 }, {
     tableName: 'messages',

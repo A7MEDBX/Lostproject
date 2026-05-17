@@ -116,7 +116,7 @@ class ChatService {
     /**
      * Send a message in a chat (security check done in controller/middleware)
      */
-    async sendMessage(chatId, senderId, content) {
+    async sendMessage(chatId, senderId, content, clientMsgId = null) {
         try {
             // Validate content
             if (!content || content.trim().length === 0) {
@@ -126,7 +126,7 @@ class ChatService {
                 };
             }
 
-            const message = await ChatRepo.sendMessage(chatId, senderId, content.trim());
+            const message = await ChatRepo.sendMessage(chatId, senderId, content.trim(), clientMsgId);
             
             return {
                 success: true,

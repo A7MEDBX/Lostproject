@@ -2,8 +2,7 @@ const express = require('express');
 const Router = express.Router();
 const chatController = require('../Controllers/chat.controller');
 const { verfyFirebaseToken } = require('../Middlewares/auth.middleware');
-const { requireVerification, requireAuthentication } = require('../Middlewares/isVerfied.middleware');
-const { verifyChatParticipant } = require('../Middlewares/chat.middleware');
+const { requireVerification, requireAuthentication } = require('../Middlewares/isVerfied.middleware');const { requireActiveUser } = require('../Middlewares/moderation.middleware');const { verifyChatParticipant } = require('../Middlewares/chat.middleware');
 const { createChatValidator, sendMessageValidator } = require('../validators/chat.validator');
 const validate = require('../Middlewares/validation');
 
@@ -53,6 +52,7 @@ Router.get('/:chatId/messages', verifyChatParticipant, chatController.getChatMes
  * @body    { content }
  */
 Router.post('/:chatId/send',
+    requireActiveUser,
     verifyChatParticipant,
     sendMessageValidator,
     validate,

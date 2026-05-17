@@ -128,15 +128,19 @@ class _ChatScreenState extends State<ChatScreen> {
       
       _socketService.joinChat(widget.chatId!);
 
-      _messageHandler = (data) {
+      _messageHandler = (payload) {
         if (mounted) {
-          setState(() {
-            _messages.removeWhere((m) => m.id.startsWith('temp-') && m.message == data['content']);
-            if (!_messages.any((m) => m.id == data['id'])) {
-              _messages.add(ChatMessageModel.fromJson(data));
-              _scrollToBottom();
-            }
-          });
+          final eventType = payload['event_type'];
+          if (eventType == 'message.created') {
+            final data = payload['data']['message'];
+            setState(() {
+              _messages.removeWhere((m) => m.id.startsWith('temp-') && m.message == data['content']);
+              if (!_messages.any((m) => m.id == data['id'])) {
+                _messages.add(ChatMessageModel.fromJson(data));
+                _scrollToBottom();
+              }
+            });
+          }
         }
       };
 
@@ -148,7 +152,7 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       };
 
-      _socketService.on('new_message', _messageHandler);
+      _socketService.onEvent(_messageHandler);
       _socketService.on('user_status', _statusHandler);
 
       if (widget.userId != null) {
@@ -165,7 +169,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _socketService.activeChatId = null;
       }
     }
-    _socketService.off('new_message', _messageHandler);
+    _socketService.offEvent(_messageHandler);
     _socketService.off('user_status', _statusHandler);
     // Do NOT disconnect singleton, allow other screens to use it
     _messageController.dispose();

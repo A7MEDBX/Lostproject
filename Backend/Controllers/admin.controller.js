@@ -157,6 +157,48 @@ class AdminController {
             return response.ErrorResponse(res, 'Server Error', error.message, 500);
         }
     }
-}
+    /**
+     * Update user account status
+     */
+    async updateUserStatus(req, res) {
+        try {
+            const { userId } = req.params;
+            const { status } = req.body;
+
+            // Validate status
+            if (!['active', 'suspended', 'banned'].includes(status)) {
+                return response.ErrorResponse(res, 'Invalid status enum for user', null, 400);
+            }
+
+            const User = require('../models/User.model');
+            await User.update({ status }, { where: { id: userId } });
+            
+            return response.Success(res, 'User status updated successfully', null, 200);
+        } catch (error) {
+            return response.ErrorResponse(res, 'Server Error', error.message, 500);
+        }
+    }
+
+    /**
+     * Update post moderation status
+     */
+    async updatePostModeration(req, res) {
+        try {
+            const { postId } = req.params;
+            const { moderation_status } = req.body;
+
+            // Validate status
+            if (!['visible', 'hidden', 'removed'].includes(moderation_status)) {
+                return response.ErrorResponse(res, 'Invalid moderation status enum for post', null, 400);
+            }
+
+            const Post = require('../models/post.model');
+            await Post.update({ moderation_status }, { where: { id: postId } });
+            
+            return response.Success(res, 'Post visibility updated successfully', null, 200);
+        } catch (error) {
+            return response.ErrorResponse(res, 'Server Error', error.message, 500);
+        }
+    }}
 
 module.exports = new AdminController();

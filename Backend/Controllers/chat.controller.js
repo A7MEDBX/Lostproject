@@ -114,7 +114,7 @@ class ChatController {
         try {
             const { chatId } = req.params;
             const currentUserId = req.user.id;
-            const { content } = req.body;
+            const { content, client_msg_id } = req.body;
 
             if (!content) {
                 return response.ErrorResponse(res, 'Message content is required', null, 400);
@@ -126,7 +126,7 @@ class ChatController {
                 return response.ErrorResponse(res, 'Access denied: You are not a participant in this chat', null, 403);
             }
 
-            const result = await ChatService.sendMessage(chatId, currentUserId, content);
+            const result = await ChatService.sendMessage(chatId, currentUserId, content, client_msg_id);
             
             if (!result.success) {
                 return response.ErrorResponse(res, result.message, null, 400);
@@ -136,28 +136,61 @@ class ChatController {
             const io = req.app.get('io');
             if (io) {
                 const messageData = result.data.toJSON ? result.data.toJSON() : result.data;
-                io.to(`conversation:${chatId}`).emit('new_message', messageData);
+                const { buildEvent, normalizeMessage, normalizeConversation, normalizeUser } = require('../utils/realtime_event.util');
 
-                // Send notification to the receiver
+                // Send notification to the receiver & get chat details
                 const chatData = await ChatService.getChatById(chatId);
+                
+                let conversationRef = null;
+                let receiverId = null;
+
                 if (chatData.success && chatData.data) {
                     const chat = chatData.data.toJSON ? chatData.data.toJSON() : chatData.data;
-                    const receiverId = chat.user_1 === currentUserId ? chat.user_2 : chat.user_1;
-                    
+                    conversationRef = normalizeConversation(chat);
+                    receiverId = chat.user_1 === currentUserId ? chat.user_2 : chat.user_1;
+                }
+                
+                const eventPayload = buildEvent({
+                    eventType: 'message.created',
+                    actor: normalizeUser(req.user),
+                    conversation: conversationRef,
+                    data: { message: normalizeMessage(messageData) },
+                    dedupeKey: client_msg_id
+                });
+
+                io.to(`conversation:${chatId}`).emit('event', eventPayload);
+
+                if (chatData.success && chatData.data) {
                     let previewContent = messageData.content;
                     if (previewContent.startsWith('http')) {
                         previewContent = '📷 Image';
                     }
 
-                    const chatUpdatePayload = {
-                        chat_id: chatId,
-                        last_message: previewContent,
-                        last_message_sender_id: currentUserId,
-                        updated_at: messageData.created_at || new Date().toISOString()
-                    };
+                    const chatUpdatePayload = buildEvent({
+                        eventType: 'conversation.updated',
+                        actor: normalizeUser(req.user),
+                        conversation: conversationRef,
+                        data: {
+                            last_message: previewContent,
+                            last_message_sender_id: currentUserId,
+                            unread_increment: 1, // Only receiver actually cares, but payload can signal it
+                        }
+                    });
 
-                    io.to(`user:${receiverId}`).emit('chat_list_update', chatUpdatePayload);
-                    io.to(`user:${currentUserId}`).emit('chat_list_update', chatUpdatePayload);
+                    io.to(`user:${receiverId}`).emit('event', chatUpdatePayload);
+                    
+                    // Sender's update (no unread increment)
+                    const senderUpdatePayload = buildEvent({
+                        eventType: 'conversation.updated',
+                        actor: normalizeUser(req.user),
+                        conversation: conversationRef,
+                        data: {
+                            last_message: previewContent,
+                            last_message_sender_id: currentUserId,
+                            unread_increment: 0,
+                        }
+                    });
+                    io.to(`user:${currentUserId}`).emit('event', senderUpdatePayload);
 
                     const NotificationService = require('../services/notification.service');
                     NotificationService.sendNotification(receiverId, 'new_message', chatId, io);
