@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../presentation/screens/splash_screen.dart';
 import '../presentation/screens/welcome_screen.dart';
 import '../presentation/screens/login_screen.dart';
 import '../presentation/screens/signup_screen.dart';
@@ -26,7 +27,8 @@ import '../presentation/screens/support_screen.dart';
 import '../presentation/screens/support_request_detail_screen.dart';
 /// App Routes Configuration
 class AppRoutes {
-  static const String welcome = '/';
+  static const String splash = '/';
+  static const String welcome = '/welcome';
   static const String home = '/home';
   static const String search = '/search';
   static const String createPost = '/create-post';
@@ -54,6 +56,9 @@ class AppRoutes {
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case splash:
+        return MaterialPageRoute(builder: (_) => const SplashScreen());
+
       case welcome:
         return MaterialPageRoute(builder: (_) => const WelcomeScreen());
 

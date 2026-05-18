@@ -71,6 +71,24 @@ class ReportService {
 
         return updatedReport || { ...report.toJSON(), status };
     }
+
+    async updateReport(id, data) {
+        const report = await reportRepo.getReportById(id);
+        if (!report) {
+            throw new Error('Report not found');
+        }
+
+        if (data.status && !['pending', 'resolved'].includes(data.status)) {
+            throw new Error('Status must be pending or resolved');
+        }
+
+        const [updatedRows, [updatedReport]] = await reportRepo.updateReport(id, data);
+        if (updatedRows === 0) {
+            throw new Error('Failed to update report');
+        }
+
+        return updatedReport || { ...report.toJSON(), ...data };
+    }
 }
 
 module.exports = new ReportService();

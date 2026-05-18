@@ -25,6 +25,9 @@ class UserProvider with ChangeNotifier {
   /// Whether the backend user has been loaded successfully.
   bool get isLoaded => _backendUser != null;
 
+  /// Whether the backend user is an admin.
+  bool get isAdmin => _backendUser?.isAdmin ?? false;
+
   // ── Actions ──────────────────────────────────────────────────
 
   /// Fetches the authenticated user from GET /user/me and stores it.

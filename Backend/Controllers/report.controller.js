@@ -41,8 +41,7 @@ class ReportController {
 
     async updateReportStatus(req, res) {
         try {
-            const { status } = req.body;
-            const report = await reportService.updateReportStatus(req.params.id, status);
+            const report = await reportService.updateReport(req.params.id, req.body);
             return response.Success(res, 'Report status updated successfully', report, 200);
         } catch (error) {
             if (error.message === 'Report not found') {

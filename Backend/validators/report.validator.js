@@ -103,8 +103,16 @@ const createReportValidator = [
 
 const updateReportStatusValidator = [
     body('status')
-        .notEmpty().withMessage('Status is required')
-        .isIn(['pending', 'reviewed', 'resolved']).withMessage('Status must be pending, reviewed, or resolved')
+        .optional()
+        .isIn(['pending', 'resolved']).withMessage('Status must be pending or resolved'),
+    body('reason')
+        .optional()
+        .isString().withMessage('Reason must be a string')
+        .isLength({ min: 2, max: 255 }).withMessage('Reason must be between 2 and 255 characters'),
+    body('note')
+        .optional()
+        .isString().withMessage('Note must be a string')
+        .isLength({ max: 2000 }).withMessage('Note cannot exceed 2000 characters')
 ];
 
 module.exports = {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/session_service.dart';
 import '../../core/utils/app_messenger.dart';
 import '../providers/user_provider.dart';
 
@@ -302,6 +303,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Center(
                       child: TextButton.icon(
                         onPressed: () async {
+                          // Clear session
+                          await SessionService.instance.clearSession();
                           // Clear backend user state
                           context.read<UserProvider>().clear();
                           // Sign out from Firebase

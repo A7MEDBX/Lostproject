@@ -150,9 +150,12 @@ class PostRepository {
         const allowedUpdates = {};
         
         if (data.title) allowedUpdates.title = data.title;
+        if (data.post_type) allowedUpdates.post_type = data.post_type;
         if (data.description !== undefined) allowedUpdates.description = data.description; 
         if (data.category) allowedUpdates.category = data.category;
         if (data.status) allowedUpdates.status = data.status; 
+        if (data.moderation_status) allowedUpdates.moderation_status = data.moderation_status;
+        if (data.image_url) allowedUpdates.image_url = data.image_url;
         if(data.country) allowedUpdates.country = data.country;
         if(data.state) allowedUpdates.state = data.state;
         if(data.city) allowedUpdates.city = data.city;

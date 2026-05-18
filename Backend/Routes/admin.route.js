@@ -11,6 +11,13 @@ Router.use(verfyFirebaseToken);
 Router.use(isAdmin);
 
 /**
+ * @route   GET /api/v1/admin/stats
+ * @desc    Get dashboard overview status
+ * @access  Admin only
+ */
+Router.get('/stats', adminController.getAdminStats);
+
+/**
  * @route   GET /api/v1/admin/users
  * @desc    Get all users with pagination
  * @access  Admin only
@@ -24,6 +31,8 @@ Router.get('/users', adminController.getAllUsers);
  * @access  Admin only
  */
 Router.get('/users/:userId', adminController.getUserById);
+
+Router.put('/users/:userId', adminController.updateUser);
 
 /**
  * @route   DELETE /api/v1/admin/users/:userId

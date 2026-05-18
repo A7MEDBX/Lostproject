@@ -6,6 +6,7 @@ import '../widgets/custom_divider.dart';
 import '../../core/utils/app_messenger.dart';
 import '../../core/constants/finder_colors.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/session_service.dart';
 import '../../core/network/api_client.dart';
 import '../../core/constants/api_constants.dart';
 import '../providers/user_provider.dart';
@@ -309,6 +310,8 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+
+      await SessionService.instance.saveSession();
 
       final user = AuthService.instance.currentUser;
       final email = user?.email ?? _emailController.text.trim();

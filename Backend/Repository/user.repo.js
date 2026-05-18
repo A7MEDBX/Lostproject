@@ -46,8 +46,16 @@ class userdb {
             try{
                 const updateFields = {};
                 if (data.name) updateFields.name = data.name;
+                if (data.email) updateFields.email = data.email;
+                if (data.role) updateFields.role = data.role;
+                if (data.status) updateFields.status = data.status;
+                if (data.verified !== undefined) updateFields.verified = data.verified;
+                if (data.trust_score !== undefined) updateFields.trust_score = data.trust_score;
+                if (data.verification_status) updateFields.verification_status = data.verification_status;
+                if (data.national_id !== undefined) updateFields.national_id = data.national_id;
                 if (data.phone) updateFields.phone_number = data.phone;
                 if (data.phone_number) updateFields.phone_number = data.phone_number;
+                if (data.verification_notes !== undefined) updateFields.verification_notes = data.verification_notes;
                 
                 return await User.update(
                     updateFields,
@@ -125,10 +133,17 @@ class userdb {
      */
     async approveVerification(userId, adminNotes = null) {
         try {
+            // First get the user to increment trust score safely
+            const user = await User.findByPk(userId);
+            if (!user) return 0;
+            
+            const newTrustScore = user.trust_score + 10.0;
+
             const [affectedRows] = await User.update(
                 {
                     verification_status: 'approved',
                     verified: true,
+                    trust_score: newTrustScore,
                     verification_reviewed_at: new Date(),
                     verification_notes: adminNotes
                 },

@@ -131,22 +131,18 @@ class _ReportProblemScreenState extends State<ReportProblemScreen> {
         );
 
         if (mounted) {
-          setState(() {
-            _isLoading = false;
-            _selectedOption = null;
-            _titleController.clear();
-            _descriptionController.clear();
-          });
+          setState(() => _isLoading = false);
           AppMessenger.showSuccess('Report submitted successfully!');
+          Navigator.pop(context);
         }
       } catch (e) {
         if (mounted) {
           setState(() => _isLoading = false);
-          AppMessenger.showError('Failed to submit report. Please try again.');
+          AppMessenger.showError(e.toString());
         }
       }
     } else if (_selectedOption == null) {
-      AppMessenger.showError('Please select an option');
+      AppMessenger.showError('Please select a reason');
     }
   }
 

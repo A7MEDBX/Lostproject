@@ -160,7 +160,8 @@ class MatchingService {
                         distance_km: post.dataValues.distance_km || null
                     };
                 })
-                .filter(Boolean);
+                .filter(Boolean)
+                .filter(res => res.match_percentage >= 75);
 
             // Sort: High similarity first, then close distance
             enrichedResults.sort((a, b) => {

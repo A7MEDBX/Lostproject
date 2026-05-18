@@ -17,6 +17,8 @@ class User {
   final DateTime? verificationReviewedAt;
   final DateTime createdAt;
 
+  bool get isAdmin => role == 'admin';
+
   const User({
     required this.id,
     required this.firebaseUid,

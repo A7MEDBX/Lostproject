@@ -1,4 +1,4 @@
-const { Report, User } = require('../models');
+const { Report, User, Post } = require('../models');
 
 class ReportRepository {
     async createReport(data) {
@@ -9,7 +9,8 @@ class ReportRepository {
         return await Report.findByPk(id, {
             include: [
                 { model: User, as: 'reporter', attributes: ['id', 'name', 'email'] },
-                { model: User, as: 'reportedUser', attributes: ['id', 'name', 'email'] }
+                { model: User, as: 'reportedUser', attributes: ['id', 'name', 'email'] },
+                { model: Post, as: 'reportedPost', attributes: ['id', 'title', 'post_type', 'status', 'moderation_status'] }
             ]
         });
     }
@@ -23,13 +24,26 @@ class ReportRepository {
             order: [['created_at', 'DESC']],
             include: [
                 { model: User, as: 'reporter', attributes: ['id', 'name', 'email'] },
-                { model: User, as: 'reportedUser', attributes: ['id', 'name', 'email'] }
+                { model: User, as: 'reportedUser', attributes: ['id', 'name', 'email'] },
+                { model: Post, as: 'reportedPost', attributes: ['id', 'title', 'post_type', 'status', 'moderation_status'] }
             ]
         });
     }
 
     async updateReportStatus(id, status) {
         return await Report.update({ status }, {
+            where: { id },
+            returning: true
+        });
+    }
+
+    async updateReport(id, data) {
+        const allowedUpdates = {};
+        if (data.status) allowedUpdates.status = data.status;
+        if (data.reason) allowedUpdates.reason = data.reason;
+        if (data.note !== undefined) allowedUpdates.note = data.note;
+
+        return await Report.update(allowedUpdates, {
             where: { id },
             returning: true
         });

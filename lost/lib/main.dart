@@ -73,7 +73,7 @@ class MyApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         navigatorKey: AppMessenger.navigatorKey,
         scaffoldMessengerKey: AppMessenger.messengerKey,
-        initialRoute: AppRoutes.welcome,
+        initialRoute: AppRoutes.splash,
         onGenerateRoute: AppRoutes.onGenerateRoute,
       ),
     );
