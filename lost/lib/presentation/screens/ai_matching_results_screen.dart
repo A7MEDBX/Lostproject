@@ -6,6 +6,7 @@ import '../../data/datasources/ai_matching_remote_data_source.dart';
 import '../../data/datasources/chat_remote_data_source.dart';
 import 'package:lost/core/services/auth_service.dart';
 import '../../core/utils/app_messenger.dart';
+import '../../core/errors/exceptions.dart';
 
 enum MatchingState { loading, results, empty }
 
@@ -1399,7 +1400,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Request Contact'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1418,12 +1419,12 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context); // Close intro dialog
+              Navigator.pop(dialogContext); // Close intro dialog
 
               // Show loading spinner
               showDialog(
@@ -1447,8 +1448,10 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
               } catch (e) {
                 if (!mounted) return;
                 Navigator.pop(context); // close loading
+                
                 AppMessenger.showError(
-                    'Failed to send request. Please try again.');
+                  e is ServerException ? e.message : 'Failed to send request. Please try again.',
+                );
               }
             },
             child: const Text('Send Request'),

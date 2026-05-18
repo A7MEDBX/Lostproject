@@ -31,6 +31,8 @@ class ApiClient {
           .timeout(ApiConstants.receiveTimeout);
 
       return _handleResponse(response);
+    } on ServerException {
+      rethrow;
     } catch (e) {
       throw NetworkException('Failed to connect to server: $e');
     }
@@ -52,6 +54,8 @@ class ApiClient {
           .timeout(ApiConstants.receiveTimeout);
 
       return _handleResponse(response);
+    } on ServerException {
+      rethrow;
     } catch (e) {
       throw NetworkException('Failed to connect to server: $e');
     }
@@ -84,6 +88,8 @@ class ApiClient {
       final response = await http.Response.fromStream(streamedResponse);
 
       return _handleResponse(response);
+    } on ServerException {
+      rethrow;
     } catch (e) {
       throw NetworkException('Failed to upload image: $e');
     }
@@ -105,6 +111,8 @@ class ApiClient {
           .timeout(ApiConstants.receiveTimeout);
 
       return _handleResponse(response);
+    } on ServerException {
+      rethrow;
     } catch (e) {
       throw NetworkException('Failed to connect to server: $e');
     }
@@ -126,6 +134,8 @@ class ApiClient {
           .timeout(ApiConstants.receiveTimeout);
 
       return _handleResponse(response);
+    } on ServerException {
+      rethrow;
     } catch (e) {
       throw NetworkException('Failed to connect to server: $e');
     }
@@ -140,6 +150,8 @@ class ApiClient {
           .timeout(ApiConstants.receiveTimeout);
 
       return _handleResponse(response);
+    } on ServerException {
+      rethrow;
     } catch (e) {
       throw NetworkException('Failed to connect to server: $e');
     }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:io';
@@ -336,6 +338,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = context.watch<UserProvider>();
+    final isVerified = userProvider.backendUser?.verified ?? false;
+
     return Scaffold(
       backgroundColor: FinderColors.background,
       appBar: PreferredSize(
@@ -375,29 +380,31 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Image Upload Section
-                GestureDetector(
-                  onTap: _showImagePickerModal,
-                  child: Container(
-                    width: double.infinity,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0xFF0A3D91),
-                        width: 2,
-                        style: BorderStyle.solid,
-                      ),
-                    ),
+      body: !isVerified
+          ? _buildUnverifiedLock(context)
+          : SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Image Upload Section
+                      GestureDetector(
+                        onTap: _showImagePickerModal,
+                        child: Container(
+                          width: double.infinity,
+                          height: 200,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: const Color(0xFF0A3D91),
+                              width: 2,
+                              style: BorderStyle.solid,
+                            ),
+                          ),
                     child: _selectedImage != null
                         ? Stack(
                             children: [
@@ -788,6 +795,76 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           borderSide: const BorderSide(color: Colors.red),
         ),
         contentPadding: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  Widget _buildUnverifiedLock(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0A3D91).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.gpp_maybe,
+                size: 80,
+                color: Color(0xFF0A3D91),
+              ),
+            ),
+            const SizedBox(height: 32),
+            const Text(
+              'Account Verification Required',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: FinderColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'To maintain a safe and trustworthy community, you must verify your identity before reporting items or creating posts.',
+              style: TextStyle(
+                fontSize: 16,
+                color: FinderColors.textSecondary,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 40),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pushReplacementNamed(context, '/kyc-verification');
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0A3D91),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Verify My Account',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

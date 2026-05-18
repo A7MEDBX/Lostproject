@@ -684,7 +684,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     final introController = TextEditingController();
                     showDialog(
                       context: context,
-                      builder: (context) => AlertDialog(
+                      builder: (dialogContext) => AlertDialog(
                         title: const Text('Request Contact'),
                         content: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -703,12 +703,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         ),
                         actions: [
                           TextButton(
-                            onPressed: () => Navigator.pop(context),
+                            onPressed: () => Navigator.pop(dialogContext),
                             child: const Text('Cancel'),
                           ),
                           ElevatedButton(
                             onPressed: () async {
-                              Navigator.pop(context); // Close intro dialog
+                              Navigator.pop(dialogContext); // Close intro dialog
 
                               // Show loading spinner
                               showDialog(
@@ -744,9 +744,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                               } catch (e) {
                                 error = ServerException('Failed to send request: $e');
                               } finally {
-                                // Always pop loading — no mounted check needed here
-                                // because Navigator.pop is safe to call even if widget rebuilt.
-                                if (context.mounted) Navigator.pop(context);
+                                // Always pop loading
+                                if (context.mounted) {
+                                  Navigator.pop(context); // Close loading spinner
+                                }
                               }
 
                               if (!context.mounted) return;
