@@ -12,13 +12,17 @@ class GetAllPostsUseCase {
     String? postType,
     String? category,
     String? country,
+    String? state,
     String? city,
+    String? area,
   }) async {
     return await repository.getAllPosts(
       postType: postType,
       category: category,
       country: country,
+      state: state,
       city: city,
+      area: area,
     );
   }
 }

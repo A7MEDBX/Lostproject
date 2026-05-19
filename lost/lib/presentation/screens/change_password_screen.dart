@@ -32,6 +32,16 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   void initState() {
     super.initState();
     _newPasswordController.addListener(_validatePassword);
+
+    // Safety check: Google users shouldn't be here
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (AuthService.instance.isGoogleUser) {
+        AppMessenger.showError(
+          'Password change is not available for Google-linked accounts.',
+        );
+        if (mounted) Navigator.pop(context);
+      }
+    });
   }
 
   void _validatePassword() {

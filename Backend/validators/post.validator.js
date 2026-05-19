@@ -36,9 +36,14 @@ exports.createPostValidator = [
         .isLength({ max: 100 }).withMessage('State cannot exceed 100 characters'),
     
     body('city')
-        .notEmpty().withMessage('City is required')
+        .optional()
         .trim()
         .isLength({ min: 2, max: 100 }).withMessage('City must be between 2 and 100 characters'),
+
+    body('area')
+        .optional()
+        .trim()
+        .isLength({ min: 2, max: 100 }).withMessage('Area must be between 2 and 100 characters'),
 
     // Coordinates (Optional but recommended)
     body('latitude')

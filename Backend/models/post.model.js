@@ -46,6 +46,10 @@ const Post = sequelize.define('posts', {
         type: DataTypes.STRING,
         allowNull: true
     },
+    area:{
+        type: DataTypes.STRING,
+        allowNull: true
+    },
         latitude: {
         type: DataTypes.FLOAT,
         allowNull: true

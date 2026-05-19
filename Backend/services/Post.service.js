@@ -33,6 +33,7 @@ class PostService {
                 country: postData.country,
                 state: postData.state|| null,
                 city: postData.city|| null,
+                area: postData.area || null,
                 description: postData.description || null,
                 category: postData.category || null,
                 latitude:postData.latitude || null,
@@ -103,6 +104,7 @@ class PostService {
                 country: post.country || '',
                 state: post.state || '',
                 city: post.city || '',
+                area: post.area || '',
                 status: post.status,
                 created_at: post.created_at.toISOString()
             };
@@ -196,7 +198,7 @@ class PostService {
      */
     async  getFilteredPosts(filters) {
         try {
-            const { type, country, state, city, category, status, userId, limit, offset, latitude, longitude } = filters;
+            const { type, country, state, city, area, category, status, userId, limit, offset, latitude, longitude } = filters;
             
             // Validate type if provided
             if (type && !['lost', 'found'].includes(type)) {
@@ -219,6 +221,7 @@ class PostService {
                 country,
                 state,
                 city,
+                area,
                  latitude,
                  longitude,
                 category,

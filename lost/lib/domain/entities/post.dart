@@ -10,6 +10,7 @@ class Post {
   final String country;
   final String? state;
   final String? city;
+  final String? area;
   final double? latitude;
   final double? longitude;
   final String? location;
@@ -29,6 +30,7 @@ class Post {
     required this.country,
     this.state,
     this.city,
+    this.area,
     this.latitude,
     this.longitude,
     this.location,
@@ -49,6 +51,7 @@ class Post {
     String? country,
     String? state,
     String? city,
+    String? area,
     double? latitude,
     double? longitude,
     String? location,
@@ -68,6 +71,7 @@ class Post {
       country: country ?? this.country,
       state: state ?? this.state,
       city: city ?? this.city,
+      area: area ?? this.area,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       location: location ?? this.location,

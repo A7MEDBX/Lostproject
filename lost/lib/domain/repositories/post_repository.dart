@@ -14,6 +14,7 @@ abstract class PostRepository {
     required String country,
     String? state,
     String? city,
+    String? area,
     double? latitude,
     double? longitude,
     String? location,
@@ -27,7 +28,9 @@ abstract class PostRepository {
     String? postType,
     String? category,
     String? country,
+    String? state,
     String? city,
+    String? area,
   });
 
   /// Get user's posts
@@ -38,9 +41,10 @@ abstract class PostRepository {
     String imagePath, {
     required String type,
     required String country,
-    required String city,
-    String? category,
     String? state,
+    String? city,
+    String? area,
+    String? category,
     double? latitude,
     double? longitude,
   });

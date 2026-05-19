@@ -149,6 +149,7 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
         country: widget.postData!['country'],
         state: widget.postData!['state'],
         city: widget.postData!['city'],
+        area: widget.postData!['area'],
         postType: widget.postData!['postType'],
       );
 
@@ -165,7 +166,9 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
             'description': widget.postData!['description'],
             'category': widget.postData!['category'],
             'country': widget.postData!['country'],
+            'state': widget.postData!['state'],
             'city': widget.postData!['city'],
+            'area': widget.postData!['area'],
             'postType': widget.postData!['postType'],
             'imageUrl': widget.postData!['uploadedImageUrl'],
             'status': 'active',

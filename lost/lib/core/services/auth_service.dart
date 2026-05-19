@@ -22,6 +22,17 @@ class AuthService {
 
   User? get currentUser => _auth.currentUser;
 
+  bool get isGoogleUser {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+    for (final userInfo in user.providerData) {
+      if (userInfo.providerId == 'google.com') {
+        return true;
+      }
+    }
+    return false;
+  }
+
   Future<User?> signInWithGoogle() async {
     try {
       // 1. Trigger the Google Authentication flow

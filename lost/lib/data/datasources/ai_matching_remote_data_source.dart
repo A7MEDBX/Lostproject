@@ -44,6 +44,7 @@ class AIMatchingRemoteDataSource {
     required String country,
     required String state,
     required String city,
+    String? area,
     required String postType,
     double? latitude,
     double? longitude,
@@ -75,6 +76,7 @@ class AIMatchingRemoteDataSource {
       request.fields['country'] = country;
       request.fields['state'] = state;
       request.fields['city'] = city;
+      if (area != null && area.isNotEmpty) request.fields['area'] = area;
       request.fields['type'] = postType;
 
       if (latitude != null) {
@@ -120,6 +122,7 @@ class AIMatchingRemoteDataSource {
     required String country,
     required String state,
     required String city,
+    String? area,
     required String postType,
     double? latitude,
     double? longitude,
@@ -140,6 +143,7 @@ class AIMatchingRemoteDataSource {
       if (description.isNotEmpty) body['description'] = description;
       if (category.isNotEmpty) body['category'] = category;
       if (state.isNotEmpty) body['state'] = state;
+      if (area != null && area.isNotEmpty) body['area'] = area;
       if (latitude != null) body['latitude'] = latitude;
       if (longitude != null) body['longitude'] = longitude;
 

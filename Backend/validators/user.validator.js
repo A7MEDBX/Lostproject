@@ -23,5 +23,21 @@ exports.updateUserValidator = [
     
     body('phone')
         .optional()
+        .trim(),
+    
+    body('country')
+        .optional()
+        .trim(),
+    
+    body('state')
+        .optional()
+        .trim(),
+    
+    body('city')
+        .optional()
+        .trim(),
+    
+    body('area')
+        .optional()
         .trim()
 ];

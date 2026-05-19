@@ -4,6 +4,7 @@ import '../../core/constants/finder_colors.dart';
 import '../../core/network/api_client.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/utils/app_messenger.dart';
 import '../providers/user_provider.dart';
 
 /// Settings Screen
@@ -164,16 +165,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 16),
 
                 // Verify Account
-                _buildMenuItem(
-                  icon: Icons.verified_user_outlined,
-                  iconColor: FinderColors.primaryBlue,
-                  title: 'Verify Account',
-                  subtitle: 'Complete KYC verification',
-                  onTap: _checkingVerification ? null : _handleVerifyAccount,
-                  trailingWidget: _checkingVerification
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: FinderColors.primaryBlue))
-                      : null,
-                ),
+
 
                 const SizedBox(height: 32),
 
@@ -196,7 +188,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: 'Change Password',
                   subtitle: 'Update your password',
                   onTap: () {
-                    Navigator.pushNamed(context, '/change-password');
+                    if (AuthService.instance.isGoogleUser) {
+                      AppMessenger.showInfo(
+                        'Password change is not available for Google accounts',
+                      );
+                    } else {
+                      Navigator.pushNamed(context, '/change-password');
+                    }
                   },
                 ),
 

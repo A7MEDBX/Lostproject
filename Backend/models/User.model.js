@@ -50,6 +50,22 @@ const User =sequelize.define('users',{
         type: DataTypes.STRING,
         allowNull: true
     },
+    country: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    state: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    city: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    area: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     id_image_url: {
         type: DataTypes.TEXT,
         allowNull: true

@@ -1,254 +1,193 @@
-/// Comprehensive location dataset: Country → State/Province → Cities
+/// Comprehensive location dataset: Country → State/Province → City → Area
 class LocationDataService {
-  static final Map<String, Map<String, List<String>>> _database = {
-    // ── Middle East & North Africa ──────────────────────────────────────────
+  static const String travelingState = 'Traveling / On the Move';
+  static final List<String> travelingMethods = [
+    'Plane',
+    'Train',
+    'Bus',
+    'Car',
+    'Ship / Boat',
+    'Other'
+  ];
+
+  /// Structure: Map<Country, Map<State, Map<City, List<Area>>>>
+  static final Map<String, Map<String, Map<String, List<String>>>> _database = {
+    // ── Egypt (Comprehensive 27 Governorates) ───────────────────────────────
     'Egypt': {
-      'Cairo': ['Cairo', 'Nasr City', 'Maadi', 'Heliopolis', 'New Cairo', 'Zamalek', 'Shubra', 'Ain Shams'],
-      'Alexandria': ['Alexandria', 'Smouha', 'Borg El Arab', 'Miami', 'Sidi Bishr'],
-      'Giza': ['Giza', '6th of October', 'Dokki', 'Sheikh Zayed', 'Imbaba', 'Mohandessin'],
-      'Red Sea': ['Hurghada', 'Safaga', 'Marsa Alam', 'El Gouna'],
-      'Dakahlia': ['Mansoura', 'Mit Ghamr', 'Talkha'],
-      'Aswan': ['Aswan', 'Edfu', 'Kom Ombo'],
-      'Luxor': ['Luxor', 'Esna'],
+      'Cairo': {
+        'Cairo City': ['Downtown', 'Zamalek', 'Garden City', 'Shubra', 'Ain Shams', 'Abbaseya', 'Mokattam', 'Helwan', 'El Marg', 'Sayeda Zeinab', 'Dar El Salam'],
+        'Nasr City': ['First Zone', 'Seventh Zone', 'Eighth Zone', 'Tayeer', 'Zahraa Nasr City'],
+        'Maadi': ['Old Maadi', 'Maadi Digla', 'New Maadi', 'Zahraa Maadi', 'Sakanat El Maadi'],
+        'Heliopolis': ['Korba', 'Roxy', 'Gesr El Suez', 'Sheraton', 'Merryland'],
+        'New Cairo': ['First Settlement', 'Third Settlement', 'Fifth Settlement', 'El Rehab', 'Madinaty', 'Tagamoa'],
+        'New Administrative Capital': ['R3', 'R7', 'Business District', 'Government District'],
+      },
+      'Alexandria': {
+        'Alexandria City': ['Smouha', 'Miami', 'Sidi Bishr', 'Stanley', 'Glim', 'Roushdy', 'Mandara', 'Sidi Gaber', 'Camp Shizar', 'Cleopatra'],
+        'Borg El Arab': ['Industrial Zone', 'Residential Zone', 'New Borg El Arab'],
+        'Agami': ['Bitash', 'Hanoville', 'Abu Youssef'],
+        'Montaza': ['Maamoura', 'Asafra', 'Tosson'],
+        'Amreya': ['Amreya First', 'Amreya Second'],
+      },
+      'Giza': {
+        'Giza City': ['Dokki', 'Agouza', 'Mohandessin', 'Haram', 'Faisal', 'Imbaba', 'Bulaq El Dakrour', 'Omrania'],
+        '6th of October': ['First District', 'Second District', 'Hadayek October', 'Sheikh Zayed', 'Industrial Zone'],
+        'Hawamdiya': ['Hawamdiya City'],
+        'Badrashein': ['Badrashein City', 'Mit Rahina'],
+      },
+      'Qalyubia': {
+        'Banha': ['Kafr El Gazar', 'Banha El Gedida', 'Atrib'],
+        'Shubra El Kheima': ['Shubra West', 'Shubra East', 'Bahtim'],
+        'Obour': ['First District', 'Second District', 'Industrial Zone'],
+        'Qalyub': ['Qalyub City'],
+        'Khanka': ['Khanka City', 'Abu Zaabal'],
+      },
+      'Monufia': {
+        'Shibin El Kom': ['East District', 'West District'],
+        'Sadat City': ['First Zone', 'Second Zone', 'Industrial Zone'],
+        'Ashmoun': ['Ashmoun City'],
+        'Menouf': ['Menouf City'],
+      },
+      'Beheira': {
+        'Damanhour': ['Shoubra', 'Abou El Rish', 'Qartasa'],
+        'Kafr El Dawwar': ['Sidi Shehata', 'El Senia'],
+        'Rashid (Rosetta)': ['Rashid City'],
+        'Edku': ['Edku City'],
+      },
+      'Kafr El Sheikh': {
+        'Kafr El Sheikh City': ['Sakha', 'Qantara', 'Gharb'],
+        'Desouk': ['Desouk City'],
+        'Baltim': ['Baltim City', 'Masyaf Baltim'],
+      },
+      'Damietta': {
+        'Damietta City': ['Old Damietta', 'Bab El Haras', 'El Shatt'],
+        'New Damietta': ['First District', 'Second District', 'Third District'],
+        'Ras El Bar': ['First Area', 'Second Area', 'El Gherby'],
+      },
+      'Dakahlia': {
+        'Mansoura': ['Hay El Gamaa', 'Gedila', 'Talkha', 'Toriel', 'El Mashaya', 'Sandub'],
+        'Mit Ghamr': ['Mit Ghamr City', 'Daqados'],
+        'Senbellawein': ['Senbellawein City'],
+        'Dikirnis': ['Dikirnis City'],
+      },
+      'Gharbia': {
+        'Tanta': ['Said', 'Moheb', 'Galaa', 'Botrous', 'Siger'],
+        'Mahalla Al Kubra': ['Samanoud', 'El Gomhoureya', 'Ghazl El Mahalla'],
+        'Zifta': ['Zifta City'],
+      },
+      'Sharkia': {
+        'Zagazig': ['El Qawmia', 'El Montaza', 'Hassan Saleh', 'Sheyba'],
+        '10th of Ramadan': ['First District', 'Second District', 'Third District'],
+        'Bilbeis': ['Bilbeis City'],
+        'Minya El Qamh': ['Minya El Qamh City'],
+      },
+      'Port Said': {
+        'Port Said City': ['El Sharq', 'El Arab', 'El Dawahy', 'El Zohour'],
+        'Port Fouad': ['Port Fouad City'],
+      },
+      'Ismailia': {
+        'Ismailia City': ['First District', 'Second District', 'Third District'],
+        'Fayed': ['Fayed City'],
+        'Qantara': ['Qantara West', 'Qantara East'],
+      },
+      'Suez': {
+        'Suez City': ['Arbaeen', 'Suez', 'Ganayen', 'Faisal', 'Ataqah'],
+      },
+      'Fayoum': {
+        'Fayoum City': ['El Mesalla', 'El Baroudiya', 'Hawaret El Makta'],
+        'Itsa': ['Itsa City'],
+        'Tamiya': ['Tamiya City'],
+        'Senoures': ['Senoures City'],
+      },
+      'Beni Suef': {
+        'Beni Suef City': ['Mokbel', 'Ghamrawi', 'El Gezira'],
+        'Wasta': ['Wasta City'],
+        'Biba': ['Biba City'],
+      },
+      'Minya': {
+        'Minya City': ['Abu Hilal', 'El Shalaby', 'New Minya'],
+        'Mallawi': ['Mallawi City'],
+        'Maghagha': ['Maghagha City'],
+        'Samalut': ['Samalut City'],
+      },
+      'Asyut': {
+        'Asyut City': ['Al Walidiya', 'Al Sadat', 'New Asyut'],
+        'Dayrut': ['Dayrut City'],
+        'Manfalut': ['Manfalut City'],
+        'Qusiya': ['Qusiya City'],
+      },
+      'Sohag': {
+        'Sohag City': ['East District', 'West District', 'New Sohag'],
+        'Akhmim': ['Akhmim City'],
+        'Girga': ['Girga City'],
+        'Tahta': ['Tahta City'],
+      },
+      'Qena': {
+        'Qena City': ['El Heswaya', 'El Maana', 'New Qena'],
+        'Nag Hammadi': ['Nag Hammadi City'],
+        'Qus': ['Qus City'],
+      },
+      'Luxor': {
+        'Luxor City': ['East Bank', 'West Bank', 'Karnak', 'Awamia'],
+        'Esna': ['Esna City'],
+        'Armant': ['Armant City'],
+      },
+      'Aswan': {
+        'Aswan City': ['Downtown', 'El Khazzan', 'Sahari', 'Kima', 'Aswan Corniche', 'Sadat', 'Akad'],
+        'Edfu': ['Edfu City', 'El Redesia'],
+        'Kom Ombo': ['Kom Ombo City', 'Daraw'],
+      },
+      'Red Sea': {
+        'Hurghada': ['El Dahar', 'Sekalla', 'El Memsha', 'Sahl Hasheesh', 'Makadi Bay'],
+        'Safaga': ['Safaga City'],
+        'Marsa Alam': ['Marsa Alam City', 'Port Ghalib'],
+        'El Gouna': ['Abu Tig Marina', 'Downtown', 'Kafr El Gouna'],
+      },
+      'South Sinai': {
+        'Sharm El Sheikh': ['Naama Bay', 'Nabq Bay', 'Sharks Bay', 'Hadaba', 'Old Market'],
+        'Dahab': ['Mashraba', 'Masbat', 'Assalah'],
+        'Nuweiba': ['Nuweiba City', 'Tarabin'],
+      },
+      'North Sinai': {
+        'Arish': ['El Masaeed', 'El Fawakhriya', 'Downtown'],
+        'Sheikh Zuweid': ['Sheikh Zuweid City'],
+      },
+      'Matrouh': {
+        'Marsa Matrouh': ['El Awam', 'El Rommel', 'Cleopatra'],
+        'El Alamein': ['El Alamein City', 'Marina', 'Sidi Abdel Rahman'],
+        'Siwa': ['Siwa Oasis'],
+      },
+      'New Valley': {
+        'Kharga': ['Kharga City'],
+        'Dakhla': ['Mut', 'El Qasr'],
+      },
+      travelingState: {
+        'Methods': travelingMethods,
+      },
     },
+    
+    // ── Saudi Arabia ────────────────────────────────────────────────────────
     'Saudi Arabia': {
-      'Riyadh': ['Riyadh', 'Al Kharj', 'Diriyah', 'Al Malaz', 'Al Naseem'],
-      'Makkah': ['Makkah', 'Jeddah', 'Taif', 'Al Qunfudhah'],
-      'Eastern Province': ['Dammam', 'Khobar', 'Dhahran', 'Jubail', 'Qatif', 'Ahsa'],
-      'Madinah': ['Madinah', 'Yanbu'],
-      'Aseer': ['Abha', 'Khamis Mushait', 'Bisha'],
+      'Riyadh': {
+        'Riyadh City': ['Olaya', 'Malaz', 'Diplomatic Quarter', 'Al Rawdah'],
+      },
+      'Makkah': {
+        'Jeddah': ['Al Balad', 'Al Hamra', 'Al Rawdah', 'Obhur'],
+        'Makkah City': ['Al Aziziya', 'Al Shubaika'],
+      },
+      travelingState: {
+        'Methods': travelingMethods,
+      },
     },
-    'UAE': {
-      'Dubai': ['Dubai', 'Jebel Ali', 'Hatta', 'Deira', 'Bur Dubai'],
-      'Abu Dhabi': ['Abu Dhabi', 'Al Ain', 'Ruwais', 'Khalifa City'],
-      'Sharjah': ['Sharjah', 'Khor Fakkan', 'Kalba'],
-      'Ajman': ['Ajman'],
-      'Ras Al Khaimah': ['Ras Al Khaimah'],
-    },
-    'Kuwait': {
-      'Kuwait Governorate': ['Kuwait City', 'Hawalli', 'Salmiya', 'Rumaithiya'],
-      'Ahmadi': ['Ahmadi', 'Fahaheel', 'Mangaf'],
-      'Jahra': ['Jahra', 'Sulaibikhat'],
-    },
-    'Qatar': {
-      'Doha': ['Doha', 'Lusail', 'Al Wakra', 'Al Rayyan', 'Mesaieed'],
-    },
-    'Bahrain': {
-      'Capital': ['Manama', 'Isa Town'],
-      'Northern': ['Muharraq', 'Budaiya'],
-      'Southern': ['Riffa', 'Hamad Town'],
-    },
-    'Oman': {
-      'Muscat': ['Muscat', 'Seeb', 'Mutrah', 'Bowsher'],
-      'Dhofar': ['Salalah'],
-      'Al Batinah': ['Sohar', 'Barka'],
-    },
-    'Jordan': {
-      'Amman': ['Amman', 'Zarqa', 'Russeifa', 'Sahab'],
-      'Irbid': ['Irbid', 'Ramtha'],
-      'Aqaba': ['Aqaba'],
-      'Zarqa': ['Zarqa'],
-    },
-    'Lebanon': {
-      'Beirut': ['Beirut', 'Hamra', 'Achrafieh', 'Verdun'],
-      'Mount Lebanon': ['Jounieh', 'Jbeil', 'Byblos', 'Baabda'],
-      'North': ['Tripoli', 'Batroun'],
-      'South': ['Sidon', 'Tyre'],
-    },
-    'Iraq': {
-      'Baghdad': ['Baghdad', 'Sadr City', 'Kadhimiyah', 'Mansour'],
-      'Basra': ['Basra', 'Zubair'],
-      'Erbil': ['Erbil', 'Soran'],
-      'Sulaymaniyah': ['Sulaymaniyah', 'Halabja'],
-    },
-    'Yemen': {
-      "Sana'a": ["Sana'a", 'Marib'],
-      'Aden': ['Aden'],
-      'Taiz': ['Taiz'],
-    },
-    'Libya': {
-      'Tripoli': ['Tripoli', 'Tajoura'],
-      'Benghazi': ['Benghazi'],
-      'Misrata': ['Misrata'],
-    },
-    'Tunisia': {
-      'Tunis': ['Tunis', 'La Marsa', 'Ariana', 'Ben Arous'],
-      'Sfax': ['Sfax'],
-      'Sousse': ['Sousse', 'Monastir'],
-    },
-    'Algeria': {
-      'Algiers': ['Algiers', 'Bab Ezzouar', 'Hydra', 'Cheraga'],
-      'Oran': ['Oran', 'Es Senia'],
-      'Constantine': ['Constantine', 'El Khroub'],
-      'Annaba': ['Annaba'],
-    },
-    'Morocco': {
-      'Casablanca-Settat': ['Casablanca', 'Settat', 'Mohammedia'],
-      "Rabat-Salé": ['Rabat', 'Salé', 'Kenitra'],
-      'Fès-Meknès': ['Fès', 'Meknès'],
-      'Marrakech-Safi': ['Marrakech', 'Safi'],
-      'Tangier-Tétouan': ['Tangier', 'Tétouan', 'Ceuta'],
-    },
-    'Sudan': {
-      'Khartoum': ['Khartoum', 'Omdurman', 'Khartoum North'],
-      'Kassala': ['Kassala'],
-      'Port Sudan': ['Port Sudan'],
-    },
-
-    // ── North America ────────────────────────────────────────────────────────
+    
+    // ── USA ─────────────────────────────────────────────────────────────────
     'USA': {
-      'California': ['Los Angeles', 'San Diego', 'San Francisco', 'San Jose', 'Sacramento', 'Fresno', 'Oakland'],
-      'New York': ['New York City', 'Buffalo', 'Rochester', 'Albany', 'Syracuse', 'Yonkers'],
-      'Texas': ['Houston', 'San Antonio', 'Dallas', 'Austin', 'Fort Worth', 'El Paso', 'Arlington'],
-      'Florida': ['Miami', 'Orlando', 'Tampa', 'Jacksonville', 'Tallahassee', 'St. Petersburg'],
-      'Illinois': ['Chicago', 'Aurora', 'Naperville', 'Joliet', 'Springfield', 'Rockford'],
-      'Pennsylvania': ['Philadelphia', 'Pittsburgh', 'Allentown', 'Erie'],
-      'Ohio': ['Columbus', 'Cleveland', 'Cincinnati', 'Toledo'],
-      'Georgia': ['Atlanta', 'Augusta', 'Columbus', 'Savannah'],
-      'North Carolina': ['Charlotte', 'Raleigh', 'Greensboro', 'Durham'],
-      'Michigan': ['Detroit', 'Grand Rapids', 'Flint', 'Ann Arbor'],
-      'Washington': ['Seattle', 'Spokane', 'Tacoma', 'Bellevue'],
-      'Arizona': ['Phoenix', 'Tucson', 'Scottsdale', 'Mesa'],
-      'Massachusetts': ['Boston', 'Worcester', 'Springfield', 'Cambridge'],
-    },
-    'Canada': {
-      'Ontario': ['Toronto', 'Ottawa', 'Mississauga', 'Hamilton', 'London', 'Brampton'],
-      'Quebec': ['Montreal', 'Quebec City', 'Laval', 'Gatineau'],
-      'British Columbia': ['Vancouver', 'Surrey', 'Burnaby', 'Victoria'],
-      'Alberta': ['Calgary', 'Edmonton', 'Red Deer', 'Lethbridge'],
-      'Manitoba': ['Winnipeg', 'Brandon'],
-      'Saskatchewan': ['Saskatoon', 'Regina'],
-      'Nova Scotia': ['Halifax', 'Sydney'],
-    },
-
-    // ── Europe ───────────────────────────────────────────────────────────────
-    'UK': {
-      'England': ['London', 'Birmingham', 'Manchester', 'Liverpool', 'Leeds', 'Sheffield', 'Bristol', 'Leicester'],
-      'Scotland': ['Edinburgh', 'Glasgow', 'Aberdeen', 'Dundee', 'Inverness'],
-      'Wales': ['Cardiff', 'Swansea', 'Newport', 'Wrexham'],
-      'Northern Ireland': ['Belfast', 'Derry', 'Lisburn'],
-    },
-    'France': {
-      'Île-de-France': ['Paris', 'Versailles', 'Boulogne-Billancourt', 'Saint-Denis'],
-      'Auvergne-Rhône-Alpes': ['Lyon', 'Grenoble', 'Saint-Étienne'],
-      'Provence-Alpes-Côte d\'Azur': ['Marseille', 'Nice', 'Toulon', 'Aix-en-Provence'],
-      'Occitanie': ['Toulouse', 'Montpellier'],
-      'Nouvelle-Aquitaine': ['Bordeaux', 'Limoges'],
-    },
-    'Germany': {
-      'Bavaria': ['Munich', 'Nuremberg', 'Augsburg', 'Regensburg'],
-      'North Rhine-Westphalia': ['Cologne', 'Düsseldorf', 'Dortmund', 'Essen', 'Duisburg'],
-      'Berlin': ['Berlin'],
-      'Hamburg': ['Hamburg'],
-      'Baden-Württemberg': ['Stuttgart', 'Karlsruhe', 'Mannheim', 'Freiburg'],
-      'Hesse': ['Frankfurt', 'Wiesbaden', 'Darmstadt'],
-    },
-    'Italy': {
-      'Lombardy': ['Milan', 'Bergamo', 'Brescia', 'Como'],
-      'Lazio': ['Rome', 'Latina'],
-      'Campania': ['Naples', 'Salerno'],
-      'Sicily': ['Palermo', 'Catania', 'Messina'],
-      'Veneto': ['Venice', 'Verona', 'Padua'],
-      'Tuscany': ['Florence', 'Pisa', 'Siena'],
-    },
-    'Spain': {
-      'Community of Madrid': ['Madrid', 'Alcalá de Henares', 'Getafe'],
-      'Catalonia': ['Barcelona', 'Hospitalet de Llobregat', 'Tarragona'],
-      'Andalusia': ['Seville', 'Málaga', 'Córdoba', 'Granada'],
-      'Valencia': ['Valencia', 'Alicante'],
-      'Basque Country': ['Bilbao', 'San Sebastián'],
-    },
-    'Netherlands': {
-      'North Holland': ['Amsterdam', 'Haarlem', 'Zaandam'],
-      'South Holland': ['Rotterdam', 'The Hague', 'Delft'],
-      'Utrecht': ['Utrecht'],
-      'Gelderland': ['Nijmegen', 'Arnhem'],
-    },
-    'Belgium': {
-      'Brussels': ['Brussels'],
-      'Flanders': ['Antwerp', 'Ghent', 'Bruges', 'Leuven'],
-      'Wallonia': ['Liège', 'Namur', 'Charleroi'],
-    },
-    'Turkey': {
-      'Istanbul': ['Istanbul', 'Kadıköy', 'Beyoğlu', 'Şişli'],
-      'Ankara': ['Ankara', 'Çankaya'],
-      'Izmir': ['Izmir', 'Konak', 'Karşıyaka'],
-      'Antalya': ['Antalya', 'Alanya', 'Kemer'],
-      'Bursa': ['Bursa', 'Osmangazi'],
-    },
-    'Russia': {
-      'Moscow': ['Moscow', 'Zelenograd'],
-      'Saint Petersburg': ['Saint Petersburg'],
-      'Novosibirsk': ['Novosibirsk'],
-      'Yekaterinburg': ['Yekaterinburg'],
-      'Tatarstan': ['Kazan'],
-    },
-
-    // ── South & Southeast Asia ───────────────────────────────────────────────
-    'India': {
-      'Maharashtra': ['Mumbai', 'Pune', 'Nagpur', 'Thane'],
-      'Delhi': ['New Delhi', 'Delhi', 'Noida', 'Gurgaon'],
-      'Karnataka': ['Bengaluru', 'Mysuru', 'Hubli'],
-      'Tamil Nadu': ['Chennai', 'Coimbatore', 'Madurai'],
-      'Telangana': ['Hyderabad', 'Warangal'],
-      'West Bengal': ['Kolkata', 'Howrah'],
-      'Gujarat': ['Ahmedabad', 'Surat', 'Vadodara'],
-      'Uttar Pradesh': ['Lucknow', 'Kanpur', 'Agra', 'Varanasi'],
-      'Rajasthan': ['Jaipur', 'Jodhpur', 'Udaipur'],
-    },
-    'Pakistan': {
-      'Punjab': ['Lahore', 'Faisalabad', 'Rawalpindi', 'Gujranwala', 'Multan'],
-      'Sindh': ['Karachi', 'Hyderabad', 'Sukkur'],
-      'Khyber Pakhtunkhwa': ['Peshawar', 'Mardan', 'Abbottabad'],
-      'Islamabad Capital Territory': ['Islamabad'],
-    },
-
-    // ── East Asia & Pacific ──────────────────────────────────────────────────
-    'China': {
-      'Beijing': ['Beijing'],
-      'Shanghai': ['Shanghai'],
-      'Guangdong': ['Guangzhou', 'Shenzhen', 'Dongguan'],
-      'Zhejiang': ['Hangzhou', 'Ningbo', 'Wenzhou'],
-      'Sichuan': ['Chengdu'],
-      'Hubei': ['Wuhan'],
-    },
-    'Japan': {
-      'Tokyo': ['Tokyo', 'Shinjuku', 'Shibuya', 'Ginza'],
-      'Osaka': ['Osaka', 'Sakai', 'Higashiosaka'],
-      'Kanagawa': ['Yokohama', 'Kawasaki', 'Sagamihara'],
-      'Aichi': ['Nagoya'],
-      'Hokkaido': ['Sapporo'],
-    },
-    'South Korea': {
-      'Seoul': ['Seoul', 'Gangnam', 'Hongdae'],
-      'Busan': ['Busan'],
-      'Incheon': ['Incheon'],
-      'Gyeonggi': ['Suwon', 'Goyang', 'Seongnam'],
-    },
-    'Australia': {
-      'New South Wales': ['Sydney', 'Newcastle', 'Wollongong', 'Parramatta'],
-      'Victoria': ['Melbourne', 'Geelong', 'Ballarat'],
-      'Queensland': ['Brisbane', 'Gold Coast', 'Cairns', 'Townsville'],
-      'Western Australia': ['Perth', 'Mandurah', 'Fremantle'],
-      'South Australia': ['Adelaide', 'Mount Gambier'],
-      'Australian Capital Territory': ['Canberra'],
-    },
-
-    // ── Sub-Saharan Africa ───────────────────────────────────────────────────
-    'Nigeria': {
-      'Lagos': ['Lagos', 'Ikeja', 'Victoria Island', 'Lekki'],
-      'Abuja FCT': ['Abuja', 'Gwagwalada'],
-      'Kano': ['Kano', 'Fagge'],
-      'Rivers': ['Port Harcourt', 'Bonny'],
-    },
-
-    // ── South America ────────────────────────────────────────────────────────
-    'Brazil': {
-      'São Paulo': ['São Paulo', 'Campinas', 'Guarulhos', 'Santo André'],
-      'Rio de Janeiro': ['Rio de Janeiro', 'Niterói', 'Duque de Caxias'],
-      'Minas Gerais': ['Belo Horizonte', 'Uberlândia'],
-      'Bahia': ['Salvador', 'Feira de Santana'],
-      'Rio Grande do Sul': ['Porto Alegre', 'Caxias do Sul'],
+      'New York': {
+        'New York City': ['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island'],
+      },
+      travelingState: {
+        'Methods': travelingMethods,
+      },
     },
   };
 
@@ -263,69 +202,57 @@ class LocationDataService {
   /// Get all states/provinces for a country matching the query
   static List<String> getStates(String country, String query) {
     if (!_database.containsKey(country)) return [];
-    final states = _database[country]!.keys.toList()..sort();
+    final states = _database[country]!.keys.toList();
+    
+    states.sort((a, b) {
+      if (a == travelingState) return 1;
+      if (b == travelingState) return -1;
+      return a.compareTo(b);
+    });
+
     if (query.isEmpty) return states;
     final q = query.toLowerCase();
     return states.where((s) => s.toLowerCase().contains(q)).toList();
   }
 
-  /// Get cities filtered by country (and optionally state) matching the query
+  /// Get cities for a country and state
   static List<String> getCities(String country, String state, String query) {
     if (country.isEmpty || !_database.containsKey(country)) return [];
+    if (state.isEmpty || !_database[country]!.containsKey(state)) return [];
 
-    List<String> cities = [];
-    if (state.isNotEmpty && _database[country]!.containsKey(state)) {
-      cities = List.from(_database[country]![state]!);
-    } else {
-      for (var stateCities in _database[country]!.values) {
-        cities.addAll(stateCities);
-      }
+    if (state == travelingState) {
+      if (query.isEmpty) return travelingMethods;
+      final q = query.toLowerCase();
+      return travelingMethods.where((m) => m.toLowerCase().contains(q)).toList();
     }
-    cities.sort();
 
+    final cities = _database[country]![state]!.keys.toList()..sort();
+    
     if (query.isEmpty) return cities;
     final q = query.toLowerCase();
     return cities.where((city) => city.toLowerCase().contains(q)).toList();
   }
 
-  /// Helper to get flag emoji for a country
+  /// Get areas for a country, state, and city
+  static List<String> getAreas(String country, String state, String city, String query) {
+    if (country.isEmpty || !_database.containsKey(country)) return [];
+    if (state.isEmpty || !_database[country]!.containsKey(state)) return [];
+    if (city.isEmpty || !_database[country]![state]!.containsKey(city)) return [];
+
+    final areas = _database[country]![state]![city]!;
+    
+    if (query.isEmpty) return areas;
+    final q = query.toLowerCase();
+    return areas.where((area) => area.toLowerCase().contains(q)).toList();
+  }
+
   static String getCountryFlag(String country) {
     const flags = {
       'Egypt': '🇪🇬',
       'Saudi Arabia': '🇸🇦',
       'UAE': '🇦🇪',
-      'Kuwait': '🇰🇼',
-      'Qatar': '🇶🇦',
-      'Bahrain': '🇧🇭',
-      'Oman': '🇴🇲',
-      'Jordan': '🇯🇴',
-      'Lebanon': '🇱🇧',
-      'Iraq': '🇮🇶',
-      'Yemen': '🇾🇪',
-      'Libya': '🇱🇾',
-      'Tunisia': '🇹🇳',
-      'Algeria': '🇩🇿',
-      'Morocco': '🇲🇦',
-      'Sudan': '🇸🇩',
       'USA': '🇺🇸',
-      'Canada': '🇨🇦',
       'UK': '🇬🇧',
-      'France': '🇫🇷',
-      'Germany': '🇩🇪',
-      'Italy': '🇮🇹',
-      'Spain': '🇪🇸',
-      'Netherlands': '🇳🇱',
-      'Belgium': '🇧🇪',
-      'Turkey': '🇹🇷',
-      'Russia': '🇷🇺',
-      'India': '🇮🇳',
-      'Pakistan': '🇵🇰',
-      'China': '🇨🇳',
-      'Japan': '🇯🇵',
-      'South Korea': '🇰🇷',
-      'Australia': '🇦🇺',
-      'Nigeria': '🇳🇬',
-      'Brazil': '🇧🇷',
     };
     return flags[country] ?? '🌍';
   }

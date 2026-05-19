@@ -19,6 +19,12 @@ class _FilterScreenState extends State<FilterScreen> {
   final TextEditingController _countryController = TextEditingController();
   final TextEditingController _stateController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _areaController = TextEditingController();
+
+  final FocusNode _countryFocus = FocusNode();
+  final FocusNode _stateFocus = FocusNode();
+  final FocusNode _cityFocus = FocusNode();
+  final FocusNode _areaFocus = FocusNode();
 
   @override
   void initState() {
@@ -32,6 +38,7 @@ class _FilterScreenState extends State<FilterScreen> {
       _countryController.text = saved['country'] ?? '';
       _stateController.text = saved['state'] ?? '';
       _cityController.text = saved['city'] ?? '';
+      _areaController.text = saved['area'] ?? '';
     }
   }
 
@@ -40,6 +47,7 @@ class _FilterScreenState extends State<FilterScreen> {
     _countryController.dispose();
     _stateController.dispose();
     _cityController.dispose();
+    _areaController.dispose();
     super.dispose();
   }
 
@@ -50,6 +58,7 @@ class _FilterScreenState extends State<FilterScreen> {
       'country': _countryController.text.trim(),
       'state': _stateController.text.trim(),
       'city': _cityController.text.trim(),
+      'area': _areaController.text.trim(),
     };
     context.read<PostProvider>().applyFilters(
       filters: filters,
@@ -57,6 +66,7 @@ class _FilterScreenState extends State<FilterScreen> {
       country: _countryController.text.trim(),
       state: _stateController.text.trim(),
       city: _cityController.text.trim(),
+      area: _areaController.text.trim(),
     );
     Navigator.pop(context);
   }
@@ -69,6 +79,7 @@ class _FilterScreenState extends State<FilterScreen> {
       _countryController.clear();
       _stateController.clear();
       _cityController.clear();
+      _areaController.clear();
     });
   }
 
@@ -207,6 +218,7 @@ class _FilterScreenState extends State<FilterScreen> {
             // 1. Country
             LocationAutocompleteField(
               controller: _countryController,
+              focusNode: _countryFocus,
               hint: 'Country',
               optionsBuilder: (textEditingValue) {
                 return LocationDataService.getCountries(textEditingValue.text);
@@ -217,6 +229,7 @@ class _FilterScreenState extends State<FilterScreen> {
                   _stateController.clear();
                   _cityController.clear();
                 });
+                _stateFocus.requestFocus();
               },
               itemPrefixBuilder: LocationDataService.getCountryFlag,
             ),
@@ -224,7 +237,9 @@ class _FilterScreenState extends State<FilterScreen> {
 
             // 2. State / Province
             LocationAutocompleteField(
+              key: ValueKey('state_${_countryController.text}'),
               controller: _stateController,
+              focusNode: _stateFocus,
               hint: 'State / Province (Optional)',
               optionsBuilder: (textEditingValue) {
                 return LocationDataService.getStates(
@@ -237,14 +252,19 @@ class _FilterScreenState extends State<FilterScreen> {
                   _stateController.text = selection;
                   _cityController.clear(); // City must be re-selected after state changes
                 });
+                _cityFocus.requestFocus();
               },
             ),
             const SizedBox(height: 12),
 
             // 3. City  (depends on country + optionally state)
             LocationAutocompleteField(
+              key: ValueKey('city_${_countryController.text}_${_stateController.text}'),
               controller: _cityController,
-              hint: 'City',
+              focusNode: _cityFocus,
+              hint: _stateController.text == LocationDataService.travelingState
+                  ? 'Traveling Method (e.g., Train)'
+                  : 'City',
               optionsBuilder: (textEditingValue) {
                 return LocationDataService.getCities(
                   _countryController.text,
@@ -255,9 +275,40 @@ class _FilterScreenState extends State<FilterScreen> {
               onSelected: (String selection) {
                 setState(() {
                   _cityController.text = selection;
+                  _areaController.clear();
                 });
+                if (_stateController.text != LocationDataService.travelingState) {
+                  _areaFocus.requestFocus();
+                } else {
+                  _cityFocus.unfocus();
+                }
               },
             ),
+
+            if (_stateController.text != LocationDataService.travelingState) ...[
+              const SizedBox(height: 12),
+              // 4. Area
+              LocationAutocompleteField(
+                key: ValueKey('area_${_countryController.text}_${_stateController.text}_${_cityController.text}'),
+                controller: _areaController,
+                focusNode: _areaFocus,
+                hint: 'Area / District (Optional)',
+                optionsBuilder: (textEditingValue) {
+                  return LocationDataService.getAreas(
+                    _countryController.text,
+                    _stateController.text,
+                    _cityController.text,
+                    textEditingValue.text,
+                  );
+                },
+                onSelected: (String selection) {
+                  setState(() {
+                    _areaController.text = selection;
+                  });
+                  _areaFocus.unfocus();
+                },
+              ),
+            ],
 
             const SizedBox(height: 16),
 

@@ -23,9 +23,16 @@ class userController {
      async editprofile(req, res){
         try{
             const userId = req.user.id; // Database UUID
-            const { name, phone } = req.body; // Data to update
+            const { name, phone, country, state, city, area } = req.body; // Data to update
             
-            const updateResult = await UserService.updateUserProfile(userId, { name, phone });
+            const updateResult = await UserService.updateUserProfile(userId, { 
+                name, 
+                phone,
+                country,
+                state,
+                city,
+                area
+            });
             
             if(!updateResult.success){
                 return response.ErrorResponse(res, updateResult.message, null, 400);

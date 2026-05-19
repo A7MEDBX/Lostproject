@@ -59,7 +59,7 @@ class PostRepository {
     // Get posts with dynamic filters
     async getFilteredPosts(filters) {
      
-        const { type, country,state, city, category, status, userId, limit, offset, latitude, longitude } = filters;
+        const { type, country,state, city, area, category, status, userId, limit, offset, latitude, longitude } = filters;
         
         try {
             // Build WHERE clause dynamically
@@ -75,6 +75,7 @@ class PostRepository {
             if(country) whereClause.country = { [Op.iLike]: `%${country}%` };
             if(state) whereClause.state = { [Op.iLike]: `%${state}%` };
             if(city) whereClause.city = { [Op.iLike]: `%${city}%` };
+            if(area) whereClause.area = { [Op.iLike]: `%${area}%` };
             // Note: latitude/longitude removed from SQL filters (used for distance calculation in service)
            
             return await Post.findAndCountAll({
@@ -111,6 +112,7 @@ class PostRepository {
             if (data.country) allowedUpdates.country = data.country;
             if (data.state) allowedUpdates.state = data.state;
             if (data.city) allowedUpdates.city = data.city;
+            if (data.area) allowedUpdates.area = data.area;
             if (data.latitude) allowedUpdates.latitude = data.latitude;
             if (data.longitude) allowedUpdates.longitude = data.longitude;
             if (data.image_url) allowedUpdates.image_url = data.image_url;
@@ -159,6 +161,7 @@ class PostRepository {
         if(data.country) allowedUpdates.country = data.country;
         if(data.state) allowedUpdates.state = data.state;
         if(data.city) allowedUpdates.city = data.city;
+        if(data.area) allowedUpdates.area = data.area;
         if(data.latitude) allowedUpdates.latitude = data.latitude;
         if(data.longitude) allowedUpdates.longitude = data.longitude;
         return await Post.update(

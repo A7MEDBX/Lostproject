@@ -6,7 +6,7 @@ class MatchingController {
     // Check for matches before creating a post
     async findMatches(req, res) {
         try {
-            const { image_url, type, category, country, state, city, latitude, longitude } = req.body;
+            const { image_url, type, category, country, state, city, area, latitude, longitude } = req.body;
 
             if (!image_url) {
                 return response.ErrorResponse(res, 'Image URL is required', null, 400);
@@ -16,9 +16,6 @@ class MatchingController {
             }
             if (!country) {
                 return response.ErrorResponse(res, 'Country is required for location-based matching', null, 400);
-            }
-            if (!city) {
-                return response.ErrorResponse(res, 'City is required for location-based matching', null, 400);
             }
 
             // Convert coordinates to floats if provided
@@ -32,6 +29,7 @@ class MatchingController {
                 country, 
                 state, 
                 city, 
+                area,
                 lat, 
                 lng
             );

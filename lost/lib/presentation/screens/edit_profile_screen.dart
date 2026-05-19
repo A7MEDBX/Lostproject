@@ -4,6 +4,8 @@ import '../../core/network/api_client.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/utils/app_messenger.dart';
+import '../../core/utils/location_data.dart';
+import '../widgets/location_autocomplete_field.dart';
 import '../providers/user_provider.dart';
 
 /// Edit Profile Screen
@@ -20,8 +22,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late final TextEditingController _emailController;
   late final TextEditingController _phoneController;
   final _addressController = TextEditingController();
+  final _countryController = TextEditingController();
+  final _stateController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _areaController = TextEditingController();
 
-  String _selectedCountry = 'United States';
+  final FocusNode _countryFocus = FocusNode();
+  final FocusNode _stateFocus = FocusNode();
+  final FocusNode _cityFocus = FocusNode();
+  final FocusNode _areaFocus = FocusNode();
+
   String _selectedGender = 'Male';
   bool _isLoading = false;
 
@@ -42,6 +52,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _phoneController = TextEditingController(
       text: backendUser?.phoneNumber ?? '',
     );
+    _countryController.text = backendUser?.country ?? '';
+    _stateController.text = backendUser?.state ?? '';
+    _cityController.text = backendUser?.city ?? '';
+    _areaController.text = backendUser?.area ?? '';
   }
 
   @override
@@ -50,6 +64,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _emailController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
+    _countryController.dispose();
+    _stateController.dispose();
+    _cityController.dispose();
+    _areaController.dispose();
+    _countryFocus.dispose();
+    _stateFocus.dispose();
+    _cityFocus.dispose();
+    _areaFocus.dispose();
     super.dispose();
   }
 
@@ -257,7 +279,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   ),
                                   child: const Center(
                                     child: Text(
-                                      '🇺🇸',
+                                      '🌍',
                                       style: TextStyle(fontSize: 12),
                                     ),
                                   ),
@@ -284,121 +306,164 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                     const SizedBox(height: 20),
 
-                    // Country and Gender Row
+                    // Country Field
+                    const Text(
+                      'Country',
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 8),
+                    LocationAutocompleteField(
+                      controller: _countryController,
+                      focusNode: _countryFocus,
+                      hint: 'Select Country',
+                      optionsBuilder: (textEditingValue) => 
+                        LocationDataService.getCountries(textEditingValue.text),
+                      onSelected: (selection) {
+                        setState(() {
+                          _countryController.text = selection;
+                          _stateController.clear();
+                          _cityController.clear();
+                        });
+                        _stateFocus.requestFocus();
+                      },
+                      itemPrefixBuilder: LocationDataService.getCountryFlag,
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // State and City Row
                     Row(
                       children: [
-                        // Country Dropdown
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                'Country',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey,
-                                ),
+                                'State',
+                                style: TextStyle(fontSize: 13, color: Colors.grey),
                               ),
                               const SizedBox(height: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.grey[300]!),
-                                ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: _selectedCountry,
-                                    isExpanded: true,
-                                    icon: const Icon(
-                                      Icons.keyboard_arrow_down,
-                                      color: Colors.grey,
-                                    ),
-                                    items:
-                                        [
-                                          'United States',
-                                          'Canada',
-                                          'United Kingdom',
-                                          'Australia',
-                                        ].map((String value) {
-                                          return DropdownMenuItem<String>(
-                                            value: value,
-                                            child: Text(
-                                              value,
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                          );
-                                        }).toList(),
-                                    onChanged: (String? newValue) {
-                                      setState(() {
-                                        _selectedCountry = newValue!;
-                                      });
-                                    },
-                                  ),
-                                ),
+                              LocationAutocompleteField(
+                                key: ValueKey('state_${_countryController.text}'),
+                                controller: _stateController,
+                                focusNode: _stateFocus,
+                                hint: 'Select State',
+                                optionsBuilder: (textEditingValue) =>
+                                  LocationDataService.getStates(_countryController.text, textEditingValue.text),
+                                onSelected: (selection) {
+                                  setState(() {
+                                    _stateController.text = selection;
+                                    _cityController.clear();
+                                  });
+                                  _cityFocus.requestFocus();
+                                },
                               ),
                             ],
                           ),
                         ),
                         const SizedBox(width: 12),
-                        // Gender Dropdown
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                'Genre',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey,
-                                ),
+                                'City',
+                                style: TextStyle(fontSize: 13, color: Colors.grey),
                               ),
                               const SizedBox(height: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.grey[300]!),
-                                ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: _selectedGender,
-                                    isExpanded: true,
-                                    icon: const Icon(
-                                      Icons.keyboard_arrow_down,
-                                      color: Colors.grey,
-                                    ),
-                                    items: ['Male', 'Female'].map((
-                                      String value,
-                                    ) {
-                                      return DropdownMenuItem<String>(
-                                        value: value,
-                                        child: Text(
-                                          value,
-                                          style: const TextStyle(fontSize: 14),
-                                        ),
-                                      );
-                                    }).toList(),
-                                    onChanged: (String? newValue) {
-                                      setState(() {
-                                        _selectedGender = newValue!;
-                                      });
-                                    },
-                                  ),
-                                ),
+                              LocationAutocompleteField(
+                                key: ValueKey('city_${_countryController.text}_${_stateController.text}'),
+                                controller: _cityController,
+                                focusNode: _cityFocus,
+                                hint: 'Select City',
+                                optionsBuilder: (textEditingValue) =>
+                                  LocationDataService.getCities(_countryController.text, _stateController.text, textEditingValue.text),
+                                onSelected: (selection) {
+                                  setState(() {
+                                    _cityController.text = selection;
+                                    _areaController.clear();
+                                  });
+                                  if (_stateController.text != LocationDataService.travelingState) {
+                                    _areaFocus.requestFocus();
+                                  } else {
+                                    _cityFocus.unfocus();
+                                  }
+                                },
                               ),
                             ],
                           ),
                         ),
                       ],
+                    ),
+
+                    if (_stateController.text != LocationDataService.travelingState) ...[
+                      const SizedBox(height: 20),
+                      // Area Field
+                      const Text(
+                        'Area / District',
+                        style: TextStyle(fontSize: 13, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 8),
+                      LocationAutocompleteField(
+                        key: ValueKey('area_${_countryController.text}_${_stateController.text}_${_cityController.text}'),
+                        controller: _areaController,
+                        focusNode: _areaFocus,
+                        hint: 'Select Area / District',
+                        optionsBuilder: (textEditingValue) =>
+                          LocationDataService.getAreas(
+                            _countryController.text,
+                            _stateController.text,
+                            _cityController.text,
+                            textEditingValue.text,
+                          ),
+                        onSelected: (selection) {
+                          setState(() {
+                            _areaController.text = selection;
+                          });
+                          _areaFocus.unfocus();
+                        },
+                      ),
+                    ],
+
+                    const SizedBox(height: 20),
+
+                    // Gender Field
+                    const Text(
+                      'Gender',
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedGender,
+                          isExpanded: true,
+                          icon: const Icon(
+                            Icons.keyboard_arrow_down,
+                            color: Colors.grey,
+                          ),
+                          items: ['Male', 'Female'].map((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(
+                                value,
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedGender = newValue!;
+                            });
+                          },
+                        ),
+                      ),
                     ),
 
                     const SizedBox(height: 20),
@@ -452,6 +517,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     body: {
                                       'name': _nameController.text.trim(),
                                       'phone': _phoneController.text.trim(),
+                                      'country': _countryController.text.trim(),
+                                      'state': _stateController.text.trim(),
+                                      'city': _cityController.text.trim(),
+                                      'area': _areaController.text.trim(),
                                     },
                                   );
 

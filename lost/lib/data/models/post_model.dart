@@ -15,6 +15,7 @@ class PostModel extends Post {
     required super.country,
     super.state,
     super.city,
+    super.area,
     super.latitude,
     super.longitude,
     super.location,
@@ -37,10 +38,11 @@ class PostModel extends Post {
       country: json['country'] as String? ?? '',
       state: json['state'] as String?,
       city: json['city'] as String?,
+      area: json['area'] as String?,
       latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
       longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
       location: json['location'] as String? ?? 
-          [json['city'], json['state'], json['country']]
+          [json['area'], json['city'], json['state'], json['country']]
               .where((e) => e != null && e.toString().isNotEmpty)
               .join(', '),
       ownerName: (json['owner'] as Map<String, dynamic>?)?['name'] as String? ?? 'Unknown User',
@@ -73,6 +75,7 @@ class PostModel extends Post {
       'country': country,
       'state': state,
       'city': city,
+      'area': area,
       'latitude': latitude,
       'longitude': longitude,
       'location': location,
@@ -96,6 +99,7 @@ class PostModel extends Post {
       country: post.country,
       state: post.state,
       city: post.city,
+      area: post.area,
       latitude: post.latitude,
       longitude: post.longitude,
       location: post.location,

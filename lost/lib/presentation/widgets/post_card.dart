@@ -168,14 +168,18 @@ class PostCard extends StatelessWidget {
           const SizedBox(height: 6),
 
           // Location
-          if (post.location != null)
+          if (post.location != null && post.location!.isNotEmpty)
             Row(
               children: [
                 Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
                 const SizedBox(width: 4),
-                Text(
-                  post.location!,
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                Expanded(
+                  child: Text(
+                    post.location!,
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),

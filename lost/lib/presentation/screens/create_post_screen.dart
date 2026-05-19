@@ -32,6 +32,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final _countryController = TextEditingController();
   final _stateController = TextEditingController();
   final _cityController = TextEditingController();
+  final _areaController = TextEditingController();
+
+  final FocusNode _countryFocus = FocusNode();
+  final FocusNode _stateFocus = FocusNode();
+  final FocusNode _cityFocus = FocusNode();
+  final FocusNode _areaFocus = FocusNode();
 
   String _selectedCategory = 'Wallet';
   String _selectedType = 'Lost';
@@ -101,6 +107,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     _countryController.dispose();
     _stateController.dispose();
     _cityController.dispose();
+    _areaController.dispose();
+    _countryFocus.dispose();
+    _stateFocus.dispose();
+    _cityFocus.dispose();
+    _areaFocus.dispose();
     super.dispose();
   }
 
@@ -251,6 +262,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             country: _countryController.text,
             state: _stateController.text.isEmpty ? null : _stateController.text,
             city: _cityController.text,
+            area: _areaController.text.isEmpty ? null : _areaController.text,
             postType: _selectedType.toLowerCase(),
             imageUrl: newImageUrl,
           );
@@ -278,6 +290,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             country: _countryController.text,
             state: _stateController.text,
             city: _cityController.text,
+            area: _areaController.text,
             postType: _selectedType.toLowerCase(),
           );
 
@@ -307,6 +320,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 'country': _countryController.text,
                 'state': _stateController.text,
                 'city': _cityController.text,
+                'area': _areaController.text,
                 'postType': _selectedType.toLowerCase(),
                 'imageUrl': _selectedImage?.path ?? '',
               },
@@ -616,62 +630,36 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 // Location Fields (Autocomplete Input)
                 _buildLabel('Location'),
                 const SizedBox(height: 8),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: LocationAutocompleteField(
-                        controller: _countryController,
-                        hint: 'Country (e.g., USA)',
-                        optionsBuilder: (textEditingValue) {
-                          return LocationDataService.getCountries(textEditingValue.text);
-                        },
-                        onSelected: (String selection) {
-                          setState(() {
-                            _countryController.text = selection;
-                            _stateController.clear();
-                            _cityController.clear();
-                          });
-                        },
-                        itemPrefixBuilder: LocationDataService.getCountryFlag,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) return 'Required';
-                          if (value.trim().length < 2) return 'Min 2 chars';
-                          return null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
-                      child: LocationAutocompleteField(
-                        controller: _cityController,
-                        hint: 'City (e.g., NY)',
-                        optionsBuilder: (textEditingValue) {
-                          return LocationDataService.getCities(
-                            _countryController.text, 
-                            _stateController.text, 
-                            textEditingValue.text
-                          );
-                        },
-                        onSelected: (String selection) {
-                          setState(() {
-                            _cityController.text = selection;
-                          });
-                        },
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) return 'Required';
-                          if (value.trim().length < 2) return 'Min 2 chars';
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
+                // 1. Country
+                LocationAutocompleteField(
+                  controller: _countryController,
+                  focusNode: _countryFocus,
+                  hint: 'Country (e.g., USA)',
+                  optionsBuilder: (textEditingValue) {
+                    return LocationDataService.getCountries(textEditingValue.text);
+                  },
+                  onSelected: (String selection) {
+                    setState(() {
+                      _countryController.text = selection;
+                      _stateController.clear();
+                      _cityController.clear();
+                    });
+                    _stateFocus.requestFocus();
+                  },
+                  itemPrefixBuilder: LocationDataService.getCountryFlag,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) return 'Required';
+                    if (value.trim().length < 2) return 'Min 2 chars';
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 12),
+                
+                // 2. State / Province
                 LocationAutocompleteField(
+                  key: ValueKey('state_${_countryController.text}'),
                   controller: _stateController,
+                  focusNode: _stateFocus,
                   hint: 'State/Province (Optional)',
                   optionsBuilder: (textEditingValue) {
                     return LocationDataService.getStates(
@@ -684,8 +672,70 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       _stateController.text = selection;
                       _cityController.clear();
                     });
+                    _cityFocus.requestFocus();
                   },
                 ),
+                const SizedBox(height: 12),
+
+                // 3. City
+                LocationAutocompleteField(
+                  key: ValueKey('city_${_countryController.text}_${_stateController.text}'),
+                  controller: _cityController,
+                  focusNode: _cityFocus,
+                  hint: _stateController.text == LocationDataService.travelingState
+                      ? 'Traveling Method (e.g., Train)'
+                      : 'City (e.g., NY)',
+                  optionsBuilder: (textEditingValue) {
+                    return LocationDataService.getCities(
+                      _countryController.text, 
+                      _stateController.text, 
+                      textEditingValue.text
+                    );
+                  },
+                  onSelected: (String selection) {
+                    setState(() {
+                      _cityController.text = selection;
+                      _areaController.clear();
+                    });
+                    if (_stateController.text != LocationDataService.travelingState) {
+                      _areaFocus.requestFocus();
+                    } else {
+                      _cityFocus.unfocus();
+                    }
+                  },
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) return 'Required';
+                    if (value.trim().length < 2) return 'Min 2 chars';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                if (_stateController.text != LocationDataService.travelingState) ...[
+                  // 4. Area
+                  LocationAutocompleteField(
+                    key: ValueKey('area_${_countryController.text}_${_stateController.text}_${_cityController.text}'),
+                    controller: _areaController,
+                    focusNode: _areaFocus,
+                    hint: 'Area / District (Optional)',
+                    optionsBuilder: (textEditingValue) {
+                      return LocationDataService.getAreas(
+                        _countryController.text,
+                        _stateController.text,
+                        _cityController.text,
+                        textEditingValue.text,
+                      );
+                    },
+                    onSelected: (String selection) {
+                      setState(() {
+                        _areaController.text = selection;
+                      });
+                      _areaFocus.unfocus();
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
                 const SizedBox(height: 32),
 
                 // Submit Button

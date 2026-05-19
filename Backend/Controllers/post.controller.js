@@ -74,6 +74,7 @@ class PostController {
                 country,         // Filter by specific user
                 state,
                 city,
+                area,
                 latitude,
                 longitude,
                 limit = 50,
@@ -86,6 +87,7 @@ class PostController {
                 country,
                 state,
                 city,
+                area,
                 latitude,
                 longitude,
                 category,

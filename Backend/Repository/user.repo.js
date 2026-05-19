@@ -55,6 +55,10 @@ class userdb {
                 if (data.national_id !== undefined) updateFields.national_id = data.national_id;
                 if (data.phone) updateFields.phone_number = data.phone;
                 if (data.phone_number) updateFields.phone_number = data.phone_number;
+                if (data.country) updateFields.country = data.country;
+                if (data.state) updateFields.state = data.state;
+                if (data.city) updateFields.city = data.city;
+                if (data.area) updateFields.area = data.area;
                 if (data.verification_notes !== undefined) updateFields.verification_notes = data.verification_notes;
                 
                 return await User.update(

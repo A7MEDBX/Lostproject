@@ -22,6 +22,7 @@ class PostRepositoryImpl implements PostRepository {
     required String country,
     String? state,
     String? city,
+    String? area,
     double? latitude,
     double? longitude,
     String? location,
@@ -36,6 +37,7 @@ class PostRepositoryImpl implements PostRepository {
         country: country,
         state: state,
         city: city,
+        area: area,
         latitude: latitude,
         longitude: longitude,
         location: location,
@@ -69,14 +71,18 @@ class PostRepositoryImpl implements PostRepository {
     String? postType,
     String? category,
     String? country,
+    String? state,
     String? city,
+    String? area,
   }) async {
     try {
       final posts = await remoteDataSource.getAllPosts(
         postType: postType,
         category: category,
         country: country,
+        state: state,
         city: city,
+        area: area,
       );
       return Either.right(posts);
     } on ServerException catch (e) {
@@ -107,9 +113,10 @@ class PostRepositoryImpl implements PostRepository {
     String imagePath, {
     required String type,
     required String country,
-    required String city,
-    String? category,
     String? state,
+    String? city,
+    String? area,
+    String? category,
     double? latitude,
     double? longitude,
   }) async {
@@ -118,9 +125,10 @@ class PostRepositoryImpl implements PostRepository {
         imagePath: imagePath,
         type: type,
         country: country,
-        city: city,
-        category: category,
         state: state,
+        city: city,
+        area: area,
+        category: category,
         latitude: latitude,
         longitude: longitude,
       );

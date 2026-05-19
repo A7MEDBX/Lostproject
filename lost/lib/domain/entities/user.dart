@@ -10,6 +10,10 @@ class User {
   final double trustScore;
   final String verificationStatus; // 'not_submitted' | 'pending' | 'approved' | 'rejected'
   final String? phoneNumber;
+  final String? country;
+  final String? state;
+  final String? city;
+  final String? area;
   final String? nationalId;
   final String? idImageUrl;
   final String? verificationNotes;
@@ -29,6 +33,10 @@ class User {
     required this.trustScore,
     required this.verificationStatus,
     this.phoneNumber,
+    this.country,
+    this.state,
+    this.city,
+    this.area,
     this.nationalId,
     this.idImageUrl,
     this.verificationNotes,
@@ -47,6 +55,10 @@ class User {
     double? trustScore,
     String? verificationStatus,
     String? phoneNumber,
+    String? country,
+    String? state,
+    String? city,
+    String? area,
     String? nationalId,
     String? idImageUrl,
     String? verificationNotes,
@@ -64,6 +76,10 @@ class User {
       trustScore: trustScore ?? this.trustScore,
       verificationStatus: verificationStatus ?? this.verificationStatus,
       phoneNumber: phoneNumber ?? this.phoneNumber,
+      country: country ?? this.country,
+      state: state ?? this.state,
+      city: city ?? this.city,
+      area: area ?? this.area,
       nationalId: nationalId ?? this.nationalId,
       idImageUrl: idImageUrl ?? this.idImageUrl,
       verificationNotes: verificationNotes ?? this.verificationNotes,

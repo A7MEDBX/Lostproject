@@ -16,6 +16,7 @@ abstract class PostRemoteDataSource {
     required String country,
     String? state,
     String? city,
+    String? area,
     double? latitude,
     double? longitude,
     String? location,
@@ -26,16 +27,19 @@ abstract class PostRemoteDataSource {
     String? postType,
     String? category,
     String? country,
+    String? state,
     String? city,
+    String? area,
   });
   Future<List<PostModel>> getUserPosts(String userId);
   Future<List<SearchResultModel>> searchByImage({
     required String imagePath,
     required String type,
     required String country,
-    required String city,
-    String? category,
     String? state,
+    String? city,
+    String? area,
+    String? category,
     double? latitude,
     double? longitude,
   });
@@ -60,6 +64,7 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
     required String country,
     String? state,
     String? city,
+    String? area,
     double? latitude,
     double? longitude,
     String? location,
@@ -73,6 +78,7 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
         'country': country,
         if (state != null) 'state': state,
         if (city != null) 'city': city,
+        if (area != null) 'area': area,
         if (latitude != null) 'latitude': latitude.toString(),
         if (longitude != null) 'longitude': longitude.toString(),
         if (location != null) 'location': location,
@@ -107,14 +113,18 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
     String? postType,
     String? category,
     String? country,
+    String? state,
     String? city,
+    String? area,
   }) async {
     try {
       final queryParams = <String>[];
-      if (postType != null && postType.isNotEmpty) queryParams.add('post_type=$postType');
+      if (postType != null && postType.isNotEmpty) queryParams.add('type=$postType');
       if (category != null && category.isNotEmpty) queryParams.add('category=$category');
       if (country != null && country.isNotEmpty) queryParams.add('country=$country');
+      if (state != null && state.isNotEmpty) queryParams.add('state=$state');
       if (city != null && city.isNotEmpty) queryParams.add('city=$city');
+      if (area != null && area.isNotEmpty) queryParams.add('area=$area');
       
       final queryString = queryParams.isNotEmpty ? '?${queryParams.join('&')}' : '';
       final response = await apiClient.get('${ApiConstants.allPostsEndpoint}$queryString');
@@ -146,9 +156,10 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
     required String imagePath,
     required String type,
     required String country,
-    required String city,
-    String? category,
     String? state,
+    String? city,
+    String? area,
+    String? category,
     double? latitude,
     double? longitude,
   }) async {
@@ -156,9 +167,10 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
       final fields = <String, String>{
         'type': type,
         'country': country,
-        'city': city,
-        if (category != null) 'category': category,
         if (state != null) 'state': state,
+        if (city != null) 'city': city,
+        if (area != null) 'area': area,
+        if (category != null) 'category': category,
         if (latitude != null) 'latitude': latitude.toString(),
         if (longitude != null) 'longitude': longitude.toString(),
       };

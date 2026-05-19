@@ -28,7 +28,7 @@ class MatchingService {
         return degrees * (Math.PI / 180);
     }
 
-    async checkMatch(imageUrl, type, category, country, state, city, latitude, longitude) {
+    async checkMatch(imageUrl, type, category, country, state, city, area, latitude, longitude) {
         try {
             // ==========================================
             // VALIDATION
@@ -55,6 +55,7 @@ class MatchingService {
                 country: country || null,
                 state: state || null,
                 city: city || null,
+                area: area || null,
                 category: category || null,
                 limit: 500,
                 offset: 0
@@ -64,10 +65,10 @@ class MatchingService {
 
             // Early exit if no candidates found
             if (candidatePosts.count === 0) {
-                console.log(`No ${oppositeType} posts in ${city || state || country}. Skipping embedding.`);
+                console.log(`No ${oppositeType} posts in ${area || city || state || country}. Skipping embedding.`);
                 return {
                     success: true,
-                    message: `No ${oppositeType} items found in ${city || state || country}`,
+                    message: `No ${oppositeType} items found in ${area || city || state || country}`,
                     data: [],
                     count: 0
                 };
@@ -125,6 +126,7 @@ class MatchingService {
 
             if (state) pineconeFilter.state = state;
             if (city) pineconeFilter.city = city;
+            if (area) pineconeFilter.area = area;
             if (category) pineconeFilter.category = category;
 
             console.log('Pinecone filter:', pineconeFilter);
@@ -176,7 +178,7 @@ class MatchingService {
                 data: enrichedResults,
                 count: enrichedResults.length,
                 metadata: {
-                    searched_area: city || state || country,
+                    searched_area: area || city || state || country,
                     total_candidates: candidatePosts.count,
                     within_radius: nearbyPosts.length,
                     visual_matches: enrichedResults.length

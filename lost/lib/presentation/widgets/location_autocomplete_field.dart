@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/finder_colors.dart';
 
-class LocationAutocompleteField extends StatelessWidget {
+class LocationAutocompleteField extends StatefulWidget {
   final String hint;
   final TextEditingController controller;
+  final FocusNode? focusNode;
   final Iterable<String> Function(TextEditingValue) optionsBuilder;
   final void Function(String) onSelected;
   final String? Function(String?)? validator;
   final Widget? prefixIcon;
-  final String Function(String)? itemPrefixBuilder; // E.g., for flags
+  final String Function(String)? itemPrefixBuilder;
 
   const LocationAutocompleteField({
     super.key,
     required this.hint,
     required this.controller,
+    this.focusNode,
     required this.optionsBuilder,
     required this.onSelected,
     this.validator,
@@ -22,29 +24,73 @@ class LocationAutocompleteField extends StatelessWidget {
   });
 
   @override
+  State<LocationAutocompleteField> createState() => _LocationAutocompleteFieldState();
+}
+
+class _LocationAutocompleteFieldState extends State<LocationAutocompleteField> {
+  late FocusNode _internalFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _internalFocusNode = widget.focusNode ?? FocusNode();
+    _internalFocusNode.addListener(_onFocusChange);
+
+    // If it starts with focus (auto-focus from previous field selection),
+    // we nudge it to show suggestions immediately.
+    if (_internalFocusNode.hasFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && widget.controller.text.isEmpty) {
+          widget.controller.text = ''; 
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    if (widget.focusNode == null) {
+      _internalFocusNode.dispose();
+    } else {
+      _internalFocusNode.removeListener(_onFocusChange);
+    }
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (_internalFocusNode.hasFocus && widget.controller.text.isEmpty) {
+      // Trigger optionsBuilder by "nudging" the controller
+      widget.controller.text = ''; 
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         return RawAutocomplete<String>(
-          textEditingController: controller,
-          focusNode: FocusNode(),
-          optionsBuilder: optionsBuilder,
-          onSelected: onSelected,
-          fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+          textEditingController: widget.controller,
+          focusNode: _internalFocusNode,
+          optionsBuilder: (TextEditingValue textEditingValue) {
+            // If the field is focused but empty, show all options
+            return widget.optionsBuilder(textEditingValue);
+          },
+          onSelected: widget.onSelected,
+          fieldViewBuilder: (context, textEditingController, node, onFieldSubmitted) {
             return TextFormField(
               controller: textEditingController,
-              focusNode: focusNode,
+              focusNode: node,
               onFieldSubmitted: (String value) {
                 onFieldSubmitted();
               },
-              validator: validator,
+              validator: widget.validator,
               style: const TextStyle(color: FinderColors.textPrimary, fontSize: 16),
               decoration: InputDecoration(
-                hintText: hint,
+                hintText: widget.hint,
                 hintStyle: const TextStyle(color: FinderColors.textSecondary),
                 filled: true,
                 fillColor: Colors.white,
-                prefixIcon: prefixIcon,
+                prefixIcon: widget.prefixIcon,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(color: Color(0xFF0A3D91)),
@@ -69,23 +115,13 @@ class LocationAutocompleteField extends StatelessWidget {
             return Align(
               alignment: Alignment.topLeft,
               child: Material(
-                color: Colors.transparent,
+                elevation: 4,
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.white,
                 child: Container(
                   width: constraints.maxWidth,
-                  margin: const EdgeInsets.only(top: 8.0),
+                  margin: EdgeInsets.zero,
                   constraints: const BoxConstraints(maxHeight: 200),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: ListView.builder(
@@ -94,9 +130,10 @@ class LocationAutocompleteField extends StatelessWidget {
                       itemCount: options.length,
                       itemBuilder: (BuildContext context, int index) {
                         final String option = options.elementAt(index);
-                        final prefix = itemPrefixBuilder?.call(option) ?? '';
+                        final prefix = widget.itemPrefixBuilder?.call(option) ?? '';
                         
-                        return InkWell(
+                        return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
                           onTap: () {
                             onSelected(option);
                           },
@@ -116,7 +153,7 @@ class LocationAutocompleteField extends StatelessWidget {
                                 Expanded(
                                   child: _HighlightText(
                                     text: option,
-                                    query: controller.text,
+                                    query: widget.controller.text,
                                   ),
                                 ),
                               ],

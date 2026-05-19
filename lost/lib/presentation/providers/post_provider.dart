@@ -28,7 +28,9 @@ class PostProvider with ChangeNotifier {
     String? postType,
     String? category,
     String? country,
+    String? state,
     String? city,
+    String? area,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -37,7 +39,9 @@ class PostProvider with ChangeNotifier {
     _hasActiveFilters = (postType != null && postType.isNotEmpty) ||
                         (category != null && category.isNotEmpty && category != 'All Categories') ||
                         (country != null && country.isNotEmpty) ||
-                        (city != null && city.isNotEmpty);
+                        (state != null && state.isNotEmpty) ||
+                        (city != null && city.isNotEmpty) ||
+                        (area != null && area.isNotEmpty);
 
     notifyListeners();
 
@@ -45,7 +49,9 @@ class PostProvider with ChangeNotifier {
       postType: postType,
       category: category == 'All Categories' ? null : category,
       country: country,
+      state: state,
       city: city,
+      area: area,
     );
 
     result.fold(
@@ -68,12 +74,15 @@ class PostProvider with ChangeNotifier {
     String? country,
     String? state,
     String? city,
+    String? area,
   }) async {
     _activeFilters = filters;
     await loadPosts(
       category: category,
       country: country,
+      state: state,
       city: city,
+      area: area,
     );
   }
 
@@ -84,7 +93,9 @@ class PostProvider with ChangeNotifier {
       await loadPosts(
         category: f['category'] == 'All' ? null : f['category'],
         country: f['country'],
+        state: f['state'],
         city: f['city'],
+        area: f['area'],
       );
     } else {
       await loadPosts();

@@ -75,6 +75,7 @@ dependencies:
   url_launcher: ^6.3.0
   flutter_secure_storage: ^10.2.0
   google_sign_in: 6.2.1
+  fpdart: ^1.2.0
 
 dev_dependencies:
   flutter_test:
