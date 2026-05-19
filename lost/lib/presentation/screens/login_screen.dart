@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../widgets/custom_rounded_button.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_divider.dart';
-import '../../core/utils/app_messenger.dart';
 import '../../core/constants/finder_colors.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/session_service.dart';
@@ -138,9 +137,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Login with Google Button
                 CustomRoundedButton(
                   text: 'Login with Google',
-                  onPressed: () {
-                    AppMessenger.showInfo('Google login is not enabled yet.');
-                  },
+                  onPressed: _isLoading 
+                      ? () {} 
+                      : () {
+                          _handleGoogleSignIn();
+                        },
                   backgroundColor: FinderColors.primaryBlue,
                   height: 50,
                 ),
@@ -293,6 +294,52 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final user = await AuthService.instance.signInWithGoogle();
+      
+      // If user is null, they cancelled the login
+      if (user == null) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      await SessionService.instance.saveSession();
+
+      final email = user.email ?? '';
+      final name = _buildSafeName(user.displayName, email);
+
+      await _syncBackendUser(name: name, email: email);
+
+      if (mounted) {
+        await context.read<UserProvider>().loadUser();
+      }
+
+      if (!mounted) return;
+
+      Navigator.pushReplacementNamed(context, '/home');
+    } on Exception catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _errorMessage = _mapAuthError(e);
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> _handleSignIn() async {

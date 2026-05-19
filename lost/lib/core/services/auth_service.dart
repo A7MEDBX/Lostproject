@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 /// Thrown when Firebase rate-limits verification email sending.
 class TooManyRequestsException implements Exception {
@@ -15,10 +16,41 @@ class AuthService {
   static final AuthService instance = AuthService._();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   Stream<User?> authStateChanges() => _auth.authStateChanges();
 
   User? get currentUser => _auth.currentUser;
+
+  Future<User?> signInWithGoogle() async {
+    try {
+      // 1. Trigger the Google Authentication flow
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      
+      // Handle the case where the user cancels the sign in
+      if (googleUser == null) {
+        debugPrint('[AuthService] Google sign-in cancelled by user');
+        return null;
+      }
+
+      // 2. Obtain the auth details from the request
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      // 3. Create a new credential using the tokens
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // 4. Sign in to Firebase with the credential
+      final UserCredential userCredential = await _auth.signInWithCredential(credential);
+      
+      return userCredential.user;
+    } catch (e) {
+      debugPrint('[AuthService] Google sign-in failed: $e');
+      rethrow;
+    }
+  }
 
   Future<User> signUpWithEmail({
     required String email,
@@ -66,6 +98,11 @@ class AuthService {
   }
 
   Future<void> signOut() async {
+    try {
+      await _googleSignIn.signOut();
+    } catch (e) {
+      debugPrint('[AuthService] Error signing out of Google: $e');
+    }
     await _auth.signOut();
   }
 

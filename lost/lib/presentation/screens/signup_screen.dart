@@ -142,9 +142,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 // Sign Up with Google Button
                 CustomRoundedButton(
                   text: 'Sign up with Google',
-                  onPressed: () {
-                    AppMessenger.showInfo('Google sign up is not enabled yet.');
-                  },
+                  onPressed: _isLoading 
+                      ? () {} 
+                      : () {
+                          _handleGoogleSignUp();
+                        },
                   backgroundColor: FinderColors.primaryBlue,
                   height: 50,
                 ),
@@ -312,6 +314,55 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleGoogleSignUp() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final user = await AuthService.instance.signInWithGoogle();
+
+      if (user == null) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      await SessionService.instance.saveSession();
+
+      final email = user.email ?? '';
+      final name = _buildSafeName(user.displayName, email);
+
+      try {
+        await _syncBackendUser(name: name, email: email);
+
+        if (mounted) {
+          await context.read<UserProvider>().loadUser();
+        }
+      } on Exception catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Failed to register user in backend: ${e.toString()}';
+        });
+        return;
+      }
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      Navigator.pushReplacementNamed(context, '/home');
+    } on Exception catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = _mapAuthError(e);
+      });
+    }
   }
 
   Future<void> _handleSignUp() async {
