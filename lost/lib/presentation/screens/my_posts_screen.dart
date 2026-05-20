@@ -305,15 +305,21 @@ class _MyPostsScreenState extends State<MyPostsScreen>
     final bool isResolved =
         post.status == 'resolved' || post.status == 'closed';
     final bool isUpdating = _updatingPosts.contains(post.id);
+    final bool isHidden = post.moderationStatus == 'hidden';
+    final bool isRemoved = post.moderationStatus == 'removed';
+    final bool isBlocked = isHidden || isRemoved;
 
     return Container(
-      key: ValueKey('${post.id}_${post.status}'),
+      key: ValueKey('${post.id}_${post.status}_${post.moderationStatus}'),
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isBlocked ? Colors.grey[50] : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!, width: 1),
+        border: Border.all(
+          color: isBlocked ? Colors.red[200]! : Colors.grey[200]!,
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -327,60 +333,128 @@ class _MyPostsScreenState extends State<MyPostsScreen>
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  post.imageUrl,
-                  width: 70,
-                  height: 70,
-                  fit: BoxFit.cover,
-                  errorBuilder: (c, e, s) => Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(12),
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: ColorFiltered(
+                      colorFilter: ColorFilter.mode(
+                        isBlocked ? Colors.grey : Colors.transparent,
+                        BlendMode.saturation,
+                      ),
+                      child: Image.network(
+                        post.imageUrl,
+                        width: 70,
+                        height: 70,
+                        fit: BoxFit.cover,
+                        errorBuilder: (c, e, s) => Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.image, color: Colors.grey),
+                        ),
+                      ),
                     ),
-                    child: const Icon(Icons.image, color: Colors.grey),
                   ),
-                ),
+                  if (isBlocked)
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.visibility_off_rounded,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isResolved
-                            ? Colors.grey[300]
-                            : const Color(0xFF0A3D91).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        isResolved ? 'RESOLVED' : 'ACTIVE',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: isResolved
-                              ? Colors.grey[700]
-                              : const Color(0xFF0A3D91),
-                          letterSpacing: 0.5,
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isResolved
+                                ? Colors.grey[300]
+                                : const Color(0xFF0A3D91).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            isResolved ? 'RESOLVED' : 'ACTIVE',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: isResolved
+                                  ? Colors.grey[700]
+                                  : const Color(0xFF0A3D91),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (isBlocked) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red[50],
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: Colors.red[100]!),
+                            ),
+                            child: Text(
+                              isHidden ? 'HIDDEN' : 'REMOVED',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.red[700],
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: 6),
                     Text(
                       post.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
+                        color: isBlocked ? Colors.grey[700] : Colors.black,
+                        decoration: isRemoved ? TextDecoration.lineThrough : null,
                       ),
                     ),
+                    if (isBlocked)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          isHidden 
+                            ? 'Hidden by moderator for review.'
+                            : 'Removed by moderator for violation.',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.red[400],
+                            fontWeight: FontWeight.w600,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
@@ -408,7 +482,26 @@ class _MyPostsScreenState extends State<MyPostsScreen>
             ],
           ),
           const SizedBox(height: 12),
-          if (isResolved)
+          if (isBlocked)
+             Container(
+               width: double.infinity,
+               padding: const EdgeInsets.symmetric(vertical: 10),
+               decoration: BoxDecoration(
+                 color: Colors.red[50]?.withOpacity(0.5),
+                 borderRadius: BorderRadius.circular(8),
+               ),
+               child: Center(
+                 child: Text(
+                   'Moderation actions cannot be overridden.',
+                   style: TextStyle(
+                     color: Colors.red[700],
+                     fontSize: 12,
+                     fontWeight: FontWeight.bold,
+                   ),
+                 ),
+               ),
+             )
+          else if (isResolved)
             Row(
               children: [
                 Expanded(

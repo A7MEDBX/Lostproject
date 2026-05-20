@@ -66,7 +66,19 @@ const User =sequelize.define('users',{
         type: DataTypes.STRING,
         allowNull: true
     },
+    profile_image_url: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
+    selfie_image_url: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
     id_image_url: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
+    verification_location: {
         type: DataTypes.TEXT,
         allowNull: true
     },
@@ -85,6 +97,14 @@ const User =sequelize.define('users',{
     },
     verification_notes: {
         type: DataTypes.TEXT,
+        allowNull: true
+    },
+    moderation_reason: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
+    moderated_at: {
+        type: DataTypes.DATE,
         allowNull: true
     }
 },

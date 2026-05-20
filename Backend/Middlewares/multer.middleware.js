@@ -87,39 +87,48 @@ const uploadToCloudinary = async (req, res, next) => {
 // Middleware to Upload KYC to Cloudinary
 const uploadVerificationToCloudinary = async (req, res, next) => {
     try {
-        if (!req.files || !req.files.id_image) {
+        if (!req.files) {
             return next(); 
         }
 
-        const idFile = req.files.id_image[0];
-        console.log(`Uploading ID file to Cloudinary: ${idFile.path}`);
+        // Upload ID Image
+        if (req.files.id_image) {
+            const idFile = req.files.id_image[0];
+            console.log(`Uploading ID file to Cloudinary: ${idFile.path}`);
+            const result = await cloudinary.uploader.upload(idFile.path, {
+                folder: 'finder_app_kyc',
+                use_filename: true
+            });
+            req.body.id_image_url = result.secure_url;
+            fs.unlink(idFile.path, () => {});
+        }
 
-        // Upload to Cloudinary
-        const result = await cloudinary.uploader.upload(idFile.path, {
-            folder: 'finder_app_kyc',
-            use_filename: true
-        });
-
-        // The validator expects id_image_url and phone_number
-        req.body.id_image_url = result.secure_url;
+        // Upload Selfie Image
+        if (req.files.selfie_image) {
+            const selfieFile = req.files.selfie_image[0];
+            console.log(`Uploading Selfie file to Cloudinary: ${selfieFile.path}`);
+            const result = await cloudinary.uploader.upload(selfieFile.path, {
+                folder: 'finder_app_kyc',
+                use_filename: true
+            });
+            req.body.selfie_image_url = result.secure_url;
+            fs.unlink(selfieFile.path, () => {});
+        }
         
         // Map frontend "phone" to backend "phone_number"
         if (req.body.phone && !req.body.phone_number) {
             req.body.phone_number = req.body.phone;
         }
 
-        console.log(`Cloudinary Upload Success: ${result.secure_url}`);
-
-        // Cleanup: Delete local temp files
-        fs.unlink(idFile.path, () => {});
-        if (req.files.selfie_image) {
-            fs.unlink(req.files.selfie_image[0].path, () => {});
-        }
-
         next();
 
     } catch (error) {
         console.error("Cloudinary KYC Upload Failed:", error);
+        // Attempt to cleanup local files on error
+        if (req.files) {
+            if (req.files.id_image) fs.unlink(req.files.id_image[0].path, () => {});
+            if (req.files.selfie_image) fs.unlink(req.files.selfie_image[0].path, () => {});
+        }
         return res.status(500).json({ 
             error: "Image upload failed", 
             details: error.message 

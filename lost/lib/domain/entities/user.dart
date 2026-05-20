@@ -6,6 +6,7 @@ class User {
   final String email;
   final String name;
   final String role; // 'user' | 'admin'
+  final String status; // 'active' | 'suspended' | 'banned'
   final bool verified;
   final double trustScore;
   final String verificationStatus; // 'not_submitted' | 'pending' | 'approved' | 'rejected'
@@ -14,8 +15,11 @@ class User {
   final String? state;
   final String? city;
   final String? area;
+  final String? profileImageUrl;
+  final String? selfieImageUrl;
   final String? nationalId;
   final String? idImageUrl;
+  final String? verificationLocation;
   final String? verificationNotes;
   final DateTime? verificationSubmittedAt;
   final DateTime? verificationReviewedAt;
@@ -29,6 +33,7 @@ class User {
     required this.email,
     required this.name,
     required this.role,
+    this.status = 'active',
     required this.verified,
     required this.trustScore,
     required this.verificationStatus,
@@ -37,8 +42,11 @@ class User {
     this.state,
     this.city,
     this.area,
+    this.profileImageUrl,
+    this.selfieImageUrl,
     this.nationalId,
     this.idImageUrl,
+    this.verificationLocation,
     this.verificationNotes,
     this.verificationSubmittedAt,
     this.verificationReviewedAt,
@@ -51,6 +59,7 @@ class User {
     String? email,
     String? name,
     String? role,
+    String? status,
     bool? verified,
     double? trustScore,
     String? verificationStatus,
@@ -59,8 +68,11 @@ class User {
     String? state,
     String? city,
     String? area,
+    String? profileImageUrl,
+    String? selfieImageUrl,
     String? nationalId,
     String? idImageUrl,
+    String? verificationLocation,
     String? verificationNotes,
     DateTime? verificationSubmittedAt,
     DateTime? verificationReviewedAt,
@@ -72,6 +84,7 @@ class User {
       email: email ?? this.email,
       name: name ?? this.name,
       role: role ?? this.role,
+      status: status ?? this.status,
       verified: verified ?? this.verified,
       trustScore: trustScore ?? this.trustScore,
       verificationStatus: verificationStatus ?? this.verificationStatus,
@@ -80,8 +93,11 @@ class User {
       state: state ?? this.state,
       city: city ?? this.city,
       area: area ?? this.area,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      selfieImageUrl: selfieImageUrl ?? this.selfieImageUrl,
       nationalId: nationalId ?? this.nationalId,
       idImageUrl: idImageUrl ?? this.idImageUrl,
+      verificationLocation: verificationLocation ?? this.verificationLocation,
       verificationNotes: verificationNotes ?? this.verificationNotes,
       verificationSubmittedAt:
           verificationSubmittedAt ?? this.verificationSubmittedAt,

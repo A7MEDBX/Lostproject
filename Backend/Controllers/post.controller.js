@@ -70,6 +70,7 @@ class PostController {
                 type,           // 'lost' or 'found'
                 category,       // Search string
                 status,         // 'active', 'matched', 'resolved'
+                moderationStatus, // 'visible', 'hidden', 'removed'
                 userId,
                 country,         // Filter by specific user
                 state,
@@ -91,7 +92,8 @@ class PostController {
                 latitude,
                 longitude,
                 category,
-                status: status || 'active', // Default to active
+                status: status === 'all' ? null : (status || 'active'), // Default to active, but allow 'all'
+                moderation_status: moderationStatus, // Service defaults to 'visible' if null
                 userId,
                 limit: parseInt(limit),
                 offset: parseInt(offset)

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Alert,
   Button,
@@ -24,12 +25,20 @@ import {
   Avatar,
   Card,
   InputBase,
+  Grid,
+  Divider,
 } from '@mui/material';
 import {
   EditRounded as EditIcon,
   FilterListRounded as FilterIcon,
   SearchRounded as SearchIcon,
   FileDownloadRounded as ExportIcon,
+  VisibilityRounded as ViewIcon,
+  InfoRounded as InfoIcon,
+  LocationOnRounded as LocationIcon,
+  ShieldRounded as ShieldIcon,
+  HistoryRounded as HistoryIcon,
+  EventNoteRounded as ActivityIcon,
 } from '@mui/icons-material';
 import api from '../../api/axios';
 import MotionPage from '../../components/MotionPage';
@@ -42,6 +51,7 @@ const initialForm = {
   phone_number: '',
   verification_status: 'not_submitted',
   trust_score: 0,
+  moderation_reason: '',
 };
 
 function StatusPill({ value }) {
@@ -77,31 +87,58 @@ function StatusPill({ value }) {
   );
 }
 
+function DetailItem({ icon: Icon, label, value, color = 'text.secondary' }) {
+  return (
+    <Stack direction="row" spacing={2} alignItems="flex-start" sx={{ mb: 2 }}>
+      <Box sx={{ p: 1, borderRadius: '10px', bgcolor: alpha(color === 'text.secondary' ? '#000' : color, 0.05) }}>
+        <Icon sx={{ fontSize: 18, color: color === 'text.secondary' ? 'text.secondary' : color }} />
+      </Box>
+      <Box>
+        <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          {label}
+        </Typography>
+        <Typography variant="body2" fontWeight={600} color="text.primary">
+          {value || 'N/A'}
+        </Typography>
+      </Box>
+    </Stack>
+  );
+}
+
 export default function Users() {
-  const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [selectedUser, setSelectedUser] = useState(null);
+  const [viewingUser, setViewingUser] = useState(null);
   const [form, setForm] = useState(initialForm);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
   const theme = useTheme();
+  const queryClient = useQueryClient();
 
-  const fetchUsers = async () => {
-    try {
+  const { data: usersData, isLoading, error: fetchError } = useQuery({
+    queryKey: ['users'],
+    queryFn: async () => {
       const response = await api.get('/admin/users', { params: { limit: 100, offset: 0 } });
-      setUsers(response.data?.users || []);
-    } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to load users.');
-    } finally {
-      setLoading(false);
+      return response.data?.users || [];
     }
-  };
+  });
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  const users = usersData || [];
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ userId, data }) => {
+      // If status changed to suspended or banned, ensure reason is provided
+      if ((data.status === 'suspended' || data.status === 'banned') && !data.moderation_reason) {
+        throw new Error(`Reason is required when setting status to ${data.status}`);
+      }
+      return await api.put(`/admin/users/${userId}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      setSelectedUser(null);
+      setViewingUser(null);
+    }
+  });
 
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
@@ -111,20 +148,6 @@ export default function Users() {
       return matchesSearch && matchesRole;
     });
   }, [users, searchQuery, roleFilter]);
-
-  const handleExport = () => {
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + ["Name,Email,Role,Trust Score,Status"].join(",") + "\n"
-      + filteredUsers.map(u => `"${u.name}","${u.email}","${u.role}","${u.trust_score}","${u.status}"`).join("\n");
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "finder_users_export.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   const openEditor = (user) => {
     setSelectedUser(user);
@@ -136,6 +159,7 @@ export default function Users() {
       phone_number: user.phone_number || '',
       verification_status: user.verification_status || 'not_submitted',
       trust_score: user.trust_score || 0,
+      moderation_reason: user.moderation_reason || '',
     });
   };
 
@@ -143,19 +167,12 @@ export default function Users() {
     setForm((current) => ({ ...current, [field]: value }));
   };
 
-  const saveUser = async () => {
-    setSaving(true);
-    setError('');
-    try {
-      await api.put(`/admin/users/${selectedUser.id}`, form);
-      setUsers((items) => items.map((user) => (user.id === selectedUser.id ? { ...user, ...form } : user)));
-      setSelectedUser(null);
-    } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to update user.');
-    } finally {
-      setSaving(false);
-    }
+  const saveUser = () => {
+    updateMutation.mutate({ userId: selectedUser.id, data: form });
   };
+
+  const error = fetchError?.response?.data?.message || fetchError?.message || updateMutation.error?.response?.data?.message || updateMutation.error?.message;
+  const saving = updateMutation.isPending;
 
   return (
     <MotionPage>
@@ -239,7 +256,7 @@ export default function Users() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {loading ? (
+              {isLoading ? (
                 [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
                     <TableCell colSpan={6}><LinearProgress sx={{ height: 2, opacity: 0.1 }} /></TableCell>
@@ -249,7 +266,7 @@ export default function Users() {
                 <TableRow key={user.id} sx={{ '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.02) } }}>
                   <TableCell>
                     <Stack direction="row" spacing={2} alignItems="center">
-                      <Avatar sx={{ width: 36, height: 36, bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main', fontWeight: 800, fontSize: '0.9rem' }}>
+                      <Avatar src={user.profile_image_url} sx={{ width: 36, height: 36, bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main', fontWeight: 800, fontSize: '0.9rem' }}>
                         {user.name?.charAt(0)}
                       </Avatar>
                       <Box>
@@ -272,11 +289,18 @@ export default function Users() {
                   <TableCell><StatusPill value={user.verification_status || (user.verified ? 'approved' : 'not_submitted')} /></TableCell>
                   <TableCell><StatusPill value={user.status || 'active'} /></TableCell>
                   <TableCell align="right">
-                    <Tooltip title="Edit Profile">
-                      <IconButton onClick={() => openEditor(user)} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main', bgcolor: alpha(theme.palette.primary.main, 0.1) } }}>
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Stack direction="row" spacing={1} justifyContent="flex-end">
+                      <Tooltip title="View Full Details">
+                        <IconButton onClick={() => setViewingUser(user)} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main', bgcolor: alpha(theme.palette.primary.main, 0.1) } }}>
+                          <ViewIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Quick Edit">
+                        <IconButton onClick={() => openEditor(user)} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main', bgcolor: alpha(theme.palette.primary.main, 0.1) } }}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
                   </TableCell>
                 </TableRow>
               ))}
@@ -285,6 +309,7 @@ export default function Users() {
         </Box>
       </Card>
 
+      {/* QUICK EDIT DIALOG */}
       <Dialog 
         open={Boolean(selectedUser)} 
         onClose={() => setSelectedUser(null)} 
@@ -317,6 +342,19 @@ export default function Users() {
                 <MenuItem value="banned">Banned</MenuItem>
               </TextField>
             </Stack>
+            {(form.status === 'suspended' || form.status === 'banned') && (
+              <TextField 
+                label="Moderation Reason" 
+                placeholder="Required for suspension/ban..."
+                value={form.moderation_reason} 
+                onChange={(event) => updateForm('moderation_reason', event.target.value)} 
+                fullWidth
+                multiline
+                rows={2}
+                error={!form.moderation_reason}
+                helperText={!form.moderation_reason ? 'Reason is required for punitive actions' : ''}
+              />
+            )}
             <Stack direction="row" spacing={2}>
               <TextField label="Phone" value={form.phone_number} onChange={(event) => updateForm('phone_number', event.target.value)} fullWidth />
               <TextField label="Trust Score" type="number" value={form.trust_score} onChange={(event) => updateForm('trust_score', Number(event.target.value))} fullWidth />
@@ -333,6 +371,138 @@ export default function Users() {
           <Button onClick={() => setSelectedUser(null)} sx={{ color: 'text.secondary' }}>Cancel</Button>
           <Button onClick={saveUser} variant="contained" disabled={saving} sx={{ borderRadius: '12px', px: 4 }}>
             {saving ? 'Updating...' : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* FULL USER DETAILS MODAL */}
+      <Dialog
+        open={Boolean(viewingUser)}
+        onClose={() => setViewingUser(null)}
+        fullWidth
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            borderRadius: '28px',
+            bgcolor: alpha(theme.palette.background.paper, 0.9),
+            backdropFilter: 'blur(30px)',
+            border: `1px solid ${theme.palette.divider}`,
+            boxShadow: theme.shadows[24],
+          }
+        }}
+      >
+        <DialogTitle sx={{ p: 4, pb: 0 }}>
+          <Stack direction="row" spacing={3} alignItems="center">
+            <Avatar 
+              src={viewingUser?.profile_image_url} 
+              sx={{ width: 80, height: 80, fontSize: '2rem', fontWeight: 900, bgcolor: 'primary.main' }}
+            >
+              {viewingUser?.name?.charAt(0)}
+            </Avatar>
+            <Box>
+              <Typography variant="h4" fontWeight={900} letterSpacing="-0.04em">
+                {viewingUser?.name}
+              </Typography>
+              <Stack direction="row" spacing={1} alignItems="center" mt={0.5}>
+                <StatusPill value={viewingUser?.role} />
+                <StatusPill value={viewingUser?.status} />
+                <StatusPill value={viewingUser?.verification_status} />
+              </Stack>
+            </Box>
+          </Stack>
+        </DialogTitle>
+
+        <DialogContent sx={{ p: 4 }}>
+          <Grid container spacing={4} mt={1}>
+            {/* ACCOUNT INFO */}
+            <Grid item xs={12} md={4}>
+              <Typography variant="subtitle2" fontWeight={800} color="primary" mb={2} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <InfoIcon fontSize="small" /> Account Details
+              </Typography>
+              <DetailItem icon={InfoIcon} label="Email" value={viewingUser?.email} />
+              <DetailItem icon={InfoIcon} label="Phone" value={viewingUser?.phone_number} />
+              <DetailItem icon={ShieldIcon} label="Trust Score" value={`${viewingUser?.trust_score}%`} color={theme.palette.primary.main} />
+              <DetailItem icon={ActivityIcon} label="Join Date" value={viewingUser?.created_at ? new Date(viewingUser.created_at).toLocaleDateString() : 'N/A'} />
+            </Grid>
+
+            {/* LOCATION INFO */}
+            <Grid item xs={12} md={4}>
+              <Typography variant="subtitle2" fontWeight={800} color="primary" mb={2} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <LocationIcon fontSize="small" /> Location Info
+              </Typography>
+              <DetailItem icon={LocationIcon} label="Country" value={viewingUser?.country} />
+              <DetailItem icon={LocationIcon} label="State/City" value={`${viewingUser?.state || ''}, ${viewingUser?.city || ''}`} />
+              <DetailItem icon={LocationIcon} label="Area" value={viewingUser?.area} />
+              <DetailItem icon={LocationIcon} label="Verification Region" value={viewingUser?.verification_location} />
+            </Grid>
+
+            {/* MODERATION INFO */}
+            <Grid item xs={12} md={4}>
+              <Typography variant="subtitle2" fontWeight={800} color="primary" mb={2} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <ShieldIcon fontSize="small" /> Moderation
+              </Typography>
+              <DetailItem 
+                icon={ShieldIcon} 
+                label="Reports Count" 
+                value={viewingUser?.reports_count || 0} 
+                color={viewingUser?.reports_count > 0 ? 'error.main' : 'text.secondary'} 
+              />
+              <DetailItem icon={HistoryIcon} label="Moderated At" value={viewingUser?.moderated_at ? new Date(viewingUser.moderated_at).toLocaleString() : 'Never'} />
+              <Box sx={{ p: 2, bgcolor: alpha(theme.palette.error.main, 0.05), borderRadius: '12px', border: `1px dashed ${alpha(theme.palette.error.main, 0.2)}` }}>
+                <Typography variant="caption" fontWeight={800} color="error.main" sx={{ display: 'block', mb: 0.5, textTransform: 'uppercase' }}>
+                  Current Moderation Reason
+                </Typography>
+                <Typography variant="body2" fontWeight={600}>
+                  {viewingUser?.moderation_reason || 'No active moderation reason.'}
+                </Typography>
+              </Box>
+            </Grid>
+
+            {/* IMAGES */}
+            <Grid item xs={12}>
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="subtitle2" fontWeight={800} color="primary" mb={2}>
+                Verification Documents
+              </Typography>
+              <Stack direction="row" spacing={3}>
+                <Box>
+                  <Typography variant="caption" fontWeight={700} color="text.secondary" display="block" mb={1}>Selfie Image</Typography>
+                  <Box 
+                    component="img" 
+                    src={viewingUser?.selfie_image_url} 
+                    sx={{ width: 140, height: 180, borderRadius: '16px', objectFit: 'cover', bgcolor: 'grey.100', border: `1px solid ${theme.palette.divider}` }}
+                    onError={(e) => { e.target.src = 'https://via.placeholder.com/140x180?text=No+Selfie'; }}
+                  />
+                </Box>
+                <Box>
+                  <Typography variant="caption" fontWeight={700} color="text.secondary" display="block" mb={1}>ID Document</Typography>
+                  <Box 
+                    component="img" 
+                    src={viewingUser?.id_image_url} 
+                    sx={{ width: 240, height: 180, borderRadius: '16px', objectFit: 'cover', bgcolor: 'grey.100', border: `1px solid ${theme.palette.divider}` }}
+                    onError={(e) => { e.target.src = 'https://via.placeholder.com/240x180?text=No+ID+Image'; }}
+                  />
+                </Box>
+              </Stack>
+            </Grid>
+          </Grid>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 4, pt: 0 }}>
+          <Button onClick={() => setViewingUser(null)} sx={{ color: 'text.secondary', fontWeight: 700 }}>Close View</Button>
+          <Box sx={{ flexGrow: 1 }} />
+          <Button 
+            variant="contained" 
+            color="primary" 
+            startIcon={<EditIcon />}
+            onClick={() => {
+              const u = viewingUser;
+              setViewingUser(null);
+              setTimeout(() => openEditor(u), 100);
+            }}
+            sx={{ borderRadius: '12px', px: 3 }}
+          >
+            Edit User
           </Button>
         </DialogActions>
       </Dialog>

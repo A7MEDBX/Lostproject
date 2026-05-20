@@ -18,7 +18,15 @@ exports.submitVerificationValidator = [
 
     body('id_image_url')
         .notEmpty().withMessage('ID image URL is required')
-        .isURL().withMessage('ID image URL must be a valid URL')
+        .isURL().withMessage('ID image URL must be a valid URL'),
+
+    body('selfie_image_url')
+        .optional()
+        .isURL().withMessage('Selfie image URL must be a valid URL'),
+
+    body('verification_location')
+        .optional()
+        .trim()
 ];
 
 // Approve/Reject verification validator

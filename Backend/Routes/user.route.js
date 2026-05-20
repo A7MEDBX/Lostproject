@@ -1,5 +1,6 @@
 const authController = require('../Controllers/auth.controller');
 const UserController = require('../Controllers/User.controller');
+const response = require('../utils/response.util');
 const { verfyFirebaseToken, verfyFirebaseTokenLite } = require('../Middlewares/auth.middleware');
 const { requireAuthentication } = require('../Middlewares/isVerfied.middleware');
 const { createUserValidator, updateUserValidator } = require('../validators/user.validator');
@@ -31,6 +32,22 @@ Router.use(requireAuthentication);
  */
 Router.get('/me',      
        UserController.getprofile);
+
+/**
+ * @route   POST /api/v1/user/upload-image
+ * @desc    Upload an image (e.g. for profile or selfie)
+ * @access  Private (requires authentication)
+ */
+const { uploadMiddleware, uploadToCloudinary } = require('../Middlewares/multer.middleware');
+Router.post('/upload-image',
+    uploadMiddleware,
+    uploadToCloudinary,
+    (req, res) => {
+        if (!req.body.image_url) {
+            return response.ErrorResponse(res, 'Image upload failed', null, 400);
+        }
+        return response.Success(res, 'Image uploaded successfully', { url: req.body.image_url }, 200);
+    });
 
 /**
  * @route   PUT /api/v1/user/me

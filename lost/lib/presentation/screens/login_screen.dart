@@ -322,11 +322,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (mounted) {
         await context.read<UserProvider>().loadUser();
+        final backendUser = context.read<UserProvider>().backendUser;
+        
+        if (backendUser != null && (backendUser.status == 'suspended' || backendUser.status == 'banned')) {
+          Navigator.pushReplacementNamed(
+            context, 
+            '/moderation-status',
+            arguments: backendUser.status,
+          );
+        } else {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
       }
-
-      if (!mounted) return;
-
-      Navigator.pushReplacementNamed(context, '/home');
     } on Exception catch (e) {
       if (!mounted) return;
 
@@ -370,13 +377,18 @@ class _LoginScreenState extends State<LoginScreen> {
       // Non-fatal: if this fails the user still reaches home.
       if (mounted) {
         await context.read<UserProvider>().loadUser();
-      }
+        final backendUser = context.read<UserProvider>().backendUser;
 
-      if (!mounted) {
-        return;
+        if (backendUser != null && (backendUser.status == 'suspended' || backendUser.status == 'banned')) {
+          Navigator.pushReplacementNamed(
+            context,
+            '/moderation-status',
+            arguments: backendUser.status,
+          );
+        } else {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
       }
-
-      Navigator.pushReplacementNamed(context, '/home');
     } on Exception catch (e) {
       if (!mounted) {
         return;

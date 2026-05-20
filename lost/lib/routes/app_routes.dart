@@ -25,10 +25,12 @@ import '../presentation/screens/kyc_verification_screen.dart';
 import '../presentation/screens/privacy_policy_screen.dart';
 import '../presentation/screens/support_screen.dart';
 import '../presentation/screens/support_request_detail_screen.dart';
+import '../presentation/screens/moderation_status_screen.dart';
 /// App Routes Configuration
 class AppRoutes {
   static const String splash = '/';
   static const String welcome = '/welcome';
+  static const String moderationStatus = '/moderation-status';
   static const String home = '/home';
   static const String search = '/search';
   static const String createPost = '/create-post';
@@ -61,6 +63,12 @@ class AppRoutes {
 
       case welcome:
         return MaterialPageRoute(builder: (_) => const WelcomeScreen());
+
+      case moderationStatus:
+        final status = settings.arguments as String? ?? 'suspended';
+        return MaterialPageRoute(
+          builder: (_) => ModerationStatusScreen(status: status),
+        );
 
       case home:
         return MaterialPageRoute(builder: (_) => const HomeScreen());

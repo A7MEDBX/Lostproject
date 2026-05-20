@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../core/network/api_client.dart';
 import '../../core/constants/api_constants.dart';
@@ -34,6 +36,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   String _selectedGender = 'Male';
   bool _isLoading = false;
+  
+  File? _pickedSelfie;
+  String? _currentSelfieUrl;
+  final _picker = ImagePicker();
 
   @override
   void initState() {
@@ -56,6 +62,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _stateController.text = backendUser?.state ?? '';
     _cityController.text = backendUser?.city ?? '';
     _areaController.text = backendUser?.area ?? '';
+    _currentSelfieUrl = backendUser?.selfieImageUrl;
   }
 
   @override
@@ -73,6 +80,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _cityFocus.dispose();
     _areaFocus.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickSelfie() async {
+    try {
+      final pickedFile = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 70,
+      );
+      if (pickedFile != null) {
+        setState(() {
+          _pickedSelfie = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      AppMessenger.showError('Failed to pick image: $e');
+    }
   }
 
   @override
@@ -196,6 +219,74 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Verification Selfie Section
+                    const Text(
+                      'Verification Selfie',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 12),
+                    Center(
+                      child: Stack(
+                        children: [
+                          Container(
+                            width: 120,
+                            height: 160,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey[300]!),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: _pickedSelfie != null
+                                  ? Image.file(_pickedSelfie!, fit: BoxFit.cover)
+                                  : (_currentSelfieUrl != null && _currentSelfieUrl!.isNotEmpty)
+                                      ? Image.network(_currentSelfieUrl!, fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 40))
+                                      : const Icon(Icons.face, size: 40, color: Colors.grey),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 8,
+                            right: 8,
+                            child: GestureDetector(
+                              onTap: _pickSelfie,
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF0A3D91),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.edit, color: Colors.white, size: 16),
+                              ),
+                            ),
+                          ),
+                          if (_pickedSelfie != null || (_currentSelfieUrl != null && _currentSelfieUrl!.isNotEmpty))
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _pickedSelfie = null;
+                                    _currentSelfieUrl = null;
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.close, color: Colors.white, size: 12),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+
                     // Full Name Field
                     const Text(
                       'Full name',
@@ -217,6 +308,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             vertical: 14,
                           ),
                         ),
+                        validator: (v) => (v == null || v.isEmpty) ? 'Name is required' : null,
                       ),
                     ),
 
@@ -237,6 +329,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       child: TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
+                        enabled: false, // Usually email shouldn't be edited here
                         decoration: const InputDecoration(
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.symmetric(
@@ -263,41 +356,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                       child: Row(
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.only(left: 12, right: 8),
-                            child: Image.network(
-                              'https://flagcdn.com/w40/us.png',
-                              width: 24,
-                              height: 16,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  width: 24,
-                                  height: 16,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[300],
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                  child: const Center(
-                                    child: Text(
-                                      '🌍',
-                                      style: TextStyle(fontSize: 12),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
+                          const Padding(
+                            padding: EdgeInsets.only(left: 12, right: 8),
+                            child: Text('📞', style: TextStyle(fontSize: 16)),
                           ),
                           Expanded(
                             child: TextFormField(
                               controller: _phoneController,
                               keyboardType: TextInputType.phone,
                               decoration: const InputDecoration(
+                                hintText: 'Enter phone number',
                                 border: InputBorder.none,
                                 contentPadding: EdgeInsets.symmetric(
                                   horizontal: 8,
                                   vertical: 14,
                                 ),
                               ),
+                              validator: (v) {
+                                if (v != null && v.isNotEmpty) {
+                                  if (v.length < 8) return 'Invalid phone number';
+                                }
+                                return null;
+                              },
                             ),
                           ),
                         ],
@@ -511,16 +591,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     tokenProvider: AuthService.instance.getIdToken,
                                   );
 
+                                  String? selfieUrl = _currentSelfieUrl;
+
+                                  // Upload selfie if picked
+                                  if (_pickedSelfie != null) {
+                                    final uploadResult = await apiClient.postMultipart(
+                                      '/user/upload-image',
+                                      filePath: _pickedSelfie!.path,
+                                    );
+                                    selfieUrl = uploadResult['data']['url'];
+                                  }
+
                                   // Update backend profile
                                   await apiClient.put(
                                     ApiConstants.userProfileEndpoint,
                                     body: {
                                       'name': _nameController.text.trim(),
-                                      'phone': _phoneController.text.trim(),
+                                      'phone_number': _phoneController.text.trim(),
                                       'country': _countryController.text.trim(),
                                       'state': _stateController.text.trim(),
                                       'city': _cityController.text.trim(),
                                       'area': _areaController.text.trim(),
+                                      'selfie_image_url': selfieUrl,
                                     },
                                   );
 
@@ -541,7 +633,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 } catch (e) {
                                   if (mounted) {
                                     setState(() => _isLoading = false);
-                                    AppMessenger.showError('Failed to save changes. Please try again.');
+                                    AppMessenger.showError('Failed to save changes: $e');
                                   }
                                 }
                               },

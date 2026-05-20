@@ -28,7 +28,10 @@ class PostRepository {
     async getAllActivePosts(limit = 50, offset = 0) {
         try {
             return await Post.findAndCountAll({
-                where: { status: 'active' },
+                where: { 
+                    status: 'active',
+                    moderation_status: 'visible'
+                },
                 order: [['created_at', 'DESC']],
                 limit: limit,
                 offset: offset,
@@ -59,7 +62,7 @@ class PostRepository {
     // Get posts with dynamic filters
     async getFilteredPosts(filters) {
      
-        const { type, country,state, city, area, category, status, userId, limit, offset, latitude, longitude } = filters;
+        const { type, country,state, city, area, category, status, moderation_status, userId, limit, offset, latitude, longitude } = filters;
         
         try {
             // Build WHERE clause dynamically
@@ -67,6 +70,13 @@ class PostRepository {
             
             // Always filter by status (default 'active')
             whereClause.status = status || 'active';
+            
+            // Apply moderation filter (default to visible for safety)
+            if (moderation_status && moderation_status !== 'all') {
+                whereClause.moderation_status = moderation_status;
+            } else if (!moderation_status) {
+                whereClause.moderation_status = 'visible';
+            }
             
             // Add filters only if provided
             if (type) whereClause.post_type = type;
@@ -135,7 +145,8 @@ class PostRepository {
         return await Post.findAndCountAll({
             where: { 
                 post_type: postType,
-                status: 'active'
+                status: 'active',
+                moderation_status: 'visible'
             },
             order: [['created_at', 'DESC']],
             limit: limit,

@@ -198,7 +198,7 @@ class PostService {
      */
     async  getFilteredPosts(filters) {
         try {
-            const { type, country, state, city, area, category, status, userId, limit, offset, latitude, longitude } = filters;
+            const { type, country, state, city, area, category, status, moderation_status, userId, limit, offset, latitude, longitude } = filters;
             
             // Validate type if provided
             if (type && !['lost', 'found'].includes(type)) {
@@ -215,6 +215,14 @@ class PostService {
                     message: 'Invalid status value'
                 };
             }
+
+            // Validate moderation_status if provided
+            if (moderation_status && !['visible', 'hidden', 'removed', 'all'].includes(moderation_status)) {
+                return {
+                    success: false,
+                    message: 'Invalid moderation status value'
+                };
+            }
             
             const result = await PostRepo.getFilteredPosts({
                 type,
@@ -226,6 +234,7 @@ class PostService {
                  longitude,
                 category,
                 status: status || 'active',
+                moderation_status,
                 userId,
                 limit: parseInt(limit) || 50,
                 offset: parseInt(offset) || 0
@@ -425,6 +434,23 @@ class PostService {
                     success: false,
                     message: 'No changes made'
                 };
+            }
+
+            // Sync with Pinecone if visibility or status changed
+            try {
+                if (post.vector_id && (updateData.moderation_status || updateData.status)) {
+                    const metadataUpdate = {};
+                    if (updateData.moderation_status) metadataUpdate.moderation_status = updateData.moderation_status;
+                    if (updateData.status) metadataUpdate.status = updateData.status;
+
+                    await pineconeIndex.update({
+                        id: post.vector_id,
+                        metadata: metadataUpdate
+                    });
+                    console.log(`Updated Pinecone metadata for post ${postId} via admin action`);
+                }
+            } catch (error) {
+                console.error(`Failed to update Pinecone metadata for post ${postId}:`, error);
             }
 
             return {

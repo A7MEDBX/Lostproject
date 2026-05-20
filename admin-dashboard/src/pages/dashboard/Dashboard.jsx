@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Alert,
   Box,
@@ -85,27 +86,20 @@ function StatCard({ title, value, icon, color, delay = 0 }) {
 }
 
 export default function Dashboard() {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [selectedItems, setSelectedItems] = useState(['users', 'posts', 'reports', 'verifications']);
   const theme = useTheme();
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await api.get('/admin/stats');
-        setStats(response.data || response);
-      } catch (err) {
-        setError('Connection failed. Please refresh.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStats();
-  }, []);
+  const { data: stats, isLoading, error: fetchError } = useQuery({
+    queryKey: ['admin-stats'],
+    queryFn: async () => {
+      const response = await api.get('/admin/stats');
+      return response.data;
+    }
+  });
+
+  const error = fetchError ? 'Connection failed. Please refresh.' : null;
 
   const chartData = useMemo(() => [
     { name: 'Mon', val: 40 }, { name: 'Tue', val: 30 }, { name: 'Wed', val: 60 },
@@ -193,7 +187,7 @@ export default function Dashboard() {
     }
   };
 
-  if (loading) return (
+  if (isLoading) return (
     <Box sx={{ display: 'grid', gap: 4, gridTemplateColumns: 'repeat(12, 1fr)' }}>
       <Skeleton variant="rounded" height={400} sx={{ gridColumn: 'span 12', borderRadius: 8 }} />
     </Box>

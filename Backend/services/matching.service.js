@@ -121,6 +121,7 @@ class MatchingService {
             const pineconeFilter = {
                 post_type: oppositeType,
                 status: 'active',
+                moderation_status: 'visible',
                 country: country
             };
 

@@ -23,15 +23,16 @@ class userController {
      async editprofile(req, res){
         try{
             const userId = req.user.id; // Database UUID
-            const { name, phone, country, state, city, area } = req.body; // Data to update
+            const { name, phone_number, country, state, city, area, selfie_image_url } = req.body; // Data to update
             
             const updateResult = await UserService.updateUserProfile(userId, { 
                 name, 
-                phone,
+                phone_number,
                 country,
                 state,
                 city,
-                area
+                area,
+                selfie_image_url
             });
             
             if(!updateResult.success){
@@ -70,9 +71,16 @@ class userController {
     async submitVerification(req, res) {
         try {
             const userId = req.user.id;
-            const { national_id, phone_number, id_image_url } = req.body;
+            const { national_id, phone_number, id_image_url, selfie_image_url, verification_location } = req.body;
 
-            const result = await UserService.submitVerification(userId, national_id, phone_number, id_image_url);
+            const result = await UserService.submitVerification(
+                userId, 
+                national_id, 
+                phone_number, 
+                id_image_url, 
+                selfie_image_url, 
+                verification_location
+            );
             
             if (!result.success) {
                 return response.ErrorResponse(res, result.message, null, 400);

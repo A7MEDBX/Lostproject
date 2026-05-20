@@ -187,6 +187,30 @@ class AdminController {
     }
 
     /**
+     * Get all identity verifications with optional status filter (for history)
+     */
+    async getVerifications(req, res) {
+        try {
+            const limit = parseInt(req.query.limit) || 50;
+            const offset = parseInt(req.query.offset) || 0;
+            const status = req.query.status || 'all';
+
+            const result = await UserService.getVerifications(status, limit, offset);
+            
+            if (!result.success) {
+                return response.ErrorResponse(res, result.message, null, 400);
+            }
+            
+            return response.Success(res, result.message, {
+                verifications: result.data,
+                pagination: result.pagination
+            }, 200);
+        } catch (error) {
+            return response.ErrorResponse(res, 'Server Error', error.message, 500);
+        }
+    }
+
+    /**
      * Get all pending identity verifications
      */
     async getPendingVerifications(req, res) {
@@ -254,7 +278,7 @@ class AdminController {
     async updateUserStatus(req, res) {
         try {
             const { userId } = req.params;
-            const { status } = req.body;
+            const { status, reason } = req.body;
 
             // Validate status
             if (!['active', 'suspended', 'banned'].includes(status)) {
@@ -262,7 +286,11 @@ class AdminController {
             }
 
             const User = require('../models/User.model');
-            await User.update({ status }, { where: { id: userId } });
+            await User.update({ 
+                status,
+                moderation_reason: reason,
+                moderated_at: new Date()
+            }, { where: { id: userId } });
             
             return response.Success(res, 'User status updated successfully', null, 200);
         } catch (error) {

@@ -94,7 +94,14 @@ export default function Posts() {
 
   const fetchPosts = async () => {
     try {
-      const response = await api.get('/post', { params: { limit: 100, offset: 0 } });
+      const response = await api.get('/post', { 
+        params: { 
+          limit: 100, 
+          offset: 0, 
+          moderationStatus: 'all',
+          status: 'all' // Request all lifecycle statuses (active, matched, etc)
+        } 
+      });
       setPosts(response.data || []);
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to load posts.');

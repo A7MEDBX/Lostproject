@@ -33,7 +33,16 @@ class _SplashScreenState extends State<SplashScreen> {
           // Proceed to home even if backend user load fails, gracefully handle in app
         }
         if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
+          final backendUser = context.read<UserProvider>().backendUser;
+          if (backendUser != null && (backendUser.status == 'suspended' || backendUser.status == 'banned')) {
+            Navigator.pushReplacementNamed(
+              context, 
+              '/moderation-status',
+              arguments: backendUser.status,
+            );
+          } else {
+            Navigator.pushReplacementNamed(context, '/home');
+          }
         }
       }
     } else {

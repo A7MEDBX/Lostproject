@@ -162,13 +162,13 @@ class UserService {
     /**
      * Submit verification documents
      */
-    async submitVerification(userId, nationalId, phoneNumber, idImageUrl) {
+    async submitVerification(userId, nationalId, phoneNumber, idImageUrl, selfieImageUrl = null, location = null) {
         try {
             // Validate inputs
             if (!nationalId || !phoneNumber || !idImageUrl) {
                 return {
                     success: false,
-                    message: 'All verification fields are required: national_id, phone_number, id_image_url'
+                    message: 'Required verification fields are missing: national_id, phone_number, id_image_url'
                 };
             }
 
@@ -197,7 +197,7 @@ class UserService {
                 };
             }
 
-            const result = await UserRepo.submitVerification(userId, nationalId, phoneNumber, idImageUrl);
+            const result = await UserRepo.submitVerification(userId, nationalId, phoneNumber, idImageUrl, selfieImageUrl, location);
             
             if (result === 0) {
                 return {
@@ -233,6 +233,29 @@ class UserService {
                 success: true,
                 message: 'Verification status retrieved',
                 data: user
+            };
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    /**
+     * Admin: Get verifications with status filter (history)
+     */
+    async getVerifications(status, limit = 50, offset = 0) {
+        try {
+            const result = await UserRepo.getVerifications(status, limit, offset);
+            
+            return {
+                success: true,
+                message: 'Verifications retrieved',
+                data: result.rows,
+                pagination: {
+                    total: result.count,
+                    limit,
+                    offset,
+                    hasMore: offset + limit < result.count
+                }
             };
         } catch (err) {
             throw err;

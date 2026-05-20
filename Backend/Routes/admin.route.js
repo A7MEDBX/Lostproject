@@ -65,6 +65,14 @@ Router.delete('/posts/:postId', adminController.deletePost);
 Router.get('/verifications/pending', adminController.getPendingVerifications);
 
 /**
+ * @route   GET /api/v1/admin/verifications
+ * @desc    Get all identity verifications with optional status filter
+ * @access  Admin only
+ * @query   ?limit=50&offset=0&status=all|pending|approved|rejected
+ */
+Router.get('/verifications', adminController.getVerifications);
+
+/**
  * @route   POST /api/v1/admin/verifications/:userId/approve
  * @desc    Approve user's identity verification
  * @access  Admin only

@@ -1,7 +1,10 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import '../widgets/custom_rounded_button.dart';
 import '../widgets/custom_text_field.dart';
 import '../../core/constants/api_constants.dart';
@@ -36,6 +39,73 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
     super.dispose();
   }
 
+  Future<Map<String, String>> _captureLocationMetadata() async {
+    try {
+      bool serviceEnabled;
+      LocationPermission permission;
+
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        return _fallbackToIpLocation();
+      }
+
+      permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          return _fallbackToIpLocation();
+        }
+      }
+      
+      if (permission == LocationPermission.deniedForever) {
+        return _fallbackToIpLocation();
+      } 
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.low,
+        timeLimit: const Duration(seconds: 5),
+      );
+
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude, 
+        position.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+        return {
+          'city': place.locality ?? 'Unknown',
+          'country': place.country ?? 'Unknown',
+          'source': 'gps',
+        };
+      }
+    } catch (e) {
+      debugPrint('GPS Capture failed: $e');
+    }
+    return _fallbackToIpLocation();
+  }
+
+  Future<Map<String, String>> _fallbackToIpLocation() async {
+    try {
+      final response = await http.get(Uri.parse('http://ip-api.com/json')).timeout(const Duration(seconds: 3));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {
+          'city': data['city'] ?? 'Unknown',
+          'country': data['country'] ?? 'Unknown',
+          'source': 'ip',
+        };
+      }
+    } catch (e) {
+      debugPrint('IP Capture failed: $e');
+    }
+    return {
+      'city': 'Unknown',
+      'country': 'Unknown',
+      'source': 'device',
+    };
+  }
+
   Future<void> _pickImage(bool isSelfie) async {
     final XFile? pickedFile = await _picker.pickImage(
       source: isSelfie ? ImageSource.camera : ImageSource.gallery,
@@ -57,14 +127,17 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
   Future<void> _submitVerification() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_idImage == null || _selfieImage == null) {
-      AppMessenger.showError('Please upload both ID photo and Selfie photo.');
+    if (_idImage == null) {
+      AppMessenger.showError('National ID photo is required.');
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
+      final locationMetadata = await _captureLocationMetadata();
+      final locationString = jsonEncode(locationMetadata);
+
       final token = await AuthService.instance.getIdToken();
       final uri = Uri.parse(
         '${ApiConstants.baseUrl}${ApiConstants.submitVerificationEndpoint}',
@@ -74,12 +147,16 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
         ..headers['Authorization'] = 'Bearer $token'
         ..fields['national_id'] = _idController.text.trim()
         ..fields['phone'] = _phoneController.text.trim()
+        ..fields['verification_location'] = locationString
         ..files.add(
           await http.MultipartFile.fromPath('id_image', _idImage!.path),
-        )
-        ..files.add(
+        );
+
+      if (_selfieImage != null) {
+        request.files.add(
           await http.MultipartFile.fromPath('selfie_image', _selfieImage!.path),
         );
+      }
 
       final streamed = await request.send();
       final response = await http.Response.fromStream(streamed);
@@ -91,7 +168,6 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
           _isLoading = false;
           _isSuccess = true;
         });
-        // Brief success display then go back
         await Future.delayed(const Duration(seconds: 2));
         if (mounted) {
           Navigator.pop(context);
@@ -207,14 +283,27 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Upload National ID Photo
-                const Text(
-                  'National ID Photo',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
+                // Upload National ID Photo (REQUIRED)
+                Row(
+                  children: [
+                    const Text(
+                      'National ID Photo',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '(Required)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.red.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 _buildImagePickerBox(
@@ -222,18 +311,32 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                   label: 'Upload ID Card',
                   icon: Icons.credit_card,
                   onTap: () => _pickImage(false),
+                  isRequired: true,
                 ),
 
                 const SizedBox(height: 32),
 
-                // Upload Personal Photo
-                const Text(
-                  'Personal Photo (Selfie)',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
+                // Upload Personal Photo (OPTIONAL)
+                Row(
+                  children: [
+                    const Text(
+                      'Personal Photo (Selfie)',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '(Optional)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 _buildImagePickerBox(
@@ -241,13 +344,14 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                   label: 'Take a Selfie',
                   icon: Icons.face_retouching_natural,
                   onTap: () => _pickImage(true),
+                  isRequired: false,
                 ),
 
                 const SizedBox(height: 48),
 
                 // Submit Button
                 CustomRoundedButton(
-                  text: _isLoading ? 'Verifying...' : 'Submit Verification',
+                  text: _isLoading ? 'Submitting...' : 'Submit Verification',
                   onPressed: _isLoading ? () {} : _submitVerification,
                   backgroundColor: const Color(0xFF0A3D91),
                   prefixWidget: _isLoading 
@@ -288,6 +392,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
     required String label,
     required IconData icon,
     required VoidCallback onTap,
+    bool isRequired = false,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -298,7 +403,9 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
           color: const Color(0xFFF5F7FA),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: imageFile != null ? const Color(0xFF0A3D91) : Colors.grey[300]!,
+            color: imageFile != null 
+                ? const Color(0xFF0A3D91) 
+                : (isRequired ? Colors.red.shade200 : Colors.grey[300]!),
             width: 2,
             style: BorderStyle.solid,
           ),
@@ -376,7 +483,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
             ),
             const SizedBox(height: 12),
             const Text(
-              'Your identity has been verified\nsuccessfully.',
+              'Your documents are under review.\nYou will be notified once approved.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,

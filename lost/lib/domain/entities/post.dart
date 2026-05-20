@@ -16,6 +16,7 @@ class Post {
   final String? location;
   final String? ownerName; // Added ownerName
   final String status; // 'active', 'matched', 'resolved', 'closed'
+  final String moderationStatus; // 'visible', 'hidden', 'removed'
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -36,6 +37,7 @@ class Post {
     this.location,
     this.ownerName,
     this.status = 'active',
+    this.moderationStatus = 'visible',
     required this.createdAt,
     this.updatedAt,
   });
@@ -57,6 +59,7 @@ class Post {
     String? location,
     String? ownerName,
     String? status,
+    String? moderationStatus,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -77,6 +80,7 @@ class Post {
       location: location ?? this.location,
       ownerName: ownerName ?? this.ownerName,
       status: status ?? this.status,
+      moderationStatus: moderationStatus ?? this.moderationStatus,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

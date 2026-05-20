@@ -101,11 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.person,
-                      size: 60,
-                      color: Color(0xFF0A3D91),
-                    ),
+                    child: _buildAvatar(backendUser, firebaseUser),
                   ),
                   Positioned(
                     bottom: 0,
@@ -392,6 +388,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAvatar(backendUser, firebaseUser) {
+    final avatarUrl = backendUser?.profileImageUrl ?? 
+                      backendUser?.selfieImageUrl ?? 
+                      firebaseUser?.photoURL;
+
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(65),
+        child: Image.network(
+          avatarUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => const Icon(
+            Icons.person,
+            size: 60,
+            color: Color(0xFF0A3D91),
+          ),
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+                strokeWidth: 2,
+                color: const Color(0xFF0A3D91),
+              ),
+            );
+          },
+        ),
+      );
+    }
+
+    return const Icon(
+      Icons.person,
+      size: 60,
+      color: Color(0xFF0A3D91),
     );
   }
 

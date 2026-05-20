@@ -21,6 +21,7 @@ class PostModel extends Post {
     super.location,
     super.ownerName,
     super.status = 'active',
+    super.moderationStatus = 'visible',
     required super.createdAt,
     super.updatedAt,
   });
@@ -47,6 +48,7 @@ class PostModel extends Post {
               .join(', '),
       ownerName: (json['owner'] as Map<String, dynamic>?)?['name'] as String? ?? 'Unknown User',
       status: json['status'] as String? ?? 'active',
+      moderationStatus: json['moderation_status'] as String? ?? 'visible',
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
@@ -81,6 +83,7 @@ class PostModel extends Post {
       'location': location,
       'ownerName': ownerName,
       'status': status,
+      'moderation_status': moderationStatus,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };
@@ -105,6 +108,7 @@ class PostModel extends Post {
       location: post.location,
       ownerName: post.ownerName,
       status: post.status,
+      moderationStatus: post.moderationStatus,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
     );
