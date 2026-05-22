@@ -1,6 +1,8 @@
 const response = require('../utils/response.util');
 const UserService = require('../services/user.service');
-const PostService = require('../services/post.service');
+const PostService = require('../services/Post.service');
+const RecoveryService = require('../services/recovery.service');
+
 
 class AdminController {
 
@@ -13,6 +15,7 @@ class AdminController {
             const Post = require('../models/post.model');
             const Report = require('../models/Report.model');
             const UserVerification = require('../models/UserVerification.model');
+            const RecoveryRedemption = require('../models/RecoveryRedemption.model');
 
             const [
                 totalUsers,
@@ -20,14 +23,18 @@ class AdminController {
                 activePosts,
                 pendingReports,
                 pendingVerifications,
-                resolvedReports
+                resolvedReports,
+                totalRecoveryPoints,
+                totalRewardsRedeemed
             ] = await Promise.all([
                 User.count(),
                 User.count({ where: { verified: true } }).catch(() => User.count()), // Fallback if `is_verified` or `verified` differs
                 Post.count({ where: { is_found: false, moderation_status: 'visible' } }).catch(() => Post.count()),
                 Report.count({ where: { status: 'pending' } }),
                 User.count({ where: { verification_status: 'pending' } }),
-                Report.count({ where: { status: 'resolved' } })
+                Report.count({ where: { status: 'resolved' } }),
+                User.sum('recovery_points').then(sum => sum || 0).catch(() => 0),
+                RecoveryRedemption.count().catch(() => 0)
             ]);
 
             return response.Success(res, 'Admin stats retrieved successfully', {
@@ -36,7 +43,9 @@ class AdminController {
                 activePosts,
                 pendingReports,
                 pendingVerifications,
-                resolvedReports
+                resolvedReports,
+                totalRecoveryPoints,
+                totalRewardsRedeemed
             }, 200);
         } catch (error) {
             return response.ErrorResponse(res, 'Server Error', error.message, 500);
@@ -318,6 +327,71 @@ class AdminController {
         } catch (error) {
             return response.ErrorResponse(res, 'Server Error', error.message, 500);
         }
-    }}
+    }
+
+    /**
+     * Admin manual point adjustment
+     */
+    async adjustUserPoints(req, res) {
+        try {
+            const { userId } = req.params;
+            const { points, reason } = req.body;
+
+            if (points === undefined || isNaN(parseInt(points))) {
+                return response.ErrorResponse(res, 'Valid points parameter is required', null, 400);
+            }
+
+            const result = await RecoveryService.adminAdjustPoints(userId, parseInt(points), reason);
+            if (!result.success) {
+                return response.ErrorResponse(res, result.message, null, 400);
+            }
+
+            return response.Success(res, result.message, { currentPoints: result.currentPoints }, 200);
+        } catch (error) {
+            return response.ErrorResponse(res, 'Server Error', error.message, 500);
+        }
+    }
+
+    /**
+     * Get full chat message history for admin review
+     */
+    async getChatMessages(req, res) {
+        try {
+            const { chatId } = req.params;
+            const Chat = require('../models/Chat.model');
+            const Message = require('../models/Message.model');
+            const User = require('../models/User.model');
+
+            // 1. Check if chat exists
+            const chat = await Chat.findByPk(chatId, {
+                include: [
+                    { model: User, as: 'firstUser', attributes: ['id', 'name', 'email'] },
+                    { model: User, as: 'secondUser', attributes: ['id', 'name', 'email'] }
+                ]
+            });
+
+            if (!chat) {
+                return response.ErrorResponse(res, 'Chat not found', null, 404);
+            }
+
+            // 2. Fetch all messages in the chat
+            const messages = await Message.findAll({
+                where: { chat_id: chatId },
+                order: [['created_at', 'ASC']],
+                include: [
+                    { model: User, as: 'sender', attributes: ['id', 'name', 'email'] }
+                ]
+            });
+
+            return response.Success(res, 'Chat messages retrieved successfully for admin audit', {
+                chat,
+                messages
+            }, 200);
+        } catch (error) {
+            return response.ErrorResponse(res, 'Server Error', error.message, 500);
+        }
+    }
+}
 
 module.exports = new AdminController();
+

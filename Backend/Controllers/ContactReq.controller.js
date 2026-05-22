@@ -5,14 +5,18 @@ const NotificationService = require('../services/notification.service');
 class ContactReqController {
     async sendContactRequest(req, res) {
         try {
-            const sender_id = req.user.id; // Database UUID, not firebase_uid
-            const { receiver_id, post_id, intro_message } = req.body;
+            const sender_id = req.user.id;
+            // verification_answers is optional — null for old/non-question flow
+            const { receiver_id, post_id, intro_message, verification_answers } = req.body;
 
             if (!receiver_id || !post_id) {
                 return response.ErrorResponse(res, 'receiver_id and post_id are required', null, 400);
             }
 
-            const result = await contactReqService.sendRequest(sender_id, receiver_id, post_id, intro_message);
+            const result = await contactReqService.sendRequest(
+                sender_id, receiver_id, post_id, intro_message,
+                verification_answers || null
+            );
             
             if (!result.success) {
                 return response.ErrorResponse(res, result.message, result.data, 409);

@@ -31,6 +31,8 @@ import {
   FileDownloadRounded as ExportIcon,
   ArchiveRounded as ZipIcon,
   DescriptionRounded as CSVIcon,
+  EmojiEventsRounded as PointsIcon,
+  RedeemRounded as GiftIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -261,7 +263,7 @@ export default function Dashboard() {
         </Box>
 
         {/* Bottom Bento Row */}
-        <Box sx={{ gridColumn: 'span 3' }}>
+        <Box sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 3' } }}>
           <StatCard 
             title="Verified" 
             value={stats?.verifiedUsers || 0} 
@@ -270,7 +272,7 @@ export default function Dashboard() {
             delay={0.3}
           />
         </Box>
-        <Box sx={{ gridColumn: 'span 3' }}>
+        <Box sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 3' } }}>
           <StatCard 
             title="Active Posts" 
             value={stats?.activePosts || 0} 
@@ -279,17 +281,36 @@ export default function Dashboard() {
             delay={0.4}
           />
         </Box>
-        <Box sx={{ gridColumn: 'span 6' }}>
-          <Card sx={{ p: 4, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
+        <Box sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 3' } }}>
+          <StatCard 
+            title="Recovery Points" 
+            value={stats?.totalRecoveryPoints || 0} 
+            icon={<PointsIcon />} 
+            color="#FF9900" 
+            delay={0.5}
+          />
+        </Box>
+        <Box sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 3' } }}>
+          <StatCard 
+            title="Redemptions" 
+            value={stats?.totalRewardsRedeemed || 0} 
+            icon={<GiftIcon />} 
+            color="#146B93" 
+            delay={0.6}
+          />
+        </Box>
+
+        <Box sx={{ gridColumn: 'span 12' }}>
+          <Card sx={{ p: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', flexWrap: 'wrap', gap: 2 }}>
             <Box>
-              <Typography variant="h5" mb={1}>Export Administration Data</Typography>
+              <Typography variant="h5" fontWeight={800} mb={0.5}>Export Administration Data</Typography>
+              <Typography variant="body2" color="text.secondary">Securely download platform backups and audit trails in CSV and ZIP formats.</Typography>
             </Box>
-            {/* Positioned slightly higher (6px offset from center alignment) */}
             <Button 
               variant="contained" 
               startIcon={<ExportIcon />}
               onClick={() => setExportOpen(true)}
-              sx={{ borderRadius: '14px', py: 1.5, px: 3, transform: 'translateY(-6px)' }}
+              sx={{ borderRadius: '14px', py: 1.5, px: 4 }}
             >
               Export Data
             </Button>

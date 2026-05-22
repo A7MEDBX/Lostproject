@@ -110,4 +110,20 @@ Router.patch('/users/:userId/status', adminController.updateUserStatus);
  */
 Router.patch('/posts/:postId/moderation', adminController.updatePostModeration);
 
+/**
+ * @route   POST /api/v1/admin/users/:userId/points/adjust
+ * @desc    Adjust user's recovery points (admin manual override)
+ * @access  Admin only
+ * @body    { points: number, reason?: string }
+ */
+Router.post('/users/:userId/points/adjust', adminController.adjustUserPoints);
+
+/**
+ * @route   GET /api/v1/admin/chats/:chatId/messages
+ * @desc    Get full chat conversation history for admin audit
+ * @access  Admin only
+ */
+Router.get('/chats/:chatId/messages', adminController.getChatMessages);
+
 module.exports = Router;
+

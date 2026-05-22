@@ -11,7 +11,7 @@ class ContactReqService {
      * @param {string} [intro_message] 
      */
     //DONE
-    async sendRequest(sender_id, receiver_id, post_id, intro_message) {
+    async sendRequest(sender_id, receiver_id, post_id, intro_message, verification_answers) {
         try {
             // Check if user is trying to contact themselves
             if (sender_id === receiver_id) {
@@ -31,10 +31,11 @@ class ContactReqService {
                 };
             }
 
-            const [contactRequest, created] = await contactReqRepo.createContactReq(sender_id, receiver_id, post_id, intro_message);
-            
-            // TODO: Send notification to receiver (when notification system ready)
-            // NotificationService.send(receiver_id, 'contact_request_received', {...})
+            const [contactRequest, created] = await contactReqRepo.createContactReq(
+                sender_id, receiver_id, post_id, intro_message,
+                // verification_answers is null for old flow — backwards compatible
+                verification_answers || null
+            );
             
             return {
                 success: true,

@@ -24,6 +24,7 @@ class ChatScreen extends StatefulWidget {
   final String? postImage;
   final String? postStatus;
   final String? postId;
+  final String? userAvatar;
 
   const ChatScreen({
     super.key,
@@ -35,6 +36,7 @@ class ChatScreen extends StatefulWidget {
     this.postImage,
     this.postStatus,
     this.postId,
+    this.userAvatar,
   });
 
   @override
@@ -51,6 +53,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isLoadingMessages = true;
   bool _isSending = false;
   String? _error;
+  String? _otherUserAvatar;
 
   // Data source & Socket
   late final ChatRemoteDataSource _dataSource;
@@ -71,6 +74,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
     _dataSource = ChatRemoteDataSourceImpl(apiClient: apiClient);
     _isUserOnline = widget.isOnline ?? false;
+    _otherUserAvatar = widget.userAvatar;
 
     // Resolve the backend Postgres UUID asynchronously.
     // Do NOT rely on initState-time provider read — UserProvider may not
@@ -183,6 +187,15 @@ class _ChatScreenState extends State<ChatScreen> {
       _error = null;
     });
     try {
+      if (widget.chatId != null) {
+        final metadata = await _dataSource.getChatMetadata(widget.chatId!);
+        if (metadata != null && mounted) {
+          setState(() {
+            _otherUserAvatar = metadata['other_user_avatar'] as String?;
+          });
+        }
+      }
+
       final messages = await _dataSource.getChatMessages(widget.chatId!);
       if (mounted) {
         setState(() {
@@ -340,6 +353,41 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  Widget _buildAvatar(String? imageUrl, {double size = 56, double iconSize = 28, bool isMine = false}) {
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return Container(
+        width: size,
+        height: size,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+        ),
+        child: ClipOval(
+          child: Image.network(
+            imageUrl,
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                color: isMine ? const Color(0xFF0A3D91) : Colors.grey[300],
+                child: Icon(Icons.person, size: iconSize, color: isMine ? Colors.white : Colors.grey[700]),
+              );
+            },
+          ),
+        ),
+      );
+    }
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: isMine ? const Color(0xFF0A3D91) : Colors.grey[300],
+        shape: BoxShape.circle,
+      ),
+      child: Icon(Icons.person, size: iconSize, color: isMine ? Colors.white : Colors.grey[700]),
+    );
+  }
+
   String _formatTime(DateTime dt) {
     final now = DateTime.now();
     final diff = now.difference(dt);
@@ -378,15 +426,7 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 Stack(
                   children: [
-                    Container(
-                      width: 45,
-                      height: 45,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.person, size: 24, color: Colors.grey[700]),
-                    ),
+                    _buildAvatar(_otherUserAvatar, size: 45, iconSize: 24),
                     if (_isUserOnline)
                       Positioned(
                         bottom: 2,
@@ -426,97 +466,41 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ],
             ),
-           
+            actions: [
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, color: Colors.white),
+                onSelected: (value) {
+                  if (value == 'report') {
+                    Navigator.pushNamed(
+                      context,
+                      '/report-problem',
+                      arguments: {
+                        'reportType': 'chat',
+                        'targetId': widget.chatId,
+                        'targetName': widget.userName ?? 'Chat',
+                      },
+                    );
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem<String>(
+                    value: 'report',
+                    child: Row(
+                      children: [
+                        Icon(Icons.report_problem, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Report Chat'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
       body: Column(
         children: [
-          if (widget.postTitle != null && widget.postTitle!.isNotEmpty)
-            InkWell(
-              onTap: () {
-                if (widget.postId != null && widget.postId!.isNotEmpty) {
-                  Navigator.pushNamed(
-                    context,
-                    '/post-detail',
-                    arguments: {
-                      'postId': widget.postId,
-                      'title': widget.postTitle,
-                      'status': widget.postStatus,
-                      'imageUrl': widget.postImage,
-                    },
-                  );
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      offset: const Offset(0, 2),
-                      blurRadius: 4,
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    if (widget.postImage != null && widget.postImage!.isNotEmpty)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: Image.network(
-                          widget.postImage!,
-                          width: 40,
-                          height: 40,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            width: 40,
-                            height: 40,
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.image, size: 20, color: Colors.grey),
-                          ),
-                        ),
-                      )
-                    else
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Icon(Icons.inventory, color: Colors.grey),
-                      ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.postTitle!,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                          ),
-                          if (widget.postStatus != null)
-                            Text(
-                              widget.postStatus!.toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: widget.postStatus == 'resolved' ? Colors.green : const Color(0xFF0A3D91),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
-                  ],
-                ),
-              ),
-            ),
           // Date Badge
           Center(
             child: Container(
@@ -679,13 +663,7 @@ class _ChatScreenState extends State<ChatScreen> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMine)
-            Container(
-              width: 32,
-              height: 32,
-              margin: const EdgeInsets.only(right: 8),
-              decoration: BoxDecoration(color: Colors.grey[300], shape: BoxShape.circle),
-              child: Icon(Icons.person, size: 16, color: Colors.grey[600]),
-            ),
+            _buildAvatar(_otherUserAvatar, size: 32, iconSize: 16),
           Flexible(
             child: Column(
               crossAxisAlignment:
@@ -746,15 +724,12 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           if (isMine)
-            Container(
-              width: 32,
-              height: 32,
-              margin: const EdgeInsets.only(left: 8),
-              decoration: const BoxDecoration(
-                color: Color(0xFF0A3D91),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.person, size: 16, color: Colors.white),
+            Builder(
+              builder: (context) {
+                final myUser = context.read<UserProvider>().backendUser;
+                final myAvatar = myUser?.profileImageUrl ?? myUser?.selfieImageUrl;
+                return _buildAvatar(myAvatar, size: 32, iconSize: 16, isMine: true);
+              },
             ),
         ],
       ),

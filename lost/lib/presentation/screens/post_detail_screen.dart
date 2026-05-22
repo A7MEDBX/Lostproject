@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:share_plus/share_plus.dart';
 import '../../core/network/api_client.dart';
 import '../../core/services/auth_service.dart';
@@ -97,7 +98,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final String description = _livePost?.description ?? widget.postData['description'] ?? 'No description available';
     final String location = _livePost?.location ?? widget.postData['location'] ?? 'Location Unknown';
     final String distance = widget.postData['distance'] ?? '';
-    final String imageUrl = _livePost?.imageUrl ?? widget.postData['imageUrl'] ?? '';
+    
+    // Fix: Fallback to widget.postData if _livePost.imageUrl is empty (e.g. from protected DTO)
+    final String imageUrl = (_livePost?.imageUrl != null && _livePost!.imageUrl.isNotEmpty)
+        ? _livePost!.imageUrl
+        : (widget.postData['imageUrl'] ?? '');
+        
     final String status = _livePost?.status ?? widget.postData['status'] ?? 'Lost';
     final int matchPercentage = widget.postData['matchPercentage'] ?? 0;
     final double? latitude = _livePost?.latitude ?? widget.postData['latitude'];
@@ -110,6 +116,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       debugPrint('PostDetailScreen Warning: currentPostId is empty in build()');
       debugPrint('widget.postData keys: ${widget.postData.keys.toList()}');
     }
+
+    final String currentUserId = AuthService.instance.currentUser?.uid ?? '';
+    final bool isOwner = userId == currentUserId;
+    final bool shouldBlur = !isOwner;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -189,20 +199,71 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   ? Stack(
                       fit: StackFit.expand,
                       children: [
-                        Image.network(
-                          imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: Colors.grey[300],
-                              child: const Icon(
-                                Icons.image,
-                                size: 100,
-                                color: Colors.grey,
+                        shouldBlur
+                            ? Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  ImageFiltered(
+                                    imageFilter: ImageFilter.blur(
+                                        sigmaX: 10.0, sigmaY: 10.0),
+                                    child: Image.network(
+                                      imageUrl,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                    ),
+                                  ),
+                                  Container(
+                                    color: Colors.black.withOpacity(0.2),
+                                  ),
+                                  Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.visibility_off,
+                                          color: Colors.white, size: 48),
+                                      const SizedBox(height: 12),
+                                      const Text(
+                                        'Protected Content',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 16, vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.5),
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                        ),
+                                        child: const Text(
+                                          'Request contact to unlock full photo',
+                                          style: TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 13),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              )
+                            : Image.network(
+                                imageUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: Colors.grey[300],
+                                    child: const Icon(
+                                      Icons.image,
+                                      size: 100,
+                                      color: Colors.grey,
+                                    ),
+                                  );
+                                },
                               ),
-                            );
-                          },
-                        ),
                         Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(

@@ -549,6 +549,37 @@ class _MyPostsScreenState extends State<MyPostsScreen>
                   ),
                 ),
                 const SizedBox(width: 8),
+
+                // ── Verification Questions Button ──────────────────────────
+                Tooltip(
+                  message: 'Set Verification Questions',
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/post-questions',
+                        arguments: {
+                          'postId': post.id,
+                          'postTitle': post.title,
+                        },
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF0A3D91),
+                      side: const BorderSide(color: Color(0xFF0A3D91)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                    ),
+                    child: const Icon(Icons.quiz_rounded, size: 18),
+                  ),
+                ),
+                const SizedBox(width: 8),
+
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: isUpdating ? null : () => _toggleResolved(post.id, post.status),
@@ -569,6 +600,7 @@ class _MyPostsScreenState extends State<MyPostsScreen>
                 ),
               ],
             ),
+
         ],
       ),
     );

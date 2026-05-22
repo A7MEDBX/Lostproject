@@ -43,6 +43,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   String _selectedType = 'Lost';
   File? _selectedImage;
   bool _isLoading = false;
+  int _descriptionLength = 0; // Live character counter for 140-char limit
 
   // Backend data source
   late final AIMatchingRemoteDataSource _dataSource;
@@ -611,19 +612,62 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Description Field
+                // ── Description Field ─────────────────────────────────────
                 _buildLabel('Description'),
+                const SizedBox(height: 4),
+                // Safety guidance
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF8E1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFFFCC02).withOpacity(0.4)),
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        Icon(Icons.shield_outlined, size: 13, color: Color(0xFF856404)),
+                        SizedBox(width: 4),
+                        Text('Privacy tip: Keep it general', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF856404))),
+                      ]),
+                      SizedBox(height: 4),
+                      Text('✅  "Lost black wallet near Nasr City"', style: TextStyle(fontSize: 11, color: Color(0xFF856404))),
+                      Text('❌  "Wallet has Banque Misr card inside"', style: TextStyle(fontSize: 11, color: Color(0xFF856404))),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 8),
-                _buildTextField(
-                  controller: _descriptionController,
-                  hint: 'Describe the item (color, brand, unique features...)',
-                  maxLines: 4,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a description';
-                    }
-                    return null;
-                  },
+                Stack(
+                  children: [
+                    _buildTextField(
+                      controller: _descriptionController,
+                      hint: 'Brief, general description...',
+                      maxLines: 4,
+                      maxLength: 140,
+                      onChanged: (v) => setState(() => _descriptionLength = v.length),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) return 'Please enter a description';
+                        if (value.length > 140) return 'Max 140 characters';
+                        return null;
+                      },
+                    ),
+                    Positioned(
+                      right: 10, bottom: 10,
+                      child: Text(
+                        '$_descriptionLength / 140',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: _descriptionLength > 130
+                              ? Colors.red
+                              : _descriptionLength > 100
+                                  ? Colors.orange
+                                  : Colors.grey.shade400,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 20),
 
@@ -808,18 +852,23 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     required TextEditingController controller,
     required String hint,
     int maxLines = 1,
+    int? maxLength,
     IconData? prefixIcon,
     IconData? suffixIcon,
     String? Function(String?)? validator,
+    void Function(String)? onChanged,
   }) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
+      maxLength: maxLength,
+      onChanged: onChanged,
       style: const TextStyle(color: FinderColors.textPrimary, fontSize: 16),
       validator: validator,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: FinderColors.textSecondary),
+        counterText: '', // Hide default counter — we render our own
         filled: true,
         fillColor: Colors.white,
         prefixIcon: prefixIcon != null

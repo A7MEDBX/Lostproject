@@ -8,6 +8,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Grid,
   IconButton,
   MenuItem,
   Stack,
@@ -44,7 +45,11 @@ const initialForm = {
   country: '',
   state: '',
   city: '',
+  area: '',
+  latitude: '',
+  longitude: '',
   description: '',
+  image_url: '',
 };
 
 function StatusPill({ value }) {
@@ -148,7 +153,11 @@ export default function Posts() {
       country: post.country || '',
       state: post.state || '',
       city: post.city || '',
+      area: post.area || '',
+      latitude: post.latitude || '',
+      longitude: post.longitude || '',
       description: post.description || '',
+      image_url: post.image_url || '',
     });
   };
 
@@ -314,37 +323,88 @@ export default function Posts() {
           }
         }}
       >
-        <DialogTitle sx={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '-0.02em' }}>
-          Moderate Publication
+        <DialogTitle sx={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '-0.02em', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>Moderate Publication</span>
+          {selectedPost && (
+             <Typography variant="caption" color="text.secondary">
+               ID: {selectedPost.id}
+             </Typography>
+          )}
         </DialogTitle>
         <DialogContent>
-          <Stack spacing={3} mt={2}>
-            <TextField label="Post Title" value={form.title} onChange={(event) => updateForm('title', event.target.value)} fullWidth />
-            <Stack direction="row" spacing={2}>
-              <TextField select label="Listing Type" value={form.post_type} onChange={(event) => updateForm('post_type', event.target.value)} fullWidth>
-                <MenuItem value="lost">Lost Item</MenuItem>
-                <MenuItem value="found">Found Item</MenuItem>
-              </TextField>
-              <TextField select label="Listing Status" value={form.status} onChange={(event) => updateForm('status', event.target.value)} fullWidth>
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="matched">Matched</MenuItem>
-                <MenuItem value="closed">Closed</MenuItem>
-                <MenuItem value="resolved">Resolved</MenuItem>
-              </TextField>
-              <TextField select label="Moderation Visibility" value={form.moderation_status} onChange={(event) => updateForm('moderation_status', event.target.value)} fullWidth>
-                <MenuItem value="visible">Visible</MenuItem>
-                <MenuItem value="hidden">Hidden</MenuItem>
-                <MenuItem value="removed">Removed (Soft Delete)</MenuItem>
-              </TextField>
-            </Stack>
-            <TextField label="Category" value={form.category} onChange={(event) => updateForm('category', event.target.value)} fullWidth />
-            <Stack direction="row" spacing={2}>
-              <TextField label="Country" value={form.country} onChange={(event) => updateForm('country', event.target.value)} fullWidth />
-              <TextField label="State/Region" value={form.state} onChange={(event) => updateForm('state', event.target.value)} fullWidth />
-              <TextField label="City" value={form.city} onChange={(event) => updateForm('city', event.target.value)} fullWidth />
-            </Stack>
-            <TextField label="Detailed Description" value={form.description} onChange={(event) => updateForm('description', event.target.value)} fullWidth multiline minRows={4} />
-          </Stack>
+          <Grid container spacing={4} mt={1}>
+            <Grid item xs={12} md={5}>
+              <Box sx={{ position: 'sticky', top: 0 }}>
+                <Typography variant="subtitle2" fontWeight={700} gutterBottom>Publication Media</Typography>
+                <Card variant="outlined" sx={{ borderRadius: '16px', overflow: 'hidden', mb: 2 }}>
+                  <img 
+                    src={form.image_url} 
+                    alt={form.title} 
+                    style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '400px', objectFit: 'contain' }}
+                  />
+                </Card>
+                <TextField 
+                  label="Image URL" 
+                  value={form.image_url} 
+                  onChange={(event) => updateForm('image_url', event.target.value)} 
+                  fullWidth 
+                  size="small"
+                />
+                
+                <Box sx={{ mt: 3, p: 2, bgcolor: alpha(theme.palette.primary.main, 0.05), borderRadius: '16px' }}>
+                  <Typography variant="subtitle2" fontWeight={700} gutterBottom color="primary">Ownership Details</Typography>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Avatar sx={{ bgcolor: 'primary.main' }}>{selectedPost?.owner?.name?.[0] || 'U'}</Avatar>
+                    <Box>
+                      <Typography variant="body2" fontWeight={700}>{selectedPost?.owner?.name || 'Anonymous User'}</Typography>
+                      <Typography variant="caption" color="text.secondary">{selectedPost?.owner?.email || 'No email provided'}</Typography>
+                    </Box>
+                  </Stack>
+                </Box>
+              </Box>
+            </Grid>
+            
+            <Grid item xs={12} md={7}>
+              <Stack spacing={3}>
+                <TextField label="Post Title" value={form.title} onChange={(event) => updateForm('title', event.target.value)} fullWidth />
+                <Stack direction="row" spacing={2}>
+                  <TextField select label="Listing Type" value={form.post_type} onChange={(event) => updateForm('post_type', event.target.value)} fullWidth>
+                    <MenuItem value="lost">Lost Item</MenuItem>
+                    <MenuItem value="found">Found Item</MenuItem>
+                  </TextField>
+                  <TextField select label="Listing Status" value={form.status} onChange={(event) => updateForm('status', event.target.value)} fullWidth>
+                    <MenuItem value="active">Active</MenuItem>
+                    <MenuItem value="matched">Matched</MenuItem>
+                    <MenuItem value="closed">Closed</MenuItem>
+                    <MenuItem value="resolved">Resolved</MenuItem>
+                  </TextField>
+                </Stack>
+                
+                <TextField select label="Moderation Visibility" value={form.moderation_status} onChange={(event) => updateForm('moderation_status', event.target.value)} fullWidth>
+                  <MenuItem value="visible">Visible</MenuItem>
+                  <MenuItem value="hidden">Hidden</MenuItem>
+                  <MenuItem value="removed">Removed (Soft Delete)</MenuItem>
+                </TextField>
+
+                <TextField label="Category" value={form.category} onChange={(event) => updateForm('category', event.target.value)} fullWidth />
+                
+                <Typography variant="subtitle2" fontWeight={700}>Geographic Metadata</Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}><TextField label="Country" value={form.country} onChange={(event) => updateForm('country', event.target.value)} fullWidth /></Grid>
+                  <Grid item xs={6}><TextField label="State/Region" value={form.state} onChange={(event) => updateForm('state', event.target.value)} fullWidth /></Grid>
+                  <Grid item xs={6}><TextField label="City" value={form.city} onChange={(event) => updateForm('city', event.target.value)} fullWidth /></Grid>
+                  <Grid item xs={6}><TextField label="Specific Area" value={form.area} onChange={(event) => updateForm('area', event.target.value)} fullWidth /></Grid>
+                </Grid>
+
+                <Stack direction="row" spacing={2}>
+                  <TextField label="Latitude" value={form.latitude} onChange={(event) => updateForm('latitude', event.target.value)} fullWidth />
+                  <TextField label="Longitude" value={form.longitude} onChange={(event) => updateForm('longitude', event.target.value)} fullWidth />
+                </Stack>
+
+                <TextField label="Detailed Description" value={form.description} onChange={(event) => updateForm('description', event.target.value)} fullWidth multiline minRows={4} />
+              </Stack>
+            </Grid>
+          </Grid>
         </DialogContent>
         <DialogActions sx={{ px: 4, pb: 4, pt: 2 }}>
           <Button onClick={() => setSelectedPost(null)} sx={{ color: 'text.secondary' }}>Discard Changes</Button>

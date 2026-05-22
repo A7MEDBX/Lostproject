@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:ui';
 import '../../core/constants/finder_colors.dart';
 import '../../core/network/api_client.dart';
 import '../../data/datasources/ai_matching_remote_data_source.dart';
@@ -42,6 +43,74 @@ class MatchResult {
     this.latitude,
     this.longitude,
   });
+}
+
+class BlurredProtectedImage extends StatelessWidget {
+  final String imageUrl;
+  final double height;
+  final double blurLevel;
+
+  const BlurredProtectedImage({
+    super.key,
+    required this.imageUrl,
+    this.height = 200,
+    this.blurLevel = 8.0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        ImageFiltered(
+          imageFilter: ImageFilter.blur(sigmaX: blurLevel, sigmaY: blurLevel),
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
+            height: height,
+            width: double.infinity,
+            errorBuilder: (context, error, stackTrace) => const Icon(
+              Icons.image,
+              size: 60,
+              color: Color(0xFF9dabb9),
+            ),
+          ),
+        ),
+        Container(
+          height: height,
+          width: double.infinity,
+          color: Colors.black.withOpacity(0.2),
+        ),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.visibility_off, color: Colors.white, size: 32),
+            const SizedBox(height: 8),
+            const Text(
+              'Protected View',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                'Contact owner to unlock',
+                style: TextStyle(color: Colors.white70, fontSize: 11),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 }
 
 class AIMatchingResultsScreen extends StatefulWidget {
@@ -599,14 +668,9 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                   height: 200,
                   width: double.infinity,
                   color: FinderColors.lightBrown,
-                  child: Image.network(
-                    result.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.image,
-                      size: 60,
-                      color: Color(0xFF9dabb9),
-                    ),
+                  child: BlurredProtectedImage(
+                    imageUrl: result.imageUrl,
+                    height: 200,
                   ),
                 ),
               ),
@@ -828,14 +892,9 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
                   height: 180,
                   width: double.infinity,
                   color: FinderColors.lightBrown,
-                  child: Image.network(
-                    result.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.image,
-                      size: 60,
-                      color: Color(0xFF9dabb9),
-                    ),
+                  child: BlurredProtectedImage(
+                    imageUrl: result.imageUrl,
+                    height: 180,
                   ),
                 ),
               ),
@@ -1029,11 +1088,10 @@ class _AIMatchingResultsScreenState extends State<AIMatchingResultsScreen>
               width: 96,
               height: 96,
               color: FinderColors.lightBrown,
-              child: Image.network(
-                result.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    const Icon(Icons.image, size: 40, color: Color(0xFF9dabb9)),
+              child: BlurredProtectedImage(
+                imageUrl: result.imageUrl,
+                height: 96,
+                blurLevel: 5.0,
               ),
             ),
           ),

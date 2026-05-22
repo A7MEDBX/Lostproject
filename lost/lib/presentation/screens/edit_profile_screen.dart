@@ -44,25 +44,43 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    // Pre-fill from backend user if available, fall back to Firebase.
-    final backendUser =
-        context.read<UserProvider>().backendUser;
     final firebaseUser = AuthService.instance.currentUser;
 
-    _nameController = TextEditingController(
-      text: backendUser?.name ?? firebaseUser?.displayName ?? '',
-    );
-    _emailController = TextEditingController(
-      text: backendUser?.email ?? firebaseUser?.email ?? '',
-    );
-    _phoneController = TextEditingController(
-      text: backendUser?.phoneNumber ?? '',
-    );
-    _countryController.text = backendUser?.country ?? '';
-    _stateController.text = backendUser?.state ?? '';
-    _cityController.text = backendUser?.city ?? '';
-    _areaController.text = backendUser?.area ?? '';
-    _currentSelfieUrl = backendUser?.selfieImageUrl;
+    _nameController = TextEditingController(text: firebaseUser?.displayName ?? '');
+    _emailController = TextEditingController(text: firebaseUser?.email ?? '');
+    _phoneController = TextEditingController();
+
+    // Populate instantly from cache if available to avoid any delay
+    final cachedUser = context.read<UserProvider>().backendUser;
+    if (cachedUser != null) {
+      _nameController.text = cachedUser.name;
+      _emailController.text = cachedUser.email;
+      _phoneController.text = cachedUser.phoneNumber ?? '';
+      _countryController.text = cachedUser.country ?? '';
+      _stateController.text = cachedUser.state ?? '';
+      _cityController.text = cachedUser.city ?? '';
+      _areaController.text = cachedUser.area ?? '';
+      _currentSelfieUrl = cachedUser.selfieImageUrl;
+    }
+
+    // Safely load fresh user details from backend in background to populate immediately
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final provider = context.read<UserProvider>();
+      await provider.loadUser();
+      final freshUser = provider.backendUser;
+      if (freshUser != null && mounted) {
+        setState(() {
+          _nameController.text = freshUser.name;
+          _emailController.text = freshUser.email;
+          _phoneController.text = freshUser.phoneNumber ?? '';
+          _countryController.text = freshUser.country ?? '';
+          _stateController.text = freshUser.state ?? '';
+          _cityController.text = freshUser.city ?? '';
+          _areaController.text = freshUser.area ?? '';
+          _currentSelfieUrl = freshUser.selfieImageUrl;
+        });
+      }
+    });
   }
 
   @override

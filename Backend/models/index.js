@@ -82,6 +82,20 @@ Report.belongsTo(Chat, { foreignKey: 'reported_chat_id', as: 'reportedChat' });
 // ========== ADMIN RELATIONSHIPS ==========
 AdminAction.belongsTo(User, { foreignKey: 'admin_id', as: 'admin' });
 
+// ========== RECOVERY POINTS RELATIONSHIPS ==========
+const RecoveryPointTransaction = require('./RecoveryPointTransaction.model');
+const RecoveryRedemption = require('./RecoveryRedemption.model');
+
+User.hasMany(RecoveryPointTransaction, { foreignKey: 'user_id', as: 'pointTransactions', onDelete: 'CASCADE' });
+RecoveryPointTransaction.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+Post.hasMany(RecoveryPointTransaction, { foreignKey: 'post_id', as: 'pointTransactions', onDelete: 'SET NULL' });
+RecoveryPointTransaction.belongsTo(Post, { foreignKey: 'post_id', as: 'associatedPost' });
+
+
+User.hasMany(RecoveryRedemption, { foreignKey: 'user_id', as: 'redemptions', onDelete: 'CASCADE' });
+RecoveryRedemption.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
 // Export all models
 module.exports = {
     User,
@@ -93,5 +107,7 @@ module.exports = {
     Notification,
     Report,
     AdminAction,
-    UserVerification
-};
+    UserVerification,
+    RecoveryPointTransaction,
+    RecoveryRedemption
+};

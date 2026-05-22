@@ -43,6 +43,14 @@ const ContactRequest = sequelize.define('contact_requests', {
     intro_message: {
         type: DataTypes.STRING(255),
         allowNull: true
+    },
+    // Claimant's answers to the owner's verification questions.
+    // Stored as: [{ questionId: number, answer: string }]
+    // NULL = old request, or post had no verification questions set.
+    verification_answers: {
+        type: DataTypes.JSONB,
+        allowNull: true,
+        defaultValue: null
     }
 }, {
     tableName: 'contact_requests',

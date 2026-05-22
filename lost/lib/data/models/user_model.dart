@@ -24,10 +24,13 @@ class UserModel extends User {
     super.idImageUrl,
     super.verificationLocation,
     super.verificationNotes,
+    super.bio,
+    super.recoveryPoints = 0,
     super.verificationSubmittedAt,
     super.verificationReviewedAt,
     required super.createdAt,
   });
+
 
   /// Parses the JSON object returned by the backend /user/me endpoint.
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -53,6 +56,8 @@ class UserModel extends User {
       idImageUrl: json['id_image_url'] as String?,
       verificationLocation: json['verification_location'] as String?,
       verificationNotes: json['verification_notes'] as String?,
+      bio: json['bio'] as String?,
+      recoveryPoints: (json['recovery_points'] as num?)?.toInt() ?? 0,
       verificationSubmittedAt:
           json['verification_submitted_at'] != null
               ? DateTime.tryParse(
@@ -92,8 +97,11 @@ class UserModel extends User {
       'id_image_url': idImageUrl,
       'verification_location': verificationLocation,
       'verification_notes': verificationNotes,
+      'bio': bio,
+      'recovery_points': recoveryPoints,
       'verification_submitted_at':
           verificationSubmittedAt?.toIso8601String(),
+
       'verification_reviewed_at': verificationReviewedAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
     };
@@ -122,9 +130,12 @@ class UserModel extends User {
       idImageUrl: user.idImageUrl,
       verificationLocation: user.verificationLocation,
       verificationNotes: user.verificationNotes,
+      bio: user.bio,
+      recoveryPoints: user.recoveryPoints,
       verificationSubmittedAt: user.verificationSubmittedAt,
       verificationReviewedAt: user.verificationReviewedAt,
       createdAt: user.createdAt,
     );
   }
 }
+

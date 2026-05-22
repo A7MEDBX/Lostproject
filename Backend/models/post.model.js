@@ -75,6 +75,15 @@ const Post = sequelize.define('posts', {
         type: DataTypes.ENUM('visible', 'hidden', 'removed'),
         defaultValue: 'visible',
         allowNull: false
+    },
+    // Verification questions set by the post owner for non-matched claimants.
+    // Stored as: [{ id: number, question: string }]
+    // NULL = no questions configured (old posts + new posts without questions)
+    // NEVER exposed in public feed DTOs.
+    verification_questions: {
+        type: DataTypes.JSONB,
+        allowNull: true,
+        defaultValue: null
     }
 }, {
     tableName: 'posts',

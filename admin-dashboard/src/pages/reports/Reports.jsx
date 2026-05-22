@@ -78,6 +78,45 @@ export default function Reports() {
   const [error, setError] = useState('');
   const theme = useTheme();
 
+  const [inspectingChatId, setInspectingChatId] = useState(null);
+  const [chatInspectionData, setChatInspectionData] = useState(null);
+  const [loadingInspection, setLoadingInspection] = useState(false);
+  const [inspectionError, setInspectionError] = useState('');
+
+  const inspectChat = async (chatId) => {
+    console.log("🔍 [inspectChat] Triggered for chatId:", chatId);
+    setInspectingChatId(chatId);
+    setLoadingInspection(true);
+    setInspectionError('');
+    setChatInspectionData(null);
+    try {
+      const response = await api.get(`/admin/chats/${chatId}/messages`);
+      console.log("🔍 [inspectChat] Raw API Response:", response);
+      
+      // Handle either { success, message, data: { chat, messages } } or direct { chat, messages }
+      let targetData = null;
+      if (response) {
+        if (response.chat && response.messages) {
+          targetData = response;
+        } else if (response.data && response.data.chat && response.data.messages) {
+          targetData = response.data;
+        } else if (response.data) {
+          targetData = response.data;
+        } else {
+          targetData = response;
+        }
+      }
+      
+      console.log("🔍 [inspectChat] Resolved inspection data:", targetData);
+      setChatInspectionData(targetData || null);
+    } catch (err) {
+      console.error("❌ [inspectChat] Error:", err);
+      setInspectionError(err.response?.data?.message || err.message || 'Failed to retrieve chat logs.');
+    } finally {
+      setLoadingInspection(false);
+    }
+  };
+
   const fetchReports = async () => {
     try {
       const response = await api.get('/report/all', { params: { limit: 100, offset: 0 } });
@@ -96,9 +135,11 @@ export default function Reports() {
   const filteredReports = useMemo(() => {
     return reports.filter(report => {
       const target = report.reportedUser?.email || report.reportedPost?.title || '';
-      const matchesSearch = report.reason?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      const reasonStr = report.reason || '';
+      const typeStr = report.reportType || '';
+      const matchesSearch = reasonStr.toLowerCase().includes(searchQuery.toLowerCase()) || 
                            target.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           report.reportType?.toLowerCase().includes(searchQuery.toLowerCase());
+                           typeStr.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === 'all' || report.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -240,7 +281,19 @@ export default function Reports() {
                       <Typography variant="body2" fontWeight={600}>{report.reporter?.email || 'ID: ' + report.reporter_id}</Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 200 }}>{target}</Typography>
+                      {report.reportType === 'chat' && report.reported_chat_id ? (
+                        <Button 
+                          size="small" 
+                          variant="outlined" 
+                          color="error" 
+                          onClick={() => inspectChat(report.reported_chat_id)}
+                          sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 700 }}
+                        >
+                          Inspect Chat ({report.reported_chat_id.substring(0, 8)}...)
+                        </Button>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 200 }}>{target}</Typography>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" sx={{ opacity: 0.8 }}>{report.reason}</Typography>
@@ -292,6 +345,120 @@ export default function Reports() {
           <Button onClick={() => setSelectedReport(null)} sx={{ color: 'text.secondary' }}>Cancel</Button>
           <Button onClick={saveReport} variant="contained" disabled={saving} sx={{ borderRadius: '12px', px: 4 }}>
             {saving ? 'Processing...' : 'Confirm Resolution'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Secure Conversation History Inspector */}
+      <Dialog
+        open={Boolean(inspectingChatId)}
+        onClose={() => setInspectingChatId(null)}
+        fullWidth
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            borderRadius: '24px',
+            bgcolor: alpha(theme.palette.background.paper, 0.95),
+            backdropFilter: 'blur(20px)',
+            border: `1px solid ${theme.palette.divider}`,
+            maxHeight: '85vh',
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '-0.02em', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <ReportIcon color="error" />
+            <Typography variant="h5" fontWeight={850} letterSpacing="-0.04em">Secure Chat Audit Logs</Typography>
+          </Stack>
+          <Button onClick={() => setInspectingChatId(null)} sx={{ color: 'text.secondary', fontWeight: 800 }}>Close</Button>
+        </DialogTitle>
+        <DialogContent sx={{ p: 4, display: 'flex', flexDirection: 'column', minHeight: '350px' }}>
+          {loadingInspection && (
+            <Box sx={{ py: 8, textAlign: 'center' }}>
+              <LinearProgress sx={{ mb: 2, borderRadius: 2 }} />
+              <Typography variant="body2" color="text.secondary">Accessing secure conversation vault...</Typography>
+            </Box>
+          )}
+          
+          {inspectionError && (
+            <Alert severity="error" sx={{ borderRadius: 3, mb: 2 }}>{inspectionError}</Alert>
+          )}
+
+          {!loadingInspection && chatInspectionData && (
+            <Stack spacing={3}>
+              {/* Chat metadata card */}
+              <Card variant="outlined" sx={{ p: 2.5, borderRadius: '16px', bgcolor: alpha(theme.palette.text.primary, 0.02) }}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={2}>
+                  <Box>
+                    <Typography variant="caption" fontWeight={800} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Participant 1</Typography>
+                    <Typography variant="body2" fontWeight={700}>{chatInspectionData.chat?.firstUser?.name || 'Unknown'}</Typography>
+                    <Typography variant="caption" color="text.secondary" display="block">{chatInspectionData.chat?.firstUser?.email || 'N/A'}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" fontWeight={800} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Participant 2</Typography>
+                    <Typography variant="body2" fontWeight={700}>{chatInspectionData.chat?.secondUser?.name || 'Unknown'}</Typography>
+                    <Typography variant="caption" color="text.secondary" display="block">{chatInspectionData.chat?.secondUser?.email || 'N/A'}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" fontWeight={800} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Chat Reference ID</Typography>
+                    <Typography variant="body2" fontWeight={700} color="primary" sx={{ wordBreak: 'break-all' }}>{chatInspectionData.chat?.id}</Typography>
+                  </Box>
+                </Stack>
+              </Card>
+
+              {/* Chat transcript list */}
+              <Box sx={{ 
+                maxHeight: '400px', 
+                overflowY: 'auto', 
+                p: 2.5, 
+                borderRadius: '16px', 
+                border: `1px solid ${theme.palette.divider}`,
+                bgcolor: alpha(theme.palette.background.default, 0.5),
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2
+              }}>
+                {chatInspectionData.messages?.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', textAlign: 'center', py: 4 }}>
+                    No messages recorded in this chat room.
+                  </Typography>
+                ) : (
+                  chatInspectionData.messages?.map((msg) => {
+                    const isFirstUser = msg.sender_id === chatInspectionData.chat?.user_1;
+                    return (
+                      <Box 
+                        key={msg.id}
+                        sx={{
+                          alignSelf: isFirstUser ? 'flex-start' : 'flex-end',
+                          maxWidth: '75%',
+                          p: 2,
+                          borderRadius: isFirstUser ? '16px 16px 16px 4px' : '16px 16px 4px 16px',
+                          bgcolor: isFirstUser ? alpha(theme.palette.primary.main, 0.06) : alpha(theme.palette.secondary.main, 0.06),
+                          border: `1px solid ${isFirstUser ? alpha(theme.palette.primary.main, 0.12) : alpha(theme.palette.secondary.main, 0.12)}`,
+                        }}
+                      >
+                        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.5 }}>
+                          <Typography variant="caption" fontWeight={800} color={isFirstUser ? 'primary.main' : 'secondary.main'}>
+                            {msg.sender?.name || 'Unknown'} ({msg.sender?.email})
+                          </Typography>
+                          <Typography variant="caption" sx={{ opacity: 0.5, fontSize: '0.65rem' }}>
+                            {new Date(msg.created_at || msg.timestamp).toLocaleString()}
+                          </Typography>
+                        </Stack>
+                        <Typography variant="body2" sx={{ wordBreak: 'break-word', fontWeight: 500, color: theme.palette.text.primary }}>
+                          {msg.content}
+                        </Typography>
+                      </Box>
+                    );
+                  })
+                )}
+              </Box>
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 4, pb: 4, pt: 2 }}>
+          <Button onClick={() => setInspectingChatId(null)} variant="contained" sx={{ borderRadius: '12px', px: 4 }}>
+            Done Auditing
           </Button>
         </DialogActions>
       </Dialog>

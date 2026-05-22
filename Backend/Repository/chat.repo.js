@@ -44,12 +44,12 @@ class ChatRepo {
                     {
                         model: User,
                         as: 'firstUser',
-                        attributes: ['id', 'name', 'email']
+                        attributes: ['id', 'name', 'email', 'profile_image_url', 'selfie_image_url']
                     },
                     {
                         model: User,
                         as: 'secondUser',
-                        attributes: ['id', 'name', 'email']
+                        attributes: ['id', 'name', 'email', 'profile_image_url', 'selfie_image_url']
                     },
                     {
                         model: require('../models/post.model'),
@@ -99,12 +99,12 @@ class ChatRepo {
                     {
                         model: User,
                         as: 'firstUser',
-                        attributes: ['id', 'name', 'email']
+                        attributes: ['id', 'name', 'email', 'profile_image_url', 'selfie_image_url']
                     },
                     {
                         model: User,
                         as: 'secondUser',
-                        attributes: ['id', 'name', 'email']
+                        attributes: ['id', 'name', 'email', 'profile_image_url', 'selfie_image_url']
                     },
                     {
                         model: require('../models/post.model'),
@@ -216,7 +216,7 @@ class ChatRepo {
                     {
                         model: User,
                         as: 'sender',
-                        attributes: ['id', 'name', 'email']
+                        attributes: ['id', 'name', 'email', 'profile_image_url', 'selfie_image_url']
                     }
                 ],
                 limit,
@@ -248,12 +248,12 @@ class ChatRepo {
                     {
                         model: User,
                         as: 'firstUser',
-                        attributes: ['id', 'name', 'email']
+                        attributes: ['id', 'name', 'email', 'profile_image_url', 'selfie_image_url']
                     },
                     {
                         model: User,
                         as: 'secondUser',
-                        attributes: ['id', 'name', 'email']
+                        attributes: ['id', 'name', 'email', 'profile_image_url', 'selfie_image_url']
                     },
                     {
                         model: require('../models/post.model'),

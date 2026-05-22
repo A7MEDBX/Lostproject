@@ -21,6 +21,8 @@ class User {
   final String? idImageUrl;
   final String? verificationLocation;
   final String? verificationNotes;
+  final String? bio;
+  final int recoveryPoints;
   final DateTime? verificationSubmittedAt;
   final DateTime? verificationReviewedAt;
   final DateTime createdAt;
@@ -48,10 +50,13 @@ class User {
     this.idImageUrl,
     this.verificationLocation,
     this.verificationNotes,
+    this.bio,
+    this.recoveryPoints = 0,
     this.verificationSubmittedAt,
     this.verificationReviewedAt,
     required this.createdAt,
   });
+
 
   User copyWith({
     String? id,
@@ -74,10 +79,13 @@ class User {
     String? idImageUrl,
     String? verificationLocation,
     String? verificationNotes,
+    String? bio,
+    int? recoveryPoints,
     DateTime? verificationSubmittedAt,
     DateTime? verificationReviewedAt,
     DateTime? createdAt,
   }) {
+
     return User(
       id: id ?? this.id,
       firebaseUid: firebaseUid ?? this.firebaseUid,
@@ -99,6 +107,8 @@ class User {
       idImageUrl: idImageUrl ?? this.idImageUrl,
       verificationLocation: verificationLocation ?? this.verificationLocation,
       verificationNotes: verificationNotes ?? this.verificationNotes,
+      bio: bio ?? this.bio,
+      recoveryPoints: recoveryPoints ?? this.recoveryPoints,
       verificationSubmittedAt:
           verificationSubmittedAt ?? this.verificationSubmittedAt,
       verificationReviewedAt:
@@ -107,3 +117,4 @@ class User {
     );
   }
 }
+

@@ -1,6 +1,15 @@
 const Post = require('../models/post.model');
 const User = require('../models/User.model');
 const { Op } = require('sequelize'); 
+
+// Safe attribute list for public feed — strips all sensitive/identifying fields.
+// NEVER include: image_url, vector_id, latitude, longitude, verification_questions
+const PUBLIC_FEED_ATTRIBUTES = [
+    'id', 'user_id', 'post_type', 'title', 'description',
+    'category', 'country', 'state', 'city', 'area',
+    'status', 'moderation_status', 'created_at'
+];
+
 class PostRepository {
 
     async getUserPosts(userId) {
@@ -225,6 +234,64 @@ class PostRepository {
                     id: postId
                 }
             });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Get posts for public home feed — strips all sensitive fields.
+     * No image_url, no coordinates, no verification_questions in response.
+     * Identical filter logic to getFilteredPosts but uses PUBLIC_FEED_ATTRIBUTES.
+     */
+    async getPublicFeedPosts(filters) {
+        const { type, country, state, city, area, category, status, moderation_status, limit, offset } = filters;
+        try {
+            const whereClause = {};
+            whereClause.status = status || 'active';
+
+            if (moderation_status && moderation_status !== 'all') {
+                whereClause.moderation_status = moderation_status;
+            } else if (!moderation_status) {
+                whereClause.moderation_status = 'visible';
+            }
+
+            if (type)     whereClause.post_type = type;
+            if (category) whereClause.category  = { [Op.iLike]: `%${category}%` };
+            if (country)  whereClause.country   = { [Op.iLike]: `%${country}%` };
+            if (state)    whereClause.state      = { [Op.iLike]: `%${state}%` };
+            if (city)     whereClause.city       = { [Op.iLike]: `%${city}%` };
+            if (area)     whereClause.area       = { [Op.iLike]: `%${area}%` };
+
+            return await Post.findAndCountAll({
+                attributes: PUBLIC_FEED_ATTRIBUTES,
+                where: whereClause,
+                order: [['created_at', 'DESC']],
+                limit:  limit  || 50,
+                offset: offset || 0,
+                include: {
+                    model: User,
+                    as: 'owner',
+                    attributes: ['id', 'verified', 'trust_score']  // No name/email in public feed
+                }
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Update verification_questions for a post (owner only — enforced in service).
+     * @param {string} postId
+     * @param {string} userId - Must match post.user_id
+     * @param {Array}  questions - [{ id, question }]
+     */
+    async updateVerificationQuestions(postId, userId, questions) {
+        try {
+            return await Post.update(
+                { verification_questions: questions },
+                { where: { id: postId, user_id: userId } }
+            );
         } catch (error) {
             throw error;
         }

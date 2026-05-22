@@ -14,6 +14,8 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  bool _isBreakdownExpanded = false;
+
   @override
   void initState() {
     super.initState();
@@ -186,18 +188,397 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 24),
 
-              // Account Section
+              // ==================== TRUST SECTION ====================
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade200),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.02),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.verified_user_rounded, color: _getTrustColor(trustScore ?? 0.0), size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'IDENTITY & SAFETY SCORE',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.grey.shade800,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      // Trust Gauge Row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Safety Level',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          _getTrustLabel(trustScore ?? 0.0).toUpperCase(),
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w800,
+                                            color: _getTrustColor(trustScore ?? 0.0),
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Text(
+                                      '${(trustScore ?? 0.0).toStringAsFixed(0)}%',
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w900,
+                                        color: _getTrustColor(trustScore ?? 0.0),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: LinearProgressIndicator(
+                                    value: (trustScore ?? 0.0) / 100.0,
+                                    minHeight: 8,
+                                    backgroundColor: Colors.grey.shade200,
+                                    color: _getTrustColor(trustScore ?? 0.0),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      // Status Detail Row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Verification',
+                                style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w500),
+                              ),
+                              const SizedBox(height: 4),
+                              _buildVerificationChip(verificationStatus ?? 'not_submitted'),
+                            ],
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                'Safety Standing',
+                                style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w500),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(
+                                    (backendUser?.status ?? 'active') == 'active'
+                                        ? Icons.check_circle_rounded
+                                        : Icons.warning_rounded,
+                                    color: (backendUser?.status ?? 'active') == 'active'
+                                        ? Colors.green
+                                        : Colors.red,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    (backendUser?.status ?? 'active').toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: (backendUser?.status ?? 'active') == 'active'
+                                          ? Colors.green
+                                          : Colors.red,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      const Divider(height: 24),
+                      
+                      // Expandable Trust Breakdown Header
+                      InkWell(
+                        onTap: () {
+                          setState(() {
+                            _isBreakdownExpanded = !_isBreakdownExpanded;
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'View Security Breakdown',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF0A3D91),
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                              Icon(
+                                _isBreakdownExpanded
+                                    ? Icons.keyboard_arrow_up_rounded
+                                    : Icons.keyboard_arrow_down_rounded,
+                                color: const Color(0xFF0A3D91),
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      if (_isBreakdownExpanded) ...[
+                        const SizedBox(height: 12),
+                        // Breakdown list
+                        _buildBreakdownItem(
+                          label: 'Identity Verified',
+                          isMet: backendUser?.verificationStatus == 'approved',
+                          pts: '+45 Pts',
+                        ),
+                        _buildBreakdownItem(
+                          label: 'Phone Verified',
+                          isMet: backendUser?.phoneNumber != null &&
+                              backendUser!.phoneNumber!.trim().isNotEmpty,
+                          pts: '+10 Pts',
+                        ),
+                        _buildBreakdownItem(
+                          label: 'Complete Address',
+                          isMet: backendUser?.country != null &&
+                              backendUser!.country!.trim().isNotEmpty &&
+                              backendUser?.city != null &&
+                              backendUser!.city!.trim().isNotEmpty &&
+                              backendUser?.area != null &&
+                              backendUser!.area!.trim().isNotEmpty,
+                          pts: '+10 Pts',
+                        ),
+                        _buildBreakdownItem(
+                          label: 'Profile Photo / Verified Selfie',
+                          isMet: backendUser?.profileImageUrl != null ||
+                              backendUser?.selfieImageUrl != null,
+                          pts: '+5 Pts',
+                        ),
+                        _buildBreakdownItem(
+                          label: 'Good Moderation Standing',
+                          isMet: backendUser?.status == 'active' &&
+                              (backendUser?.trustScore ?? 0.0) >= 40.0,
+                          pts: '+5 Pts',
+                        ),
+                        _buildBreakdownItem(
+                          label: 'Account Age & History',
+                          isMet: (backendUser?.createdAt != null &&
+                              DateTime.now().difference(backendUser!.createdAt).inDays >= 30),
+                          pts: 'Up to +5 Pts',
+                        ),
+                        const Divider(height: 20),
+                        // Advanced Factors Section
+                        const Text(
+                          'Advanced Security (Exceeding 70-80%):',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildBreakdownItem(
+                          label: 'Successful Recovery History',
+                          isMet: (backendUser?.trustScore ?? 0.0) >= 80.0 || (backendUser?.recoveryPoints ?? 0) > 0,
+                          pts: 'Up to +15 Pts',
+                        ),
+                        _buildBreakdownItem(
+                          label: 'Long-term Trust Standing (>90 days)',
+                          isMet: (backendUser?.createdAt != null &&
+                              DateTime.now().difference(backendUser!.createdAt).inDays > 90),
+                          pts: '+5 Pts',
+                        ),
+                        _buildBreakdownItem(
+                          label: 'Long-term Account Age (>150 days)',
+                          isMet: (backendUser?.createdAt != null &&
+                              DateTime.now().difference(backendUser!.createdAt).inDays > 150),
+                          pts: 'Up to +5 Pts',
+                        ),
+                        const SizedBox(height: 12),
+                        // Helper Explanation Box
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: const Text(
+                            'Maintain a verified account, avoid moderation issues, and complete successful recoveries to increase trust over time.',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.black54,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // ==================== RECOVERY SECTION ====================
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.orange.shade50, Colors.amber.shade50],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.amber.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.emoji_events, color: Colors.orange, size: 20),
+                              const SizedBox(width: 8),
+                              Text(
+                                'RECOVERY REWARDS',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange.shade900,
+                                  letterSpacing: 1.1,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.star, color: Colors.orange, size: 12),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '${backendUser?.recoveryPoints ?? 0} Pts',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.orange.shade900,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Earn points by returning lost items, resolving claims, and assisting the community.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.orange.shade900.withOpacity(0.8),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Redeem Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/rewards-catalog');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFFA500), // Premium Orange
+                            foregroundColor: Colors.white,
+                            elevation: 1,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: const Icon(Icons.shopping_bag_outlined),
+                          label: const Text(
+                            'Redeem Community Rewards',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // ==================== SETTINGS / ACTIONS ====================
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'ACCOUNT',
+                      'ACCOUNT SETTINGS',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey[500],
                         letterSpacing: 1.2,
@@ -216,8 +597,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
 
                     const SizedBox(height: 12),
-
-                    // Edit Profile removed from here
 
                     // Verify Account (KYC)
                     if (verificationStatus != 'approved') ...[
@@ -327,6 +706,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                     ),
+
 
                     const SizedBox(height: 40),
                   ],
@@ -553,6 +933,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
           color: isActive ? Colors.white : Colors.grey[600],
           size: 38,
         ),
+      ),
+    );
+  }
+
+  String _getTrustLabel(double score) {
+    if (score <= 30) return 'Low Trust';
+    if (score <= 60) return 'Basic Verified';
+    if (score <= 80) return 'Trusted User';
+    if (score <= 95) return 'Highly Trusted';
+    return 'Elite Trusted';
+  }
+
+  Color _getTrustColor(double score) {
+    if (score <= 30) return Colors.red.shade700;
+    if (score <= 60) return Colors.orange.shade700;
+    if (score <= 80) return const Color(0xFF0A3D91);
+    if (score <= 95) return Colors.teal.shade700;
+    return const Color(0xFFD4AF37); // Gold
+  }
+
+  Widget _buildBreakdownItem({
+    required String label,
+    required bool isMet,
+    required String pts,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          Icon(
+            isMet ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+            color: isMet ? Colors.green.shade600 : Colors.grey.shade400,
+            size: 16,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: isMet ? Colors.black87 : Colors.black54,
+                fontWeight: isMet ? FontWeight.w500 : FontWeight.normal,
+              ),
+            ),
+          ),
+          Text(
+            pts,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: isMet ? Colors.green.shade700 : Colors.grey,
+            ),
+          ),
+        ],
       ),
     );
   }

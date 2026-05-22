@@ -89,6 +89,7 @@ class ChatService {
                     other_user_id: otherUser?.id || null,
                     other_user_name: otherUser?.name || 'Unknown',
                     other_user_email: otherUser?.email || null,
+                    other_user_avatar: otherUser?.profile_image_url || otherUser?.selfie_image_url || null,
                     last_message: lastMessageContent,
                     updated_at: raw.updated_at || raw.created_at,
                     // Per-user unread: resolve correct column for this viewer

@@ -18,11 +18,11 @@ exports.createPostValidator = [
         .trim()
         .isLength({ min: 2, max: 50 }).withMessage('Category must be between 2 and 50 characters'),
 
-    // Description - optional
+    // Description - optional; max 140 chars encourages safe, concise descriptions
     body('description')
         .optional()
         .trim()
-        .isLength({ max: 1000 }).withMessage('Description cannot exceed 1000 characters'),
+        .isLength({ max: 140 }).withMessage('Description cannot exceed 140 characters. Keep it general to protect privacy.'),
 
     // Location Fields
     body('country')
@@ -83,7 +83,7 @@ exports.updatePostValidator = [
     body('description')
         .optional()
         .trim()
-        .isLength({ max: 1000 }).withMessage('Description cannot exceed 1000 characters'),
+        .isLength({ max: 140 }).withMessage('Description cannot exceed 140 characters. Keep it general to protect privacy.'),
     
     body('status')
         .optional()

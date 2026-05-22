@@ -1,6 +1,7 @@
 const postRepo = require('../Repository/post.repo');
 const AIService = require('../config/ai.config');
 const pineconeIndex = require('../config/pinecone.config');
+const { normalizeLocation } = require('../utils/normalization.util');
 
 const MAX_DISTANCE_KM = 40; // 40km radius for local matching
 
@@ -43,64 +44,131 @@ class MatchingService {
             const oppositeType = type === 'lost' ? 'found' : 'lost';
 
             // ==========================================
-            // STEP 1: Fetch Candidate Posts
+            // STEP 1: Fetch Candidate Posts (with Progressive Fallbacks)
             // ==========================================
-            console.log('Step 1: Fetching candidate posts in location...');
+            console.log('Step 1: Fetching candidate posts with fallbacks...');
             
-            const MAX_DISTANCE_KM = 40;
-            
-            const candidatePosts = await postRepo.getFilteredPosts({
+            // Normalize inputs for consistent searching
+            const normCountry = normalizeLocation(country);
+            const normState = state ? normalizeLocation(state) : null;
+            const normCity = city ? normalizeLocation(city) : null;
+            const normArea = area ? normalizeLocation(area) : null;
+            const normCategory = category ? normalizeLocation(category) : null;
+
+            console.log(`[MatchingService] Normalized inputs: city="${normCity}", area="${normArea}", category="${normCategory}"`);
+
+            let appliedState = normState;
+            let appliedCity = normCity;
+            let appliedArea = normArea;
+            let appliedCategory = normCategory;
+
+            console.log(`[MatchingService] Searching candidates. Input filters (normalized): country=${normCountry}, state=${normState}, city=${normCity}, area=${normArea}, category=${normCategory}`);
+
+            let candidatePosts = await postRepo.getFilteredPosts({
                 type: oppositeType,
                 status: 'active',
-                country: country || null,
-                state: state || null,
-                city: city || null,
-                area: area || null,
-                category: category || null,
+                country: normCountry || null,
+                state: normState || null,
+                city: normCity || null,
+                area: normArea || null,
+                category: normCategory || null,
                 limit: 500,
                 offset: 0
             });
 
+            // Fallback 1: Relax Area
+            if (candidatePosts.count === 0 && normArea) {
+                console.log(`[MatchingService] No candidates in area "${normArea}". Retrying without area...`);
+                appliedArea = null;
+                candidatePosts = await postRepo.getFilteredPosts({
+                    type: oppositeType,
+                    status: 'active',
+                    country: normCountry || null,
+                    state: normState || null,
+                    city: normCity || null,
+                    category: normCategory || null,
+                    limit: 500,
+                    offset: 0
+                });
+            }
+
+            // Fallback 2: Relax State
+            if (candidatePosts.count === 0 && normState) {
+                console.log(`[MatchingService] No candidates in state "${normState}". Retrying without state...`);
+                appliedState = null;
+                candidatePosts = await postRepo.getFilteredPosts({
+                    type: oppositeType,
+                    status: 'active',
+                    country: normCountry || null,
+                    city: normCity || null,
+                    category: normCategory || null,
+                    limit: 500,
+                    offset: 0
+                });
+            }
+
+            // Fallback 3: Relax Category
+            if (candidatePosts.count === 0 && normCategory && normCategory !== 'other') {
+                console.log(`[MatchingService] No candidates in category "${normCategory}". Retrying without category...`);
+                appliedCategory = null;
+                candidatePosts = await postRepo.getFilteredPosts({
+                    type: oppositeType,
+                    status: 'active',
+                    country: normCountry || null,
+                    city: normCity || null,
+                    limit: 500,
+                    offset: 0
+                });
+            }
+
             let nearbyPosts = candidatePosts.rows;
 
-            // Early exit if no candidates found
+            // Early exit if still no candidates found
             if (candidatePosts.count === 0) {
-                console.log(`No ${oppositeType} posts in ${area || city || state || country}. Skipping embedding.`);
+                console.log(`No ${oppositeType} posts in city-wide query for ${normCity || normCountry}. Skipping embedding.`);
                 return {
                     success: true,
-                    message: `No ${oppositeType} items found in ${area || city || state || country}`,
+                    message: `No ${oppositeType} items found in ${normCity || normCountry}`,
                     data: [],
                     count: 0
                 };
             }
 
-            console.log(`Found ${candidatePosts.count} ${oppositeType} posts in location`);
+            console.log(`Found ${candidatePosts.count} candidate ${oppositeType} posts in database.`);
 
             // Apply distance filter if coordinates provided
             if (latitude && longitude) {
-                nearbyPosts = candidatePosts.rows.filter(post => {
-                    if (!post.latitude || !post.longitude) return false;
-                    
-                    const distance = this.calculateDistance(
-                        latitude,
-                        longitude,
-                        post.latitude,
-                        post.longitude
-                    );
-                    
-                    post.dataValues.distance_km = Math.round(distance * 10) / 10;
-                    return distance <= MAX_DISTANCE_KM;
-                });
+                const latFloat = parseFloat(latitude);
+                const lonFloat = parseFloat(longitude);
+                
+                if (!isNaN(latFloat) && !isNaN(lonFloat)) {
+                    nearbyPosts = candidatePosts.rows.filter(post => {
+                        if (!post.latitude || !post.longitude) return false;
+                        
+                        const postLat = parseFloat(post.latitude);
+                        const postLon = parseFloat(post.longitude);
+                        
+                        if (isNaN(postLat) || isNaN(postLon)) return false;
+                        
+                        const distance = this.calculateDistance(
+                            latFloat,
+                            lonFloat,
+                            postLat,
+                            postLon
+                        );
+                        
+                        post.dataValues.distance_km = Math.round(distance * 10) / 10;
+                        return distance <= MAX_DISTANCE_KM;
+                    });
 
-                console.log(`${nearbyPosts.length} posts within ${MAX_DISTANCE_KM}km`);
+                    console.log(`${nearbyPosts.length} posts within ${MAX_DISTANCE_KM}km radius filter`);
 
-                if (nearbyPosts.length === 0) {
-                    return {
-                        success: true,
-                        message: `No items found within ${MAX_DISTANCE_KM}km radius`,
-                        data: [],
-                        count: 0
-                    };
+                    // Resilient Fallback: If strict distance filter leaves 0 candidates (e.g. wrong input coords),
+                    // fall back to all candidate posts in the city rather than returning an empty match list.
+                    if (nearbyPosts.length === 0) {
+                        console.log(`[MatchingService] Distance filter pruned all candidates. Falling back to all city posts.`);
+                        nearbyPosts = candidatePosts.rows;
+                    }
                 }
             }
 
@@ -117,27 +185,61 @@ class MatchingService {
             
             console.log(`Step 3: Searching ${candidateIds.length} vectors in Pinecone...`);
 
-            // Build Pinecone filter
+            // Build Pinecone filter dynamically aligned with database candidate records
+            const samplePost = nearbyPosts[0];
+            
+            // RELAXED: Removed moderation_status as it may be missing in older Pinecone records
             const pineconeFilter = {
                 post_type: oppositeType,
-                status: 'active',
-                moderation_status: 'visible',
-                country: country
+                status: 'active'
             };
 
-            if (state) pineconeFilter.state = state;
-            if (city) pineconeFilter.city = city;
-            if (area) pineconeFilter.area = area;
-            if (category) pineconeFilter.category = category;
+            // Use the actual database values (normalized) to ensure query matching
+            if (samplePost.country) pineconeFilter.country = normalizeLocation(samplePost.country);
+            if (appliedState && samplePost.state) pineconeFilter.state = normalizeLocation(samplePost.state);
+            if (appliedCity && samplePost.city) pineconeFilter.city = normalizeLocation(samplePost.city);
+            if (appliedArea && samplePost.area) pineconeFilter.area = normalizeLocation(samplePost.area);
+            if (appliedCategory && samplePost.category) pineconeFilter.category = normalizeLocation(samplePost.category);
 
-            console.log('Pinecone filter:', pineconeFilter);
+            console.log(`[MatchingService] Pinecone query for ${oppositeType} in ${pineconeFilter.city || pineconeFilter.country}`);
+            console.log('[MatchingService] Pinecone filter:', JSON.stringify(pineconeFilter));
 
             const matchResults = await pineconeIndex.query({
                 vector: imagevector,
-                topK: Math.min(nearbyPosts.length, 20),
+                topK: Math.min(nearbyPosts.length + 20, 100), // Search more candidates for better visual matches
                 includeMetadata: true,
                 filter: pineconeFilter
             });
+
+            console.log(`[MatchingService] Pinecone returned ${matchResults.matches?.length || 0} raw matches.`);
+            
+            if (!matchResults.matches || matchResults.matches.length === 0) {
+                // FALLBACK: If filtering caused 0 results, try relaxing city/area filters in Pinecone too
+                console.log('[MatchingService] Zero matches with strict filters. Retrying with relaxed Pinecone filter (country only)...');
+                const relaxedFilter = {
+                    post_type: oppositeType,
+                    status: 'active',
+                    country: normalizeLocation(samplePost.country)
+                };
+                
+                const relaxedResults = await pineconeIndex.query({
+                    vector: imagevector,
+                    topK: 20,
+                    includeMetadata: true,
+                    filter: relaxedFilter
+                });
+                
+                matchResults.matches = relaxedResults.matches || [];
+                console.log(`[MatchingService] Relaxed Pinecone search returned ${matchResults.matches.length} matches.`);
+            }
+
+            if (matchResults.matches && matchResults.matches.length > 0) {
+                matchResults.matches.forEach((m, idx) => {
+                    const isCandidate = nearbyPosts.some(p => p.id === m.id);
+                    console.log(`  Match ${idx + 1}: ID=${m.id}, Score=${m.score.toFixed(4)}, In SQL Candidates=${isCandidate}, City=${m.metadata?.city}`);
+                });
+            }
+
 
             if (!matchResults.matches || matchResults.matches.length === 0) {
                 return {

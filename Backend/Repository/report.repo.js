@@ -1,4 +1,4 @@
-const { Report, User, Post } = require('../models');
+const { Report, User, Post, Chat } = require('../models');
 
 class ReportRepository {
     async createReport(data) {
@@ -10,7 +10,16 @@ class ReportRepository {
             include: [
                 { model: User, as: 'reporter', attributes: ['id', 'name', 'email'] },
                 { model: User, as: 'reportedUser', attributes: ['id', 'name', 'email'] },
-                { model: Post, as: 'reportedPost', attributes: ['id', 'title', 'post_type', 'status', 'moderation_status'] }
+                { model: Post, as: 'reportedPost', attributes: ['id', 'title', 'post_type', 'status', 'moderation_status'] },
+                {
+                    model: Chat,
+                    as: 'reportedChat',
+                    attributes: ['id', 'post_id', 'user_1', 'user_2'],
+                    include: [
+                        { model: User, as: 'firstUser', attributes: ['id', 'name', 'email'] },
+                        { model: User, as: 'secondUser', attributes: ['id', 'name', 'email'] }
+                    ]
+                }
             ]
         });
     }
@@ -25,7 +34,16 @@ class ReportRepository {
             include: [
                 { model: User, as: 'reporter', attributes: ['id', 'name', 'email'] },
                 { model: User, as: 'reportedUser', attributes: ['id', 'name', 'email'] },
-                { model: Post, as: 'reportedPost', attributes: ['id', 'title', 'post_type', 'status', 'moderation_status'] }
+                { model: Post, as: 'reportedPost', attributes: ['id', 'title', 'post_type', 'status', 'moderation_status'] },
+                {
+                    model: Chat,
+                    as: 'reportedChat',
+                    attributes: ['id', 'post_id', 'user_1', 'user_2'],
+                    include: [
+                        { model: User, as: 'firstUser', attributes: ['id', 'name', 'email'] },
+                        { model: User, as: 'secondUser', attributes: ['id', 'name', 'email'] }
+                    ]
+                }
             ]
         });
     }

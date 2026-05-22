@@ -13,7 +13,7 @@ class Contact_req {
      * @param {string} [intro_message] - Optional introduction message
      * @returns {Promise<[ContactRequest, boolean]>} - [instance, created]
      */
-    async createContactReq(sender_id, receiver_id, post_id, intro_message) {
+    async createContactReq(sender_id, receiver_id, post_id, intro_message, verification_answers) {
         try {
             return await ContactRequest.findOrCreate({
                 where: {
@@ -23,7 +23,10 @@ class Contact_req {
                 },
                 defaults: {
                     status: 'pending',
-                    intro_message: intro_message || null
+                    intro_message: intro_message || null,
+                    // Store claimant's answers to owner's verification questions.
+                    // NULL for old requests or posts with no questions.
+                    verification_answers: verification_answers || null
                 }
             });
         } catch (err) {
@@ -116,16 +119,18 @@ class Contact_req {
         try {
             return await ContactRequest.findAndCountAll({
                 where: { receiver_id: user_id },
+                // verification_answers included so owner can review claimant answers
+                attributes: ['id', 'sender_id', 'receiver_id', 'post_id', 'status', 'intro_message', 'verification_answers', 'created_at'],
                 include: [
                     {
                         model: User,
                         as: 'sender',
-                        attributes: ['id', 'name', 'email']
+                        attributes: ['id', 'name', 'email', 'trust_score', 'verified']
                     },
                     {
                         model: Post,
                         as: 'post',
-                        attributes: ['id', 'title', 'description', 'post_type', 'category', 'image_url', 'status', 'country', 'city']
+                        attributes: ['id', 'title', 'description', 'post_type', 'category', 'image_url', 'status', 'country', 'city', 'verification_questions']
                     }
                 ],
                 order: [['created_at', 'DESC']],
@@ -183,11 +188,13 @@ class Contact_req {
                     receiver_id: receiver_id,
                     status: 'pending'
                 },
+                // Include verification_answers so owner can review per-post
+                attributes: ['id', 'sender_id', 'post_id', 'status', 'intro_message', 'verification_answers', 'created_at'],
                 include: [
                     {
                         model: User,
                         as: 'sender',
-                        attributes: ['id', 'name', 'email']
+                        attributes: ['id', 'name', 'email', 'trust_score', 'verified']
                     }
                 ],
                 order: [['created_at', 'DESC']]

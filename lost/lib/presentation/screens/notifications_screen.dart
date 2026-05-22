@@ -475,16 +475,162 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       }
 
       final senderName = reqData['sender']?['name'] ?? 'Someone';
+      final senderVerified = reqData['sender']?['verified'] as bool? ?? false;
       final introMessage = (reqData['intro_message'] as String?)?.isNotEmpty == true
           ? reqData['intro_message'] as String
-          : 'No message provided.';
+          : null;
+
+      // ── Verification Q&A ──────────────────────────────────────────────────
+      // verification_questions from the post, verification_answers from the request
+      final rawQuestions = reqData['post']?['verification_questions'];
+      final rawAnswers   = reqData['verification_answers'];
+
+      final List<Map<String, dynamic>> questions = rawQuestions != null
+          ? (rawQuestions as List<dynamic>).map((q) => q as Map<String, dynamic>).toList()
+          : [];
+
+      final List<Map<String, dynamic>> answers = rawAnswers != null
+          ? (rawAnswers as List<dynamic>).map((a) => a as Map<String, dynamic>).toList()
+          : [];
+
+      // Build a quick lookup: questionId → answer
+      final Map<int, String> answerMap = {
+        for (final a in answers)
+          (a['questionId'] as int? ?? 0): (a['answer'] as String? ?? ''),
+      };
 
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (ctx) => AlertDialog(
-          title: Text('Request from $senderName'),
-          content: Text(introMessage),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              const Icon(Icons.person_rounded, color: Color(0xFF0A3D91), size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Request from $senderName',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    if (senderVerified)
+                      const Row(children: [
+                        Icon(Icons.verified_rounded, size: 13, color: Color(0xFF0A3D91)),
+                        SizedBox(width: 3),
+                        Text('Verified user', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      ]),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // ── Intro message ─────────────────────────────────────────
+                if (introMessage != null) ...[
+                  const Text(
+                    'Message',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A1A2E)),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Text(introMessage, style: const TextStyle(fontSize: 13, height: 1.4)),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // ── Verification Q&A ──────────────────────────────────────
+                if (questions.isNotEmpty) ...[
+                  Row(children: [
+                    const Icon(Icons.quiz_rounded, size: 15, color: Color(0xFF0A3D91)),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'Claimant\'s Answers',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A1A2E)),
+                    ),
+                  ]),
+                  const SizedBox(height: 10),
+                  ...questions.map((q) {
+                    final qId      = q['id'] as int? ?? 0;
+                    final question = q['question'] as String? ?? '';
+                    final answer   = answerMap[qId] ?? '—';
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Q: $question',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF444466),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF0F4FF),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFF0A3D91).withOpacity(0.15)),
+                            ),
+                            child: Text(
+                              'A: $answer',
+                              style: const TextStyle(fontSize: 13, color: Color(0xFF1A1A2E)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ] else if (introMessage == null) ...[
+                  // No questions and no intro message
+                  Text(
+                    'The claimant did not provide any additional information.',
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  ),
+                ],
+
+                const SizedBox(height: 8),
+                // Review guidance
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF8E1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFFFCC02).withOpacity(0.4)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.info_outline_rounded, size: 14, color: Color(0xFF856404)),
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Only accept if the answers match what only the real owner would know.',
+                          style: TextStyle(fontSize: 11, color: Color(0xFF856404), height: 1.4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
           actions: [
             TextButton(
               onPressed: _respondingIds.contains(requestId)
@@ -493,7 +639,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       Navigator.pop(ctx);
                       _respondToRequest(requestId, 'rejected', notification);
                     },
-              child: const Text('Reject', style: TextStyle(color: Colors.red)),
+              child: const Text('Reject', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
             ),
             ElevatedButton(
               onPressed: _respondingIds.contains(requestId)
@@ -502,7 +648,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       Navigator.pop(ctx);
                       _respondToRequest(requestId, 'accepted', notification);
                     },
-              child: const Text('Accept'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0A3D91),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Accept', style: TextStyle(fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -512,6 +663,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       AppMessenger.showError('Something went wrong. Please try again.');
     }
   }
+
 
   Future<void> _respondToRequest(String requestId, String status, Map<String, dynamic> notification) async {
     if (_respondingIds.contains(requestId)) return; // guard: prevent double tap

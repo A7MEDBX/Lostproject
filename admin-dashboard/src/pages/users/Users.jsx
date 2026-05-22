@@ -39,6 +39,7 @@ import {
   ShieldRounded as ShieldIcon,
   HistoryRounded as HistoryIcon,
   EventNoteRounded as ActivityIcon,
+  EmojiEventsRounded as PointsIcon,
 } from '@mui/icons-material';
 import api from '../../api/axios';
 import MotionPage from '../../components/MotionPage';
@@ -111,6 +112,9 @@ export default function Users() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [viewingUser, setViewingUser] = useState(null);
   const [form, setForm] = useState(initialForm);
+  const [pointsDelta, setPointsDelta] = useState('');
+  const [pointsReason, setPointsReason] = useState('');
+  const [pointsSubmitting, setPointsSubmitting] = useState(false);
   const theme = useTheme();
   const queryClient = useQueryClient();
 
@@ -151,6 +155,8 @@ export default function Users() {
 
   const openEditor = (user) => {
     setSelectedUser(user);
+    setPointsDelta('');
+    setPointsReason('');
     setForm({
       name: user.name || '',
       email: user.email || '',
@@ -169,6 +175,38 @@ export default function Users() {
 
   const saveUser = () => {
     updateMutation.mutate({ userId: selectedUser.id, data: form });
+  };
+
+  const handleAdjustPoints = async () => {
+    if (!pointsDelta || isNaN(parseInt(pointsDelta))) {
+      alert('Please enter a valid points number');
+      return;
+    }
+    if (!pointsReason.trim()) {
+      alert('Please enter a reason for point adjustment');
+      return;
+    }
+    setPointsSubmitting(true);
+    try {
+      await api.post(`/admin/users/${selectedUser.id}/points/adjust`, {
+        points: parseInt(pointsDelta),
+        reason: pointsReason.trim()
+      });
+      // Update local state in the form
+      setSelectedUser(prev => ({
+        ...prev,
+        recovery_points: (prev?.recovery_points || 0) + parseInt(pointsDelta)
+      }));
+      setPointsDelta('');
+      setPointsReason('');
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      alert('Recovery points adjusted successfully!');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to adjust points');
+    } finally {
+      setPointsSubmitting(false);
+    }
   };
 
   const error = fetchError?.response?.data?.message || fetchError?.message || updateMutation.error?.response?.data?.message || updateMutation.error?.message;
@@ -250,6 +288,7 @@ export default function Users() {
                 <TableCell sx={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.1em' }}>Identity</TableCell>
                 <TableCell sx={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.1em' }}>Account Role</TableCell>
                 <TableCell sx={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.1em' }}>Trust Score</TableCell>
+                <TableCell sx={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.1em' }}>Recovery Points</TableCell>
                 <TableCell sx={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.1em' }}>Verification</TableCell>
                 <TableCell sx={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.1em' }}>Status</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.1em' }}>Actions</TableCell>
@@ -259,7 +298,7 @@ export default function Users() {
               {isLoading ? (
                 [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell colSpan={6}><LinearProgress sx={{ height: 2, opacity: 0.1 }} /></TableCell>
+                    <TableCell colSpan={7}><LinearProgress sx={{ height: 2, opacity: 0.1 }} /></TableCell>
                   </TableRow>
                 ))
               ) : filteredUsers.map((user) => (
@@ -276,14 +315,32 @@ export default function Users() {
                     </Stack>
                   </TableCell>
                   <TableCell><StatusPill value={user.role} /></TableCell>
-                  <TableCell sx={{ minWidth: 140 }}>
-                    <Box display="flex" alignItems="center" gap={1.5}>
-                      <Typography variant="caption" fontWeight={800}>{user.trust_score || 0}%</Typography>
-                      <LinearProgress
-                        variant="determinate"
-                        value={Math.min(100, Number(user.trust_score || 0))}
-                        sx={{ flexGrow: 1, height: 6, borderRadius: 3, bgcolor: alpha(theme.palette.text.primary, 0.05) }}
-                      />
+                  <TableCell sx={{ minWidth: 155 }}>
+                    <Box display="flex" flexDirection="column" gap={0.5}>
+                      <Box display="flex" alignItems="center" gap={1.5}>
+                        <Typography variant="caption" fontWeight={800}>{user.trust_score || 0}%</Typography>
+                        <LinearProgress
+                            variant="determinate"
+                            value={Math.min(100, Number(user.trust_score || 0))}
+                            color={user.trust_score > 80 ? "success" : user.trust_score > 60 ? "primary" : user.trust_score > 30 ? "warning" : "error"}
+                            sx={{ flexGrow: 1, height: 6, borderRadius: 3 }}
+                        />
+                      </Box>
+                      <Typography variant="caption" fontSize="0.65rem" fontWeight={900} sx={{
+                        color: user.trust_score > 95 ? '#D4AF37' : user.trust_score > 80 ? 'success.main' : user.trust_score > 60 ? 'primary.main' : user.trust_score > 30 ? 'warning.main' : 'error.main',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                      }}>
+                        {user.trust_score > 95 ? 'Elite Trusted' : user.trust_score > 80 ? 'Highly Trusted' : user.trust_score > 60 ? 'Trusted User' : user.trust_score > 30 ? 'Basic Verified' : 'Low Trust'}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Box display="flex" alignItems="center" gap={0.5}>
+                      <Typography variant="body2" fontWeight={800} color="warning.main">
+                        ★ {user.recovery_points ?? 0}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">Pts</Typography>
                     </Box>
                   </TableCell>
                   <TableCell><StatusPill value={user.verification_status || (user.verified ? 'approved' : 'not_submitted')} /></TableCell>
@@ -365,6 +422,40 @@ export default function Users() {
               <MenuItem value="approved">Approved</MenuItem>
               <MenuItem value="rejected">Rejected</MenuItem>
             </TextField>
+
+            <Divider sx={{ my: 1 }} />
+            
+            <Typography variant="subtitle2" fontWeight={800} color="warning.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <PointsIcon fontSize="small" /> Adjust Recovery Points (Community System)
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Current Balance: <strong>{selectedUser?.recovery_points ?? 0} Pts</strong>
+            </Typography>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <TextField 
+                label="Points Delta" 
+                placeholder="e.g. +10 or -5" 
+                value={pointsDelta} 
+                onChange={(e) => setPointsDelta(e.target.value)} 
+                sx={{ width: '40%' }}
+              />
+              <TextField 
+                label="Adjustment Reason" 
+                placeholder="e.g. Manual reward for returned keys" 
+                value={pointsReason} 
+                onChange={(e) => setPointsReason(e.target.value)} 
+                fullWidth
+              />
+            </Stack>
+            <Button 
+              variant="outlined" 
+              color="warning" 
+              onClick={handleAdjustPoints} 
+              disabled={pointsSubmitting}
+              sx={{ borderRadius: '10px', fontWeight: 700 }}
+            >
+              {pointsSubmitting ? 'Adjusting...' : 'Submit Points Adjustment'}
+            </Button>
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 4, pb: 4, pt: 2 }}>
@@ -422,6 +513,7 @@ export default function Users() {
               <DetailItem icon={InfoIcon} label="Email" value={viewingUser?.email} />
               <DetailItem icon={InfoIcon} label="Phone" value={viewingUser?.phone_number} />
               <DetailItem icon={ShieldIcon} label="Trust Score" value={`${viewingUser?.trust_score}%`} color={theme.palette.primary.main} />
+              <DetailItem icon={PointsIcon} label="Recovery Points" value={`${viewingUser?.recovery_points ?? 0} Pts`} color={theme.palette.warning.main} />
               <DetailItem icon={ActivityIcon} label="Join Date" value={viewingUser?.created_at ? new Date(viewingUser.created_at).toLocaleDateString() : 'N/A'} />
             </Grid>
 

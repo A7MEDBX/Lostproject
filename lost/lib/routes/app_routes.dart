@@ -26,6 +26,11 @@ import '../presentation/screens/privacy_policy_screen.dart';
 import '../presentation/screens/support_screen.dart';
 import '../presentation/screens/support_request_detail_screen.dart';
 import '../presentation/screens/moderation_status_screen.dart';
+import '../presentation/screens/post_protected_preview_screen.dart';
+import '../presentation/screens/post_verification_questions_screen.dart';
+import '../presentation/screens/rewards_catalog_screen.dart';
+
+
 /// App Routes Configuration
 class AppRoutes {
   static const String splash = '/';
@@ -55,6 +60,12 @@ class AppRoutes {
   static const String privacyPolicy = '/privacy-policy';
   static const String support = '/support';
   static const String supportRequestDetail = '/support-request-detail';
+  // Secure feed routes
+  static const String postProtectedPreview = '/post-protected-preview';
+  static const String postVerificationQuestions = '/post-questions';
+  static const String rewardsCatalog = '/rewards-catalog';
+
+
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -131,6 +142,7 @@ class AppRoutes {
             postImage: args?['postImage'] as String?,
             postStatus: args?['postStatus'] as String?,
             postId: args?['postId'] as String?,
+            userAvatar: args?['userAvatar'] as String?,
           ),
         );
 
@@ -197,12 +209,36 @@ class AppRoutes {
           ),
         );
 
+      case postProtectedPreview:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final feedPost = args?['post'];
+        if (feedPost == null) {
+          return MaterialPageRoute(builder: (_) => const Scaffold(body: Center(child: Text('No post data'))));
+        }
+        return MaterialPageRoute(builder: (_) => PostProtectedPreviewScreen(post: feedPost));
+
+      case postVerificationQuestions:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => PostVerificationQuestionsScreen(
+            postId: args?['postId'] as String? ?? '',
+            postTitle: args?['postTitle'] as String? ?? 'Post',
+          ),
+        );
+
+      case '/rewards-catalog':
+        return MaterialPageRoute(
+          builder: (_) => const RewardsCatalogScreen(),
+          settings: settings,
+        );
+
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(
             body: Center(child: Text('Route not found: ${settings.name}')),
           ),
         );
+
     }
   }
 }

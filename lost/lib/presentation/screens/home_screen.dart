@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
-import '../widgets/post_card.dart';
 import 'package:provider/provider.dart';
+import '../widgets/secure_feed_card.dart';
+
 import '../providers/post_provider.dart';
 import '../providers/notification_provider.dart';
+import '../providers/user_provider.dart';
+
+import '../../data/models/feed_post_model.dart';
+
+
+import '../../data/datasources/post_remote_data_source.dart';
+import '../../core/network/api_client.dart';
+import '../../core/services/auth_service.dart';
 import 'filter_screen.dart';
 
 /// Home Screen - Suggested Posts
@@ -15,25 +24,46 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool isDarkMode = false;
-  
+  List<FeedPost> _feedPosts = [];
+  bool _isLoading = true;
+  String? _error;
+  late PostRemoteDataSourceImpl _ds;
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => context.read<PostProvider>().loadPosts());
+    _ds = PostRemoteDataSourceImpl(apiClient: ApiClient(tokenProvider: AuthService.instance.getIdToken));
+    _loadFeed();
   }
 
-  Future<void> _fetchPosts() async {
-    await context.read<PostProvider>().loadPosts();
+  Future<void> _loadFeed() async {
+    if (!mounted) return;
+    setState(() { _isLoading = true; _error = null; });
+    try {
+      final postProvider = Provider.of<PostProvider>(context, listen: false);
+      final saved = postProvider.activeFilters;
+      
+      final String? category = saved?['category'] == 'All' ? null : saved?['category'];
+      final String? country = saved?['country']?.trim();
+      final String? city = saved?['city']?.trim();
+
+      final posts = await _ds.getPublicFeed(
+        category: category,
+        country: country,
+        city: city,
+        limit: 50,
+        offset: 0,
+      );
+      if (mounted) setState(() { _feedPosts = posts; _isLoading = false; });
+    } catch (e) {
+      if (mounted) setState(() { _error = 'Failed to load feed.'; _isLoading = false; });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final postProvider = context.watch<PostProvider>();
-    final isLoading = postProvider.isLoading;
-    final errorMessage = postProvider.errorMessage;
-    final posts = postProvider.posts;
-
+    // NotificationProvider still used for bell count — untouched.
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -42,8 +72,8 @@ class _HomeScreenState extends State<HomeScreen> {
         leading: Padding(
           padding: const EdgeInsets.only(left: 12),
           child: GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(
+            onTap: () async {
+              await Navigator.of(context).push(
                 PageRouteBuilder(
                   pageBuilder: (context, animation, secondaryAnimation) =>
                       const FilterScreen(),
@@ -64,6 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                 ),
               );
+              _loadFeed();
             },
             child: Container(
               width: 45,
@@ -104,6 +135,54 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         actions: [
+          Consumer<UserProvider>(
+            builder: (context, userProvider, child) {
+              final user = userProvider.backendUser;
+              final points = user?.recoveryPoints ?? 0;
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.pushNamed(context, '/rewards-catalog');
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFFD700), Color(0xFFFFA500)], // Gold to Orange gradient
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.orange.withOpacity(0.3),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.star, color: Colors.white, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$points Pts',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
           Stack(
             children: [
               IconButton(
@@ -184,51 +263,42 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // Subtitle
+            // Subtitle — security-focused copy
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
               child: Text(
-                'Found items matching your description',
+                'Active community incident board. Details are protected.',
                 style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
             ),
 
-            // Posts List
+            // Feed List — SecureFeedCard (no images, compact, secure)
             Expanded(
-              child: isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF0A3D91),
-                      ),
-                    )
-                  : errorMessage != null
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: Text(
-                              errorMessage,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.grey[700], fontSize: 14),
-                            ),
-                          ),
-                        )
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF0A3D91)))
+                  : _error != null
+                      ? Center(child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Column(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey.shade300),
+                            const SizedBox(height: 12),
+                            Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[700], fontSize: 14)),
+                            const SizedBox(height: 16),
+                            ElevatedButton(onPressed: _loadFeed, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0A3D91), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))), child: const Text('Retry')),
+                          ]),
+                        ))
                       : RefreshIndicator(
-                          onRefresh: _fetchPosts,
+                          onRefresh: _loadFeed,
                           color: const Color(0xFF0A3D91),
-                          child: ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            itemCount: posts.length,
-                            itemBuilder: (context, index) {
-                              final post = posts[index];
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 20),
-                                child: PostCard(
-                                  post: post,
-                                  backgroundColor: _getCardBackgroundColor(index),
-                                ),
-                              );
-                            },
-                          ),
+                          child: _feedPosts.isEmpty
+                            ? const Center(child: Text('No active incidents.', style: TextStyle(color: Colors.grey)))
+                            : ListView.builder(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                itemCount: _feedPosts.length,
+                                itemBuilder: (context, index) {
+                                  return SecureFeedCard(post: _feedPosts[index]);
+                                },
+                              ),
                         ),
             ),
           ],

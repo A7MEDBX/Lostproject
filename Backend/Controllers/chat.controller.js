@@ -74,6 +74,7 @@ class ChatController {
                 user_2: raw.user_2,
                 other_user_id: otherUser?.id || null,
                 other_user_name: otherUser?.name || null,
+                other_user_avatar: otherUser?.profile_image_url || otherUser?.selfie_image_url || null,
                 created_at: raw.created_at,
                 updated_at: raw.updated_at,
             };

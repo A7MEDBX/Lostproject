@@ -88,4 +88,26 @@ Router.post('/verification/submit',
  */
 Router.get('/verification/status', UserController.getVerificationStatus);
 
-       module.exports=Router;
+/**
+ * @route   GET /api/v1/user/me/points/history
+ * @desc    Get current user's recovery points transaction history
+ * @access  Private (requires authentication)
+ */
+Router.get('/me/points/history', UserController.getPointsHistory);
+
+/**
+ * @route   GET /api/v1/user/me/redemptions
+ * @desc    Get current user's redeemed rewards history
+ * @access  Private (requires authentication)
+ */
+Router.get('/me/redemptions', UserController.getRedemptionsHistory);
+
+/**
+ * @route   POST /api/v1/user/me/redeem
+ * @desc    Redeem a catalog reward using recovery points
+ * @access  Private (requires authentication)
+ */
+Router.post('/me/redeem', UserController.redeemReward);
+
+module.exports=Router;
+

@@ -287,10 +287,46 @@ class _MessagesScreenState extends State<MessagesScreen> {
     );
   }
 
+  Widget _buildAvatar(String? imageUrl, {double size = 56, double iconSize = 28}) {
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return Container(
+        width: size,
+        height: size,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+        ),
+        child: ClipOval(
+          child: Image.network(
+            imageUrl,
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                color: Colors.grey[300],
+                child: Icon(Icons.person, size: iconSize, color: Colors.grey[700]),
+              );
+            },
+          ),
+        ),
+      );
+    }
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        shape: BoxShape.circle,
+      ),
+      child: Icon(Icons.person, size: iconSize, color: Colors.grey[700]),
+    );
+  }
+
   Widget _buildChatItem(BuildContext context, Map<String, dynamic> chat) {
     final chatId = chat['id'] as String? ?? '';
     final otherUserId = chat['other_user_id'] as String? ?? '';
     final otherUserName = chat['other_user_name'] as String? ?? 'Unknown';
+    final otherUserAvatar = chat['other_user_avatar'] as String?;
     final lastMessage = chat['last_message'] as String? ?? '';
     final time = chat['updated_at'] as String? ?? '';
     final unreadCount = int.tryParse(chat['unread_count']?.toString() ?? '0') ?? 0;
@@ -321,6 +357,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
             'postImage': post?['image_url'],
             'postStatus': post?['status'],
             'postId': post?['id'],
+            'userAvatar': otherUserAvatar,
           },
         );
       },
@@ -336,12 +373,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
               children: [
                 Stack(
                   children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(color: Colors.grey[300], shape: BoxShape.circle),
-                      child: Icon(Icons.person, size: 28, color: Colors.grey[700]),
-                    ),
+                    _buildAvatar(otherUserAvatar, size: 56, iconSize: 28),
                     if (isOnline)
                       Positioned(
                         bottom: 2,

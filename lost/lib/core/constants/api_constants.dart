@@ -9,11 +9,20 @@ class ApiConstants {
   static const String submitVerificationEndpoint = '/user/verification/submit';
   static const String verificationStatusEndpoint = '/user/verification/status';
 
+  // Recovery Points Endpoints
+  static const String pointsHistoryEndpoint = '/user/me/points/history';
+  static const String redemptionsEndpoint = '/user/me/redemptions';
+  static const String redeemEndpoint = '/user/me/redeem';
+
+
   // Post Endpoints
   static const String createPostEndpoint = '/post/create';
   static const String allPostsEndpoint = '/post';
   static const String myPostsEndpoint = '/post/my-posts';
   static const String postDetailEndpoint = '/post'; // Used as /post/:id
+  static const String publicFeedEndpoint = '/post/feed'; // Safe public feed (no images)
+  // Post verification questions: /post/:id/questions
+
 
   // Matching Endpoints
   static const String searchEndpoint = '/match/find-matches';

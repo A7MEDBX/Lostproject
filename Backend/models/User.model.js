@@ -42,7 +42,17 @@ const User =sequelize.define('users',{
         defaultValue:0.0,
         allowNull:false
     },
+    bio:{
+        type:DataTypes.TEXT,
+        allowNull:true
+    },
+    recovery_points:{
+        type:DataTypes.INTEGER,
+        defaultValue:0,
+        allowNull:false
+    },
     national_id: {
+
         type: DataTypes.STRING,
         allowNull: true
     },

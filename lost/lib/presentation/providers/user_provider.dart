@@ -63,4 +63,38 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
     debugPrint('[UserProvider] User state cleared.');
   }
+
+  /// Fetches points history
+  Future<List<Map<String, dynamic>>> getPointsHistory() async {
+    try {
+      return await _remoteDataSource.fetchPointsHistory();
+    } catch (e) {
+      debugPrint('[UserProvider] Failed to fetch points history: $e');
+      return [];
+    }
+  }
+
+  /// Fetches redemptions history
+  Future<List<Map<String, dynamic>>> getRedemptions() async {
+    try {
+      return await _remoteDataSource.fetchRedemptions();
+    } catch (e) {
+      debugPrint('[UserProvider] Failed to fetch redemptions: $e');
+      return [];
+    }
+  }
+
+  /// Redeem a reward from the catalog
+  Future<bool> redeemReward(String rewardId) async {
+    try {
+      await _remoteDataSource.redeemReward(rewardId);
+      // Re-fetch user profile to sync the points balance instantly in the App Header!
+      await loadUser();
+      return true;
+    } catch (e) {
+      debugPrint('[UserProvider] Failed to redeem reward: $e');
+      return false;
+    }
+  }
 }
+
